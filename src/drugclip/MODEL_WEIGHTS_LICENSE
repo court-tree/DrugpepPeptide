@@ -1,0 +1,65 @@
+MODEL WEIGHTS AND MODEL OUTPUTS LICENSE
+
+Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)
+
+See docs/MODEL_WEIGHTS_LICENSE.md for full details.
+
+===============================================================================
+
+APPLIES TO:
+  - All DrugCLIP model weights
+  - All results, predictions, and outputs generated using the DrugCLIP model
+  - Pre-computed embeddings derived from the DrugCLIP model
+
+===============================================================================
+
+LICENSE SUMMARY
+
+You are free to:
+  - Share — copy and redistribute the material in any medium or format
+  - Adapt — remix, transform, and build upon the material
+
+Under the following terms:
+  - Attribution — You must give appropriate credit
+  - NonCommercial — You may not use the material for commercial purposes
+
+Full License: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+
+===============================================================================
+
+COMMERCIAL USE
+
+Commercial use includes, but is not limited to:
+  - Using the model weights or outputs in a commercial product or service
+  - Using the model for drug discovery or screening in a for-profit organization
+  - Selling or licensing access to the model or its outputs
+  - Using the model outputs to support commercial research or development
+
+Academic and Research Use: Use for non-commercial research, educational 
+purposes, and academic publications is permitted under this license.
+
+Commercial Licensing: If you wish to use the model weights or outputs for 
+commercial purposes, please contact: billgao0111@gmail.com
+
+===============================================================================
+
+ATTRIBUTION
+
+When using the model weights or outputs, please cite:
+
+@article{jia2026deep,
+  title={Deep contrastive learning enables genome-wide virtual screening},
+  author={Jia, Yinjun and Gao, Bowen and Tan, Jiaxin and Zheng, Jiqing and 
+          Hong, Xin and Zhu, Wenyu and Tan, Haichuan and Xiao, Yuan and 
+          Tan, Liping and Cai, Hongyi and others},
+  journal={Science},
+  volume={391},
+  number={6781},
+  pages={eads9530},
+  year={2026},
+  publisher={American Association for the Advancement of Science}
+}
+
+===============================================================================
+
+For complete license information and details, see docs/MODEL_WEIGHTS_LICENSE.md
