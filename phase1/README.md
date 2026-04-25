@@ -1,0 +1,117 @@
+# Phase1 Simplified Pipeline
+
+This directory contains a fresh implementation of the simplified Phase-1 logic from Step 1 through Step 7.
+
+Core steps implemented here:
+
+1. `step1_structure_qc.py`
+   X-ray / resolution / interface-based structure QC.
+2. `step2_generate_tasks.py`
+   Bidirectional receptor-peptide-source task generation.
+1. `step3_window_candidates.py`
+   Generate continuous peptide windows around interface-near residues and score each window by local average contact count.
+2. `step4_filter_dedup.py`
+   Revalidate each candidate in the original structure and filter physically weak, broken, or low-quality single peptide windows.
+3. `step5_sample_by_avg_contacts.py`
+   Sample final per-task representatives using `avg_contact_count` with an optional mild length-balance factor.
+4. `step6_joint_homology_dedup.py`
+   Remove global duplicates only when receptor and peptide are both highly similar, then create a light main/monitor split.
+5. `step7_finalize_dataset.py`
+   Build final dataset metadata with peptide sequence, receptor local patch residue ids, and simple proxy-cap annotations.
+
+## Current Default Parameters
+
+These are the current recommended working defaults after `smoke_5`, `smoke_10`, `pilot_100`, and `pilot_1000` tuning.
+
+### Step 1
+
+- `max_resolution = 3.5`
+- `min_interface_bsa = 200.0`
+- `contact_prefilter_cutoff = 6.0`
+
+### Step 2
+
+- `chain_contact_cutoff = 6.0`
+- `directed_contact_cutoff = 6.0`
+- `min_source_contact_residues = 2`
+- `min_source_chain_residues = 8`
+
+### Step 3
+
+- `anchor_cutoff = 6.0`
+- `contact_cutoff = 6.0`
+- `min_len = 8`
+- `max_len = 20`
+- `anchor_local_radius = 3`
+- `anchor_nms_gap = 2`
+- `min_anchor_contact_count = 2`
+- `max_anchors_per_task = 3`
+- `max_candidates_per_task = 16`
+
+Current Step 3 behavior:
+
+- anchor seeds must have direct receptor-residue contacts and are ranked first by direct anchor contact count
+- local `avg_contact_count` is used as the tie-breaker for hotspot anchor ranking
+- anchor-level NMS is enabled
+- duplicate windows are removed by `(left_idx, right_idx)`
+- task-level candidate count is capped at `16`
+
+### Step 4
+
+- `contact_cutoff = 6.0`
+- `min_avg_contact_count = 3.5`
+- `min_contact_coverage = 0.5`
+
+Current Step 4 behavior:
+
+- physical sanity filtering uses `avg_contact_count` plus `contact_coverage`
+- window boundaries and backbone continuity are rechecked in the original structure
+- no near-duplicate dedup is applied in Step 4; diversity and duplicate control are handled by Step 5/6
+
+### Step 5
+
+- `max_keep_per_task = 4`
+- `sampling_basis = avg_contact_count_with_len8_per_task_cap`
+- `max_len8_per_task = 2`
+- 8-mer candidates are capped only when longer candidates are available in the same task
+- `seed = 20260416`
+
+### Step 6
+
+- `receptor_identity_threshold = 0.85`
+- `peptide_identity_threshold = 0.85`
+- `peptide_min_coverage = 0.70`
+- `monitor_fraction = 0.10`
+- `seed = 20260416`
+
+Current Step 6 behavior:
+
+- a sample is dropped only when receptor identity and peptide identity are both above threshold
+- homologous competitors are considered only when short/long peptide coverage is at least `0.70`
+- longer peptide windows are prioritized before average contact count, so short windows covered by longer homologous windows are dropped
+- this is still a fairly strong dedup step at larger pilot scale
+
+### Step 7
+
+- `patch_cutoff = 6.0`
+
+## Recommended Baseline
+
+If we need one concise baseline to refer to, it is:
+
+- Step 3: `max_candidates_per_task = 16`
+- Step 4: `min_avg_contact_count = 3.5`, `min_contact_coverage = 0.5`
+- Step 5: `max_keep_per_task = 4`, `max_len8_per_task = 2`
+- Step 6: `receptor_identity_threshold = 0.85`, `peptide_identity_threshold = 0.85`, `peptide_min_coverage = 0.70`
+- Step 7: `patch_cutoff = 6.0`
+
+## Tuning History
+
+See [tuning_history.md](/e:/pep/phase1/tuning_history.md) for the step-by-step adjustment record.
+
+Example WSL run:
+
+```bash
+cd /mnt/e/pep/phase1
+bash run_phase1_wsl.sh
+```

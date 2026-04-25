@@ -1,0 +1,6 @@
+anchor_rank	receptor_chain	receptor_resseq	receptor_resname	peptide_chain	peptide_resseq	peptide_resname	anchor_min_distance
+1	A	525	ASN	B	384	GLN	2.698
+2	A	521	ASP	B	380	TYR	2.785
+3	A	526	PRO	B	484	ARG	2.810
+4	A	514	SER	B	233	THR	2.915
+5	A	513	VAL	B	422	ASN	2.957

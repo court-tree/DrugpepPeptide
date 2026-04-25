@@ -1,0 +1,17 @@
+[
+  {
+    "file_name": "6hgg.cif",
+    "pdb_id": "6hgg",
+    "passed": true,
+    "reason": "passed",
+    "method": "X-RAY DIFFRACTION",
+    "resolution": null,
+    "resolution_missing": true,
+    "assembly_name": "native_assembly",
+    "n_assemblies": 1,
+    "n_chain_instances": 2,
+    "n_contacting_pairs_prefiltered": 1,
+    "passing_pair_delta_sasa": 4981.300627691548,
+    "passing_pair": "A__B"
+  }
+]

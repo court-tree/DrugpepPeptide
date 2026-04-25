@@ -1,0 +1,2 @@
+"""Minimal PepCLIP training skeleton."""
+

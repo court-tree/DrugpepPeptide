@@ -1,0 +1,197 @@
+{"kind":"deck","id":"phase1-teacher-report","slideCount":7,"slideSize":{"width":1280,"height":720}}
+{"kind":"slide","slide":1,"id":"p7kjyr"}
+{"kind":"slide","slide":2,"id":"tei4r1"}
+{"kind":"slide","slide":3,"id":"586xga"}
+{"kind":"slide","slide":4,"id":"dw56r9"}
+{"kind":"slide","slide":5,"id":"avy8x8"}
+{"kind":"slide","slide":6,"id":"0j32dg"}
+{"kind":"slide","slide":7,"id":"elae8z"}
+{"kind":"image","slide":1,"id":"2","role":"fallback art plate","path":"fallback-data-url","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":1,"id":"3","role":"cover contrast overlay","shapeType":"rect","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":1,"id":"4","role":"cover accent rule","shapeType":"rect","bbox":[64,86,7,455]}
+{"kind":"textbox","slide":1,"id":"5","role":"kicker","text":"PEPTIDECLIP PHASE-1","textPreview":"PEPTIDECLIP PHASE-1","textChars":19,"textLines":1,"bbox":[86,88,520,26]}
+{"kind":"textbox","slide":1,"id":"6","role":"cover title","text":"高保真多肽-受体数据集构建流程","textPreview":"高保真多肽-受体数据集构建流程","textChars":15,"textLines":1,"bbox":[82,130,785,184]}
+{"kind":"textbox","slide":1,"id":"7","role":"cover subtitle","text":"从真实 PPI 复合物出发，切出结构可信、接触充分、重复度受控的多肽训练样本。","textPreview":"从真实 PPI 复合物出发，切出结构可信、接触充分、重复度受控的多肽训练样本。","textChars":39,"textLines":1,"bbox":[86,326,610,86]}
+{"kind":"shape","slide":1,"id":"8","role":"cover moment panel","shapeType":"roundRect","bbox":[86,448,470,126]}
+{"kind":"textbox","slide":1,"id":"9","role":"cover moment","text":"核心逻辑：真实结构 → 局部片段 → 物理体检 → 联合同源去重 → 1D/3D 落库","textPreview":"核心逻辑：真实结构 → 局部片段 → 物理体检 → 联合同源去重 → 1D/3D 落库","textChars":43,"textLines":1,"bbox":[112,472,416,78]}
+{"kind":"textbox","slide":1,"id":"10","role":"caption","text":"材料来源：phase1/README.md、tuning_history.md、length_balance_experiment.md、len8cap_experiment.md","textPreview":"材料来源：phase1/README.md、tuning_history.md、length_balance_experiment.md、len8cap_experiment.md","textChars":90,"textLines":1,"bbox":[64,674,980,22]}
+{"kind":"image","slide":2,"id":"2","role":"fallback art plate","path":"fallback-data-url","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":2,"id":"3","role":"content contrast overlay","shapeType":"rect","bbox":[0,0,1280,720]}
+{"kind":"textbox","slide":2,"id":"4","role":"header","text":"PIPELINE MAP","textPreview":"PIPELINE MAP","textChars":12,"textLines":1,"bbox":[64,34,430,24]}
+{"kind":"textbox","slide":2,"id":"5","role":"header","text":"02 / 07","textPreview":"02 / 07","textChars":7,"textLines":1,"bbox":[1114,34,104,24]}
+{"kind":"shape","slide":2,"id":"6","role":"header rule","shapeType":"rect","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":2,"id":"7","role":"header marker","shapeType":"ellipse","bbox":[57,57,16,16]}
+{"kind":"textbox","slide":2,"id":"8","role":"title","text":"一条主线：先保证结构可靠，再保留代表性片段","textPreview":"一条主线：先保证结构可靠，再保留代表性片段","textChars":21,"textLines":1,"bbox":[64,86,760,142]}
+{"kind":"textbox","slide":2,"id":"9","role":"subtitle","text":"新版 Phase-1 去掉全局分层采样，改成更直接、更可解释的局部质量筛选链路。","textPreview":"新版 Phase-1 去掉全局分层采样，改成更直接、更可解释的局部质量筛选链路。","textChars":40,"textLines":1,"bbox":[66,234,720,70]}
+{"kind":"shape","slide":2,"id":"10","role":"card panel: 输入端","shapeType":"roundRect","bbox":[84,392,355.3333333333333,222]}
+{"kind":"shape","slide":2,"id":"11","role":"card accent: 输入端","shapeType":"rect","bbox":[84,392,8,222]}
+{"kind":"shape","slide":2,"id":"12","role":"icon badge","shapeType":"ellipse","bbox":[106,416,54,54]}
+{"kind":"shape","slide":2,"id":"13","role":"icon glyph","shapeType":"rect","bbox":[122,445,6,12]}
+{"kind":"shape","slide":2,"id":"14","role":"icon glyph","shapeType":"rect","bbox":[131,437,6,20]}
+{"kind":"shape","slide":2,"id":"15","role":"icon glyph","shapeType":"rect","bbox":[140,430,6,27]}
+{"kind":"textbox","slide":2,"id":"16","role":"card label","text":"输入端","textPreview":"输入端","textChars":3,"textLines":1,"bbox":[172,414,247.33333333333331,28]}
+{"kind":"textbox","slide":2,"id":"17","role":"card body: 输入端","text":"Step 1–2 先筛结构质量，再把每对接触链拆成双向\nreceptor / peptide-source\n任务。","textPreview":"Step 1–2 先筛结构质量，再把每对接触链拆成双向 | receptor / peptide-source | 任务。","textChars":57,"textLines":3,"bbox":[108,478,307.3333333333333,114]}
+{"kind":"shape","slide":2,"id":"18","role":"card panel: 候选端","shapeType":"roundRect","bbox":[463.3333333333333,392,355.3333333333333,222]}
+{"kind":"shape","slide":2,"id":"19","role":"card accent: 候选端","shapeType":"rect","bbox":[463.3333333333333,392,8,222]}
+{"kind":"shape","slide":2,"id":"20","role":"icon badge","shapeType":"ellipse","bbox":[485.3333333333333,416,54,54]}
+{"kind":"shape","slide":2,"id":"21","role":"icon glyph","shapeType":"ellipse","bbox":[498.3333333333333,434,10,10]}
+{"kind":"shape","slide":2,"id":"22","role":"icon glyph","shapeType":"ellipse","bbox":[516.3333333333333,443,10,10]}
+{"kind":"shape","slide":2,"id":"23","role":"icon glyph","shapeType":"rect","bbox":[507.3333333333333,441,19,3]}
+{"kind":"textbox","slide":2,"id":"24","role":"card label","text":"候选端","textPreview":"候选端","textChars":3,"textLines":1,"bbox":[551.3333333333333,414,247.33333333333331,28]}
+{"kind":"textbox","slide":2,"id":"25","role":"card body: 候选端","text":"Step 3–5 在真实界面附近切 8–20 aa\n连续片段，用平均接触表现筛选并抽样。","textPreview":"Step 3–5 在真实界面附近切 8–20 aa | 连续片段，用平均接触表现筛选并抽样。","textChars":44,"textLines":2,"bbox":[487.3333333333333,478,307.3333333333333,114]}
+{"kind":"shape","slide":2,"id":"26","role":"card panel: 落库端","shapeType":"roundRect","bbox":[842.6666666666666,392,355.3333333333333,222]}
+{"kind":"shape","slide":2,"id":"27","role":"card accent: 落库端","shapeType":"rect","bbox":[842.6666666666666,392,8,222]}
+{"kind":"shape","slide":2,"id":"28","role":"icon badge","shapeType":"ellipse","bbox":[864.6666666666666,416,54,54]}
+{"kind":"shape","slide":2,"id":"29","role":"icon glyph","shapeType":"roundRect","bbox":[877.6666666666666,431,26,13]}
+{"kind":"shape","slide":2,"id":"30","role":"icon glyph","shapeType":"roundRect","bbox":[882.6666666666666,440,26,13]}
+{"kind":"shape","slide":2,"id":"31","role":"icon glyph","shapeType":"roundRect","bbox":[887.6666666666666,449,20,10]}
+{"kind":"textbox","slide":2,"id":"32","role":"card label","text":"落库端","textPreview":"落库端","textChars":3,"textLines":1,"bbox":[930.6666666666666,414,247.33333333333331,28]}
+{"kind":"textbox","slide":2,"id":"33","role":"card body: 落库端","text":"Step 6–7\n用受体+多肽联合相似性去重，最后封端、提口袋并写入\n1D/3D 数据。","textPreview":"Step 6–7 | 用受体+多肽联合相似性去重，最后封端、提口袋并写入 | 1D/3D 数据。","textChars":44,"textLines":3,"bbox":[866.6666666666666,478,307.3333333333333,114]}
+{"kind":"textbox","slide":2,"id":"34","role":"caption","text":"材料来源：phase1/README.md、tuning_history.md、length_balance_experiment.md、len8cap_experiment.md","textPreview":"材料来源：phase1/README.md、tuning_history.md、length_balance_experiment.md、len8cap_experiment.md","textChars":90,"textLines":1,"bbox":[64,674,980,22]}
+{"kind":"image","slide":3,"id":"2","role":"fallback art plate","path":"fallback-data-url","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":3,"id":"3","role":"metrics contrast overlay","shapeType":"rect","bbox":[0,0,1280,720]}
+{"kind":"textbox","slide":3,"id":"4","role":"header","text":"CORE IDEA","textPreview":"CORE IDEA","textChars":9,"textLines":1,"bbox":[64,34,430,24]}
+{"kind":"textbox","slide":3,"id":"5","role":"header","text":"03 / 07","textPreview":"03 / 07","textChars":7,"textLines":1,"bbox":[1114,34,104,24]}
+{"kind":"shape","slide":3,"id":"6","role":"header rule","shapeType":"rect","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":3,"id":"7","role":"header marker","shapeType":"ellipse","bbox":[57,57,16,16]}
+{"kind":"textbox","slide":3,"id":"8","role":"title","text":"候选生成不看单点最近，而看局部片段整体表现","textPreview":"候选生成不看单点最近，而看局部片段整体表现","textChars":21,"textLines":1,"bbox":[64,86,700,142]}
+{"kind":"textbox","slide":3,"id":"9","role":"subtitle","text":"真实 PPI 界面里，单个残基最近可能只是偶然；连续片段的平均接触更接近多肽结合质量。","textPreview":"真实 PPI 界面里，单个残基最近可能只是偶然；连续片段的平均接触更接近多肽结合质量。","textChars":43,"textLines":1,"bbox":[66,234,700,70]}
+{"kind":"shape","slide":3,"id":"10","role":"metric panel: 候选片段长度范围","shapeType":"roundRect","bbox":[92,404,330,174]}
+{"kind":"shape","slide":3,"id":"11","role":"metric accent: 候选片段长度范围","shapeType":"rect","bbox":[92,404,330,7]}
+{"kind":"textbox","slide":3,"id":"12","role":"metric value","text":"8–20 aa","textPreview":"8–20 aa","textChars":7,"textLines":1,"bbox":[114,428,286,54]}
+{"kind":"textbox","slide":3,"id":"13","role":"metric label","text":"候选片段长度范围","textPreview":"候选片段长度范围","textChars":8,"textLines":1,"bbox":[116,486,282,38]}
+{"kind":"textbox","slide":3,"id":"14","role":"metric note","text":"连续主链片段","textPreview":"连续主链片段","textChars":6,"textLines":1,"bbox":[116,536,282,22]}
+{"kind":"shape","slide":3,"id":"15","role":"metric panel: 当前 Step 3 任务内候选上限","shapeType":"roundRect","bbox":[462,404,330,174]}
+{"kind":"shape","slide":3,"id":"16","role":"metric accent: 当前 Step 3 任务内候选上限","shapeType":"rect","bbox":[462,404,330,7]}
+{"kind":"textbox","slide":3,"id":"17","role":"metric value","text":"16 / task","textPreview":"16 / task","textChars":9,"textLines":1,"bbox":[484,428,286,54]}
+{"kind":"textbox","slide":3,"id":"18","role":"metric label","text":"当前 Step 3 任务内候选上限","textPreview":"当前 Step 3 任务内候选上限","textChars":17,"textLines":1,"bbox":[486,486,282,38]}
+{"kind":"textbox","slide":3,"id":"19","role":"metric note","text":"避免无限召回","textPreview":"避免无限召回","textChars":6,"textLines":1,"bbox":[486,536,282,22]}
+{"kind":"shape","slide":3,"id":"20","role":"metric panel: 以每个 peptide residue 接触到的唯一 receptor residue 均值作为核心信号","shapeType":"roundRect","bbox":[832,404,330,174]}
+{"kind":"shape","slide":3,"id":"21","role":"metric accent: 以每个 peptide residue 接触到的唯一 receptor residue 均值作为核心信号","shapeType":"rect","bbox":[832,404,330,7]}
+{"kind":"textbox","slide":3,"id":"22","role":"metric value","text":"avg contact","textPreview":"avg contact","textChars":11,"textLines":1,"bbox":[854,428,286,54]}
+{"kind":"textbox","slide":3,"id":"23","role":"metric label","text":"以每个 peptide residue 接触到的唯一 receptor residue 均值作为核心信号","textPreview":"以每个 peptide residue 接触到的唯一 receptor residue 均值作为核心信号","textChars":52,"textLines":1,"bbox":[856,486,282,38]}
+{"kind":"textbox","slide":3,"id":"24","role":"metric note","text":"减少长度偏置","textPreview":"减少长度偏置","textChars":6,"textLines":1,"bbox":[856,536,282,22]}
+{"kind":"textbox","slide":3,"id":"25","role":"caption","text":"材料来源：phase1/README.md、tuning_history.md、length_balance_experiment.md、len8cap_experiment.md","textPreview":"材料来源：phase1/README.md、tuning_history.md、length_balance_experiment.md、len8cap_experiment.md","textChars":90,"textLines":1,"bbox":[64,674,980,22]}
+{"kind":"image","slide":4,"id":"2","role":"fallback art plate","path":"fallback-data-url","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":4,"id":"3","role":"content contrast overlay","shapeType":"rect","bbox":[0,0,1280,720]}
+{"kind":"textbox","slide":4,"id":"4","role":"header","text":"TUNING EVIDENCE","textPreview":"TUNING EVIDENCE","textChars":15,"textLines":1,"bbox":[64,34,430,24]}
+{"kind":"textbox","slide":4,"id":"5","role":"header","text":"04 / 07","textPreview":"04 / 07","textChars":7,"textLines":1,"bbox":[1114,34,104,24]}
+{"kind":"shape","slide":4,"id":"6","role":"header rule","shapeType":"rect","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":4,"id":"7","role":"header marker","shapeType":"ellipse","bbox":[57,57,16,16]}
+{"kind":"textbox","slide":4,"id":"8","role":"title","text":"调参不是盲调：先发现量纲问题，再让 Step 4 真正工作","textPreview":"调参不是盲调：先发现量纲问题，再让 Step 4 真正工作","textChars":29,"textLines":1,"bbox":[64,86,760,142]}
+{"kind":"textbox","slide":4,"id":"9","role":"subtitle","text":"早期 smoke 测试暴露出 Step 4 全过的问题，关键转折点是重定义 avg_contact_count。","textPreview":"早期 smoke 测试暴露出 Step 4 全过的问题，关键转折点是重定义 avg_contact_count。","textChars":56,"textLines":1,"bbox":[66,234,720,70]}
+{"kind":"shape","slide":4,"id":"10","role":"card panel: 早期问题","shapeType":"roundRect","bbox":[84,392,355.3333333333333,222]}
+{"kind":"shape","slide":4,"id":"11","role":"card accent: 早期问题","shapeType":"rect","bbox":[84,392,8,222]}
+{"kind":"shape","slide":4,"id":"12","role":"icon badge","shapeType":"ellipse","bbox":[106,416,54,54]}
+{"kind":"shape","slide":4,"id":"13","role":"icon glyph","shapeType":"rect","bbox":[122,445,6,12]}
+{"kind":"shape","slide":4,"id":"14","role":"icon glyph","shapeType":"rect","bbox":[131,437,6,20]}
+{"kind":"shape","slide":4,"id":"15","role":"icon glyph","shapeType":"rect","bbox":[140,430,6,27]}
+{"kind":"textbox","slide":4,"id":"16","role":"card label","text":"早期问题","textPreview":"早期问题","textChars":4,"textLines":1,"bbox":[172,414,247.33333333333331,28]}
+{"kind":"textbox","slide":4,"id":"17","role":"card body: 早期问题","text":"smoke_5 到 smoke_5_v3 中，Step\n4 基本 128→128 / 64→64\n全部通过，说明过滤没有真正生效。","textPreview":"smoke_5 到 smoke_5_v3 中，Step | 4 基本 128→128 / 64→64 | 全部通过，说明过滤没有真正生效。","textChars":65,"textLines":3,"bbox":[108,478,307.3333333333333,114]}
+{"kind":"shape","slide":4,"id":"18","role":"card panel: 关键修正","shapeType":"roundRect","bbox":[463.3333333333333,392,355.3333333333333,222]}
+{"kind":"shape","slide":4,"id":"19","role":"card accent: 关键修正","shapeType":"rect","bbox":[463.3333333333333,392,8,222]}
+{"kind":"shape","slide":4,"id":"20","role":"icon badge","shapeType":"ellipse","bbox":[485.3333333333333,416,54,54]}
+{"kind":"shape","slide":4,"id":"21","role":"icon glyph","shapeType":"ellipse","bbox":[498.3333333333333,434,10,10]}
+{"kind":"shape","slide":4,"id":"22","role":"icon glyph","shapeType":"ellipse","bbox":[516.3333333333333,443,10,10]}
+{"kind":"shape","slide":4,"id":"23","role":"icon glyph","shapeType":"rect","bbox":[507.3333333333333,441,19,3]}
+{"kind":"textbox","slide":4,"id":"24","role":"card label","text":"关键修正","textPreview":"关键修正","textChars":4,"textLines":1,"bbox":[551.3333333333333,414,247.33333333333331,28]}
+{"kind":"textbox","slide":4,"id":"25","role":"card body: 关键修正","text":"发现 avg_contact_count 落在\n44–67，实际更像原子邻居数；改为唯一受体残基平均接触数后回到\n3.56–5.50。","textPreview":"发现 avg_contact_count 落在 | 44–67，实际更像原子邻居数；改为唯一受体残基平均接触数后回到 | 3.56–5.50。","textChars":67,"textLines":3,"bbox":[487.3333333333333,478,307.3333333333333,114]}
+{"kind":"shape","slide":4,"id":"26","role":"card panel: 当前效果","shapeType":"roundRect","bbox":[842.6666666666666,392,355.3333333333333,222]}
+{"kind":"shape","slide":4,"id":"27","role":"card accent: 当前效果","shapeType":"rect","bbox":[842.6666666666666,392,8,222]}
+{"kind":"shape","slide":4,"id":"28","role":"icon badge","shapeType":"ellipse","bbox":[864.6666666666666,416,54,54]}
+{"kind":"shape","slide":4,"id":"29","role":"icon glyph","shapeType":"roundRect","bbox":[877.6666666666666,431,26,13]}
+{"kind":"shape","slide":4,"id":"30","role":"icon glyph","shapeType":"roundRect","bbox":[882.6666666666666,440,26,13]}
+{"kind":"shape","slide":4,"id":"31","role":"icon glyph","shapeType":"roundRect","bbox":[887.6666666666666,449,20,10]}
+{"kind":"textbox","slide":4,"id":"32","role":"card label","text":"当前效果","textPreview":"当前效果","textChars":4,"textLines":1,"bbox":[930.6666666666666,414,247.33333333333331,28]}
+{"kind":"textbox","slide":4,"id":"33","role":"card body: 当前效果","text":"Step 4 使用\nmin_avg_contact_count=3.5、min_contact_coverage=0.5\n后，在 pilot_100_v2 中更平衡。","textPreview":"Step 4 使用 | min_avg_contact_count=3.5、min_contact_coverage=0.5 | 后，在 pilot_100_v2 中更平衡。","textChars":83,"textLines":3,"bbox":[866.6666666666666,478,307.3333333333333,114]}
+{"kind":"textbox","slide":4,"id":"34","role":"caption","text":"材料来源：phase1/README.md、tuning_history.md、length_balance_experiment.md、len8cap_experiment.md","textPreview":"材料来源：phase1/README.md、tuning_history.md、length_balance_experiment.md、len8cap_experiment.md","textChars":90,"textLines":1,"bbox":[64,674,980,22]}
+{"kind":"image","slide":5,"id":"2","role":"fallback art plate","path":"fallback-data-url","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":5,"id":"3","role":"content contrast overlay","shapeType":"rect","bbox":[0,0,1280,720]}
+{"kind":"textbox","slide":5,"id":"4","role":"header","text":"CURRENT DEFAULTS","textPreview":"CURRENT DEFAULTS","textChars":16,"textLines":1,"bbox":[64,34,430,24]}
+{"kind":"textbox","slide":5,"id":"5","role":"header","text":"05 / 07","textPreview":"05 / 07","textChars":7,"textLines":1,"bbox":[1114,34,104,24]}
+{"kind":"shape","slide":5,"id":"6","role":"header rule","shapeType":"rect","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":5,"id":"7","role":"header marker","shapeType":"ellipse","bbox":[57,57,16,16]}
+{"kind":"textbox","slide":5,"id":"8","role":"title","text":"当前推荐默认版：简单、可解释、能控流","textPreview":"当前推荐默认版：简单、可解释、能控流","textChars":18,"textLines":1,"bbox":[64,86,760,142]}
+{"kind":"textbox","slide":5,"id":"9","role":"subtitle","text":"参数选择优先保证物理合理性和解释性，而不是追求复杂指标堆叠。","textPreview":"参数选择优先保证物理合理性和解释性，而不是追求复杂指标堆叠。","textChars":30,"textLines":1,"bbox":[66,234,720,70]}
+{"kind":"shape","slide":5,"id":"10","role":"card panel: Step 3 / 4","shapeType":"roundRect","bbox":[84,392,355.3333333333333,222]}
+{"kind":"shape","slide":5,"id":"11","role":"card accent: Step 3 / 4","shapeType":"rect","bbox":[84,392,8,222]}
+{"kind":"shape","slide":5,"id":"12","role":"icon badge","shapeType":"ellipse","bbox":[106,416,54,54]}
+{"kind":"shape","slide":5,"id":"13","role":"icon glyph","shapeType":"rect","bbox":[122,445,6,12]}
+{"kind":"shape","slide":5,"id":"14","role":"icon glyph","shapeType":"rect","bbox":[131,437,6,20]}
+{"kind":"shape","slide":5,"id":"15","role":"icon glyph","shapeType":"rect","bbox":[140,430,6,27]}
+{"kind":"textbox","slide":5,"id":"16","role":"card label","text":"Step 3 / 4","textPreview":"Step 3 / 4","textChars":10,"textLines":1,"bbox":[172,414,247.33333333333331,28]}
+{"kind":"textbox","slide":5,"id":"17","role":"card body: Step 3 / 4","text":"Step 3 每个 task 最多 16\n个候选；Step 4 用\navg_contact_count ≥ 3.5 与\ncontact_coverage ≥ 0.5\n做核心体检。","textPreview":"Step 3 每个 task 最多 16 | 个候选；Step 4 用 | avg_contact_count ≥ 3.5 与 | contact_coverage ≥ 0.5 | 做核心体检。","textChars":89,"textLines":5,"bbox":[108,478,307.3333333333333,114]}
+{"kind":"shape","slide":5,"id":"18","role":"card panel: Step 5","shapeType":"roundRect","bbox":[463.3333333333333,392,355.3333333333333,222]}
+{"kind":"shape","slide":5,"id":"19","role":"card accent: Step 5","shapeType":"rect","bbox":[463.3333333333333,392,8,222]}
+{"kind":"shape","slide":5,"id":"20","role":"icon badge","shapeType":"ellipse","bbox":[485.3333333333333,416,54,54]}
+{"kind":"shape","slide":5,"id":"21","role":"icon glyph","shapeType":"ellipse","bbox":[498.3333333333333,434,10,10]}
+{"kind":"shape","slide":5,"id":"22","role":"icon glyph","shapeType":"ellipse","bbox":[516.3333333333333,443,10,10]}
+{"kind":"shape","slide":5,"id":"23","role":"icon glyph","shapeType":"rect","bbox":[507.3333333333333,441,19,3]}
+{"kind":"textbox","slide":5,"id":"24","role":"card label","text":"Step 5","textPreview":"Step 5","textChars":6,"textLines":1,"bbox":[551.3333333333333,414,247.33333333333331,28]}
+{"kind":"textbox","slide":5,"id":"25","role":"card body: Step 5","text":"每个 task 最多保留 4 条；主权重仍是\navg_contact_count，并加入\nmax_len8_per_task=2 控制 8-mer\n垄断。","textPreview":"每个 task 最多保留 4 条；主权重仍是 | avg_contact_count，并加入 | max_len8_per_task=2 控制 8-mer | 垄断。","textChars":77,"textLines":4,"bbox":[487.3333333333333,478,307.3333333333333,114]}
+{"kind":"shape","slide":5,"id":"26","role":"card panel: Step 6 / 7","shapeType":"roundRect","bbox":[842.6666666666666,392,355.3333333333333,222]}
+{"kind":"shape","slide":5,"id":"27","role":"card accent: Step 6 / 7","shapeType":"rect","bbox":[842.6666666666666,392,8,222]}
+{"kind":"shape","slide":5,"id":"28","role":"icon badge","shapeType":"ellipse","bbox":[864.6666666666666,416,54,54]}
+{"kind":"shape","slide":5,"id":"29","role":"icon glyph","shapeType":"roundRect","bbox":[877.6666666666666,431,26,13]}
+{"kind":"shape","slide":5,"id":"30","role":"icon glyph","shapeType":"roundRect","bbox":[882.6666666666666,440,26,13]}
+{"kind":"shape","slide":5,"id":"31","role":"icon glyph","shapeType":"roundRect","bbox":[887.6666666666666,449,20,10]}
+{"kind":"textbox","slide":5,"id":"32","role":"card label","text":"Step 6 / 7","textPreview":"Step 6 / 7","textChars":10,"textLines":1,"bbox":[930.6666666666666,414,247.33333333333331,28]}
+{"kind":"textbox","slide":5,"id":"33","role":"card body: Step 6 / 7","text":"受体 identity 与多肽 identity 均\n≥0.85 时才去重；最后按 6 Å 提取\npatch，并生成最终 metadata / LMDB。","textPreview":"受体 identity 与多肽 identity 均 | ≥0.85 时才去重；最后按 6 Å 提取 | patch，并生成最终 metadata / LMDB。","textChars":77,"textLines":3,"bbox":[866.6666666666666,478,307.3333333333333,114]}
+{"kind":"textbox","slide":5,"id":"34","role":"caption","text":"材料来源：phase1/README.md、tuning_history.md、length_balance_experiment.md、len8cap_experiment.md","textPreview":"材料来源：phase1/README.md、tuning_history.md、length_balance_experiment.md、len8cap_experiment.md","textChars":90,"textLines":1,"bbox":[64,674,980,22]}
+{"kind":"image","slide":6,"id":"2","role":"fallback art plate","path":"fallback-data-url","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":6,"id":"3","role":"metrics contrast overlay","shapeType":"rect","bbox":[0,0,1280,720]}
+{"kind":"textbox","slide":6,"id":"4","role":"header","text":"LENGTH BIAS","textPreview":"LENGTH BIAS","textChars":11,"textLines":1,"bbox":[64,34,430,24]}
+{"kind":"textbox","slide":6,"id":"5","role":"header","text":"06 / 07","textPreview":"06 / 07","textChars":7,"textLines":1,"bbox":[1114,34,104,24]}
+{"kind":"shape","slide":6,"id":"6","role":"header rule","shapeType":"rect","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":6,"id":"7","role":"header marker","shapeType":"ellipse","bbox":[57,57,16,16]}
+{"kind":"textbox","slide":6,"id":"8","role":"title","text":"已识别的偏置：8-mer 过多；当前用 task 内上限温和修正","textPreview":"已识别的偏置：8-mer 过多；当前用 task 内上限温和修正","textChars":32,"textLines":1,"bbox":[64,86,700,142]}
+{"kind":"textbox","slide":6,"id":"9","role":"subtitle","text":"短片段更容易获得高平均接触，因此 8-mer 会天然占优；直接加长度权重有效但幅度有限。","textPreview":"短片段更容易获得高平均接触，因此 8-mer 会天然占优；直接加长度权重有效但幅度有限。","textChars":44,"textLines":1,"bbox":[66,234,700,70]}
+{"kind":"shape","slide":6,"id":"10","role":"metric panel: baseline 最终 8-mer 占比","shapeType":"roundRect","bbox":[92,404,330,174]}
+{"kind":"shape","slide":6,"id":"11","role":"metric accent: baseline 最终 8-mer 占比","shapeType":"rect","bbox":[92,404,330,7]}
+{"kind":"textbox","slide":6,"id":"12","role":"metric value","text":"77.55%","textPreview":"77.55%","textChars":6,"textLines":1,"bbox":[114,428,286,54]}
+{"kind":"textbox","slide":6,"id":"13","role":"metric label","text":"baseline 最终 8-mer 占比","textPreview":"baseline 最终 8-mer 占比","textChars":20,"textLines":1,"bbox":[116,486,282,38]}
+{"kind":"textbox","slide":6,"id":"14","role":"metric note","text":"pilot_1000","textPreview":"pilot_1000","textChars":10,"textLines":1,"bbox":[116,536,282,22]}
+{"kind":"shape","slide":6,"id":"15","role":"metric panel: alpha=2 后 8-mer 占比","shapeType":"roundRect","bbox":[462,404,330,174]}
+{"kind":"shape","slide":6,"id":"16","role":"metric accent: alpha=2 后 8-mer 占比","shapeType":"rect","bbox":[462,404,330,7]}
+{"kind":"textbox","slide":6,"id":"17","role":"metric value","text":"75.81%","textPreview":"75.81%","textChars":6,"textLines":1,"bbox":[484,428,286,54]}
+{"kind":"textbox","slide":6,"id":"18","role":"metric label","text":"alpha=2 后 8-mer 占比","textPreview":"alpha=2 后 8-mer 占比","textChars":18,"textLines":1,"bbox":[486,486,282,38]}
+{"kind":"textbox","slide":6,"id":"19","role":"metric note","text":"改善有限","textPreview":"改善有限","textChars":4,"textLines":1,"bbox":[486,536,282,22]}
+{"kind":"shape","slide":6,"id":"20","role":"metric panel: per-task 8-mer cap 后 8-mer 占比","shapeType":"roundRect","bbox":[832,404,330,174]}
+{"kind":"shape","slide":6,"id":"21","role":"metric accent: per-task 8-mer cap 后 8-mer 占比","shapeType":"rect","bbox":[832,404,330,7]}
+{"kind":"textbox","slide":6,"id":"22","role":"metric value","text":"73.32%","textPreview":"73.32%","textChars":6,"textLines":1,"bbox":[854,428,286,54]}
+{"kind":"textbox","slide":6,"id":"23","role":"metric label","text":"per-task 8-mer cap 后 8-mer 占比","textPreview":"per-task 8-mer cap 后 8-mer 占比","textChars":29,"textLines":1,"bbox":[856,486,282,38]}
+{"kind":"textbox","slide":6,"id":"24","role":"metric note","text":"质量基本稳定","textPreview":"质量基本稳定","textChars":6,"textLines":1,"bbox":[856,536,282,22]}
+{"kind":"textbox","slide":6,"id":"25","role":"caption","text":"材料来源：phase1/README.md、tuning_history.md、length_balance_experiment.md、len8cap_experiment.md","textPreview":"材料来源：phase1/README.md、tuning_history.md、length_balance_experiment.md、len8cap_experiment.md","textChars":90,"textLines":1,"bbox":[64,674,980,22]}
+{"kind":"image","slide":7,"id":"2","role":"fallback art plate","path":"fallback-data-url","bbox":[0,0,1280,720]}
+{"kind":"shape","slide":7,"id":"3","role":"content contrast overlay","shapeType":"rect","bbox":[0,0,1280,720]}
+{"kind":"textbox","slide":7,"id":"4","role":"header","text":"TAKEAWAY","textPreview":"TAKEAWAY","textChars":8,"textLines":1,"bbox":[64,34,430,24]}
+{"kind":"textbox","slide":7,"id":"5","role":"header","text":"07 / 07","textPreview":"07 / 07","textChars":7,"textLines":1,"bbox":[1114,34,104,24]}
+{"kind":"shape","slide":7,"id":"6","role":"header rule","shapeType":"rect","bbox":[64,64,1152,2]}
+{"kind":"shape","slide":7,"id":"7","role":"header marker","shapeType":"ellipse","bbox":[57,57,16,16]}
+{"kind":"textbox","slide":7,"id":"8","role":"title","text":"给老师的一句话结论","textPreview":"给老师的一句话结论","textChars":9,"textLines":1,"bbox":[64,86,760,142]}
+{"kind":"textbox","slide":7,"id":"9","role":"subtitle","text":"这版 Phase-1 的目标不是一步做到分布完美，而是先构建一条稳定、可解释、可人工审查的数据生产线。","textPreview":"这版 Phase-1 的目标不是一步做到分布完美，而是先构建一条稳定、可解释、可人工审查的数据生产线。","textChars":51,"textLines":1,"bbox":[66,234,720,70]}
+{"kind":"shape","slide":7,"id":"10","role":"card panel: 可靠性","shapeType":"roundRect","bbox":[84,392,355.3333333333333,222]}
+{"kind":"shape","slide":7,"id":"11","role":"card accent: 可靠性","shapeType":"rect","bbox":[84,392,8,222]}
+{"kind":"shape","slide":7,"id":"12","role":"icon badge","shapeType":"ellipse","bbox":[106,416,54,54]}
+{"kind":"shape","slide":7,"id":"13","role":"icon glyph","shapeType":"rect","bbox":[122,445,6,12]}
+{"kind":"shape","slide":7,"id":"14","role":"icon glyph","shapeType":"rect","bbox":[131,437,6,20]}
+{"kind":"shape","slide":7,"id":"15","role":"icon glyph","shapeType":"rect","bbox":[140,430,6,27]}
+{"kind":"textbox","slide":7,"id":"16","role":"card label","text":"可靠性","textPreview":"可靠性","textChars":3,"textLines":1,"bbox":[172,414,247.33333333333331,28]}
+{"kind":"textbox","slide":7,"id":"17","role":"card body: 可靠性","text":"输入结构有质控，候选片段来自真实界面，且要求主链连续和接触充分。","textPreview":"输入结构有质控，候选片段来自真实界面，且要求主链连续和接触充分。","textChars":32,"textLines":1,"bbox":[108,478,307.3333333333333,114]}
+{"kind":"shape","slide":7,"id":"18","role":"card panel: 可解释性","shapeType":"roundRect","bbox":[463.3333333333333,392,355.3333333333333,222]}
+{"kind":"shape","slide":7,"id":"19","role":"card accent: 可解释性","shapeType":"rect","bbox":[463.3333333333333,392,8,222]}
+{"kind":"shape","slide":7,"id":"20","role":"icon badge","shapeType":"ellipse","bbox":[485.3333333333333,416,54,54]}
+{"kind":"shape","slide":7,"id":"21","role":"icon glyph","shapeType":"ellipse","bbox":[498.3333333333333,434,10,10]}
+{"kind":"shape","slide":7,"id":"22","role":"icon glyph","shapeType":"ellipse","bbox":[516.3333333333333,443,10,10]}
+{"kind":"shape","slide":7,"id":"23","role":"icon glyph","shapeType":"rect","bbox":[507.3333333333333,441,19,3]}
+{"kind":"textbox","slide":7,"id":"24","role":"card label","text":"可解释性","textPreview":"可解释性","textChars":4,"textLines":1,"bbox":[551.3333333333333,414,247.33333333333331,28]}
+{"kind":"textbox","slide":7,"id":"25","role":"card body: 可解释性","text":"核心指标从复杂物理量链条收敛到平均接触数、覆盖率和联合同源去重，便于检查。","textPreview":"核心指标从复杂物理量链条收敛到平均接触数、覆盖率和联合同源去重，便于检查。","textChars":37,"textLines":1,"bbox":[487.3333333333333,478,307.3333333333333,114]}
+{"kind":"shape","slide":7,"id":"26","role":"card panel: 下一步","shapeType":"roundRect","bbox":[842.6666666666666,392,355.3333333333333,222]}
+{"kind":"shape","slide":7,"id":"27","role":"card accent: 下一步","shapeType":"rect","bbox":[842.6666666666666,392,8,222]}
+{"kind":"shape","slide":7,"id":"28","role":"icon badge","shapeType":"ellipse","bbox":[864.6666666666666,416,54,54]}
+{"kind":"shape","slide":7,"id":"29","role":"icon glyph","shapeType":"roundRect","bbox":[877.6666666666666,431,26,13]}
+{"kind":"shape","slide":7,"id":"30","role":"icon glyph","shapeType":"roundRect","bbox":[882.6666666666666,440,26,13]}
+{"kind":"shape","slide":7,"id":"31","role":"icon glyph","shapeType":"roundRect","bbox":[887.6666666666666,449,20,10]}
+{"kind":"textbox","slide":7,"id":"32","role":"card label","text":"下一步","textPreview":"下一步","textChars":3,"textLines":1,"bbox":[930.6666666666666,414,247.33333333333331,28]}
+{"kind":"textbox","slide":7,"id":"33","role":"card body: 下一步","text":"继续看全量结果的长度分布、Step 6\n去重强度和代表复合物可视化，决定是否进一步调 Step\n3/5。","textPreview":"继续看全量结果的长度分布、Step 6 | 去重强度和代表复合物可视化，决定是否进一步调 Step | 3/5。","textChars":52,"textLines":3,"bbox":[866.6666666666666,478,307.3333333333333,114]}
+{"kind":"textbox","slide":7,"id":"34","role":"caption","text":"材料来源：phase1/README.md、tuning_history.md、length_balance_experiment.md、len8cap_experiment.md","textPreview":"材料来源：phase1/README.md、tuning_history.md、length_balance_experiment.md、len8cap_experiment.md","textChars":90,"textLines":1,"bbox":[64,674,980,22]}

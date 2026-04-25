@@ -1,7 +1,32 @@
-pep/ 
-__pycache__/ 
-*.pt 
-*.rar 
-*.zip 
-*.tar.gz 
-*.lmdb/
+# Python cache and virtualenvs
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+~$*.pptx
+
+# Package manager / build artifacts
+node_modules/
+.pnpm-store/
+
+# Local datasets, third-party tool bundles, and generated outputs
+dow/
+download/
+pdb/
+pdb_raw/
+mmseqs/
+mmlinux/
+runs/
+run_step1/
+release/
+**/runs/
+phase1/test_input_100/
+phase1/test_input_1000/
+phase2/drugclip/Drug-The-Whole-Genome/
+phase2/drugclip/ProFSA/
+phase2/drugclip/ProFSADB/
+model_weights.zip
