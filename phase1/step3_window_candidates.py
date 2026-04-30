@@ -36,9 +36,6 @@ class Step3Config:
         min_anchor_contact_count: int = 2,
         max_anchors_per_task: int = 3,
         max_candidates_per_task: int = 16,
-        max_candidates_len_8_10: int = 6,
-        max_candidates_len_11_14: int = 6,
-        max_candidates_len_15_20: int = 4,
     ) -> None:
         self.anchor_cutoff = anchor_cutoff
         self.contact_cutoff = contact_cutoff
@@ -49,9 +46,6 @@ class Step3Config:
         self.min_anchor_contact_count = min_anchor_contact_count
         self.max_anchors_per_task = max_anchors_per_task
         self.max_candidates_per_task = max_candidates_per_task
-        self.max_candidates_len_8_10 = max_candidates_len_8_10
-        self.max_candidates_len_11_14 = max_candidates_len_11_14
-        self.max_candidates_len_15_20 = max_candidates_len_15_20
 
 
 _WORKER_CFG: Optional[Step3Config] = None
@@ -169,68 +163,90 @@ def better_candidate(a: Dict[str, Any], b: Dict[str, Any]) -> bool:
     return float(a["avg_contact_count"]) > float(b["avg_contact_count"])
 
 
-def candidate_length_band(peptide_length: int) -> str:
-    if peptide_length <= 10:
-        return "8_10"
-    if peptide_length <= 14:
-        return "11_14"
-    return "15_20"
+def centered_window_bound_candidates(anchor_idx: int, length: int, n_residues: int) -> List[Tuple[int, int]]:
+    """Generate a few near-symmetric windows by expanding around the anchor.
 
-
-def select_candidates_by_length_band(
-    candidates: List[Dict[str, Any]],
-    cfg: Step3Config,
-) -> List[Dict[str, Any]]:
-    """Keep high-contact candidates while reserving slots for longer windows.
-
-    Pure top-N by avg_contact_count tends to favor short windows, because short
-    peptides can achieve high averages with a compact contact core. We first
-    allocate a small quota to each length band, then backfill any unused slots
-    with the best remaining candidates. This keeps total output bounded while
-    giving 15-20 aa windows a chance to enter Step4.
+    The old logic enumerated every window containing the anchor. That made the
+    candidate set dense and shifted the method closer to "anchor-conditioned
+    exhaustive sliding windows". The updated logic is stricter: for each target
+    length we start from the anchor as the center and only consider the few
+    windows that are closest to symmetric expansion around that anchor.
     """
-    quotas = {
-        "8_10": cfg.max_candidates_len_8_10,
-        "11_14": cfg.max_candidates_len_11_14,
-        "15_20": cfg.max_candidates_len_15_20,
-    }
-    by_band: Dict[str, List[Dict[str, Any]]] = {band: [] for band in quotas}
-    remaining: List[Dict[str, Any]] = []
+    if length <= 0 or n_residues <= 0 or anchor_idx < 0 or anchor_idx >= n_residues:
+        return []
 
-    for candidate in candidates:
-        band = candidate_length_band(int(candidate["peptide_length"]))
-        candidate["step3_length_band"] = band
-        if band in by_band:
-            by_band[band].append(candidate)
-        else:
-            remaining.append(candidate)
+    # For odd lengths there is one perfectly centered pattern.
+    # For even lengths there are two near-centered patterns: left-heavier or
+    # right-heavier by one residue. Near chain ends, windows are shifted back
+    # into valid bounds.
+    left_options = {max(0, (length - 1) // 2), max(0, length // 2)}
+    candidates: List[Tuple[int, int]] = []
+    seen = set()
 
-    selected: List[Dict[str, Any]] = []
-    selected_ids = set()
-    for band in ("8_10", "11_14", "15_20"):
-        band_candidates = sorted(by_band[band], key=lambda x: float(x["avg_contact_count"]), reverse=True)
-        for candidate in band_candidates[:max(0, quotas[band])]:
-            if candidate["candidate_id"] in selected_ids:
-                continue
-            selected.append(candidate)
-            selected_ids.add(candidate["candidate_id"])
+    for left_span in sorted(left_options):
+        right_span = length - 1 - left_span
+        left_idx = anchor_idx - left_span
+        right_idx = anchor_idx + right_span
 
-    # If a band has fewer candidates than its quota, do not waste those slots.
-    # Backfill by avg_contact_count from all unselected candidates, preserving
-    # the same total max_candidates_per_task budget.
-    backfill_pool = [
-        candidate
-        for candidate in sorted(candidates + remaining, key=lambda x: float(x["avg_contact_count"]), reverse=True)
-        if candidate["candidate_id"] not in selected_ids
-    ]
-    for candidate in backfill_pool:
-        if len(selected) >= cfg.max_candidates_per_task:
-            break
-        selected.append(candidate)
-        selected_ids.add(candidate["candidate_id"])
+        if left_idx < 0:
+            right_idx += -left_idx
+            left_idx = 0
+        if right_idx >= n_residues:
+            left_idx -= right_idx - (n_residues - 1)
+            right_idx = n_residues - 1
 
-    selected.sort(key=lambda x: float(x["avg_contact_count"]), reverse=True)
-    return selected[:cfg.max_candidates_per_task]
+        left_idx = max(0, left_idx)
+        right_idx = min(n_residues - 1, right_idx)
+
+        if right_idx - left_idx + 1 != length:
+            continue
+
+        bounds = (left_idx, right_idx)
+        if bounds not in seen:
+            seen.add(bounds)
+            candidates.append(bounds)
+
+    return candidates
+
+
+def best_centered_window_for_length(
+    anchor_idx: int,
+    length: int,
+    peptide_residues,
+    receptor_tree,
+    atom_to_res_idx,
+    cfg: Step3Config,
+) -> Optional[Dict[str, Any]]:
+    """Pick the best near-centered window for one anchor/length pair.
+
+    Even after moving to center-out expansion, even lengths may allow two
+    almost-symmetric windows. We score that tiny candidate set and keep only the
+    better one, instead of exhaustively enumerating every anchor-containing
+    window across the whole chain.
+    """
+    n = len(peptide_residues)
+    best: Optional[Dict[str, Any]] = None
+
+    for left_idx, right_idx in centered_window_bound_candidates(anchor_idx, length, n):
+        window = peptide_residues[left_idx:right_idx + 1]
+        if not window_is_continuous(window):
+            continue
+        stats = compute_window_contact_stats(window, receptor_tree, atom_to_res_idx, cfg.contact_cutoff)
+        candidate = {
+            "final_left_index": left_idx,
+            "final_right_index": right_idx,
+            "peptide_length": len(window),
+            "avg_contact_count": stats["avg_contact_count"],
+            "total_contact_count": stats["total_contact_count"],
+            "contact_coverage": stats["contact_coverage"],
+            "longest_contact_run": stats["longest_contact_run"],
+            "peptide_residue_ids": [residue_id_string(x.residue) for x in window],
+            "start_res": window[0].residue,
+            "end_res": window[-1].residue,
+        }
+        if best is None or better_candidate(candidate, best):
+            best = candidate
+    return best
 
 
 def enumerate_windows(task: Dict[str, Any], pdb_dir: Path, cfg: Step3Config) -> List[Dict[str, Any]]:
@@ -251,57 +267,61 @@ def enumerate_windows(task: Dict[str, Any], pdb_dir: Path, cfg: Step3Config) -> 
 
     for anchor_info in selected_anchors:
         anchor_idx = int(anchor_info["anchor_idx"])
-        n = len(peptide_residues)
         for length in range(cfg.min_len, cfg.max_len + 1):
-            min_left = max(0, anchor_idx - length + 1)
-            max_left = min(anchor_idx, n - length)
-            for left_idx in range(min_left, max_left + 1):
-                right_idx = left_idx + length - 1
-                window = peptide_residues[left_idx:right_idx + 1]
-                if not window_is_continuous(window):
-                    continue
-                stats = compute_window_contact_stats(window, receptor_tree, atom_to_res_idx, cfg.contact_cutoff)
-                start_res = window[0].residue
-                end_res = window[-1].residue
-                candidate = {
-                    "candidate_id": str(uuid.uuid4()),
-                    "parent_task_id": task["task_id"],
-                    "pdb_id": task["pdb_id"],
-                    "source_file": task["source_file"],
-                    "assembly_id": task.get("assembly_id", "native_file"),
-                    "chain_pair_id": task["chain_pair_id"],
-                    "direction": task["direction"],
-                    "receptor_chain_id": task["receptor_chain_id"],
-                    "peptide_source_chain_id": task["peptide_source_chain_id"],
-                    "method": "window_avg_contact_phase1_v2",
-                    "anchor_peptide_res_index": anchor_idx,
-                    "anchor_receptor_res_index": -1,
-                    "final_left_index": left_idx,
-                    "final_right_index": right_idx,
-                    "peptide_length": len(window),
-                    "peptide_start_resseq": residue_seqid_num(start_res),
-                    "peptide_start_icode": residue_seqid_icode(start_res),
-                    "peptide_end_resseq": residue_seqid_num(end_res),
-                    "peptide_end_icode": residue_seqid_icode(end_res),
-                    "peptide_residue_ids": [residue_id_string(x.residue) for x in window],
-                    "avg_contact_count": stats["avg_contact_count"],
-                    "total_contact_count": stats["total_contact_count"],
-                    "contact_coverage": stats["contact_coverage"],
-                    "longest_contact_run": stats["longest_contact_run"],
-                    "anchor_local_avg_contact_count": anchor_info["local_avg_contact_count"],
-                    "anchor_local_contact_coverage": anchor_info["local_contact_coverage"],
-                    "anchor_local_longest_contact_run": anchor_info["local_longest_contact_run"],
-                    "anchor_direct_contact_count": anchor_info["anchor_direct_contact_count"],
-                    "anchor_direct_min_distance": anchor_info["anchor_direct_min_distance"],
-                }
-                bounds_key = (left_idx, right_idx)
-                prev = candidates_by_bounds.get(bounds_key)
-                if prev is None or better_candidate(candidate, prev):
-                    candidates_by_bounds[bounds_key] = candidate
+            window_candidate = best_centered_window_for_length(
+                anchor_idx=anchor_idx,
+                length=length,
+                peptide_residues=peptide_residues,
+                receptor_tree=receptor_tree,
+                atom_to_res_idx=atom_to_res_idx,
+                cfg=cfg,
+            )
+            if window_candidate is None:
+                continue
+
+            start_res = window_candidate["start_res"]
+            end_res = window_candidate["end_res"]
+            left_idx = int(window_candidate["final_left_index"])
+            right_idx = int(window_candidate["final_right_index"])
+            candidate = {
+                "candidate_id": str(uuid.uuid4()),
+                "parent_task_id": task["task_id"],
+                "pdb_id": task["pdb_id"],
+                "source_file": task["source_file"],
+                "assembly_id": task.get("assembly_id", "native_file"),
+                "chain_pair_id": task["chain_pair_id"],
+                "direction": task["direction"],
+                "receptor_chain_id": task["receptor_chain_id"],
+                "peptide_source_chain_id": task["peptide_source_chain_id"],
+                "method": "center_out_hotspot_growth_phase1_v1",
+                "anchor_peptide_res_index": anchor_idx,
+                "anchor_receptor_res_index": -1,
+                "final_left_index": left_idx,
+                "final_right_index": right_idx,
+                "peptide_length": int(window_candidate["peptide_length"]),
+                "peptide_start_resseq": residue_seqid_num(start_res),
+                "peptide_start_icode": residue_seqid_icode(start_res),
+                "peptide_end_resseq": residue_seqid_num(end_res),
+                "peptide_end_icode": residue_seqid_icode(end_res),
+                "peptide_residue_ids": list(window_candidate["peptide_residue_ids"]),
+                "avg_contact_count": window_candidate["avg_contact_count"],
+                "total_contact_count": window_candidate["total_contact_count"],
+                "contact_coverage": window_candidate["contact_coverage"],
+                "longest_contact_run": window_candidate["longest_contact_run"],
+                "anchor_local_avg_contact_count": anchor_info["local_avg_contact_count"],
+                "anchor_local_contact_coverage": anchor_info["local_contact_coverage"],
+                "anchor_local_longest_contact_run": anchor_info["local_longest_contact_run"],
+                "anchor_direct_contact_count": anchor_info["anchor_direct_contact_count"],
+                "anchor_direct_min_distance": anchor_info["anchor_direct_min_distance"],
+            }
+            bounds_key = (left_idx, right_idx)
+            prev = candidates_by_bounds.get(bounds_key)
+            if prev is None or better_candidate(candidate, prev):
+                candidates_by_bounds[bounds_key] = candidate
 
     candidates = list(candidates_by_bounds.values())
     candidates.sort(key=lambda x: float(x["avg_contact_count"]), reverse=True)
-    return select_candidates_by_length_band(candidates, cfg)
+    return candidates[:cfg.max_candidates_per_task]
 
 
 def worker(payload: Tuple[Dict[str, Any], str]) -> Dict[str, Any]:
@@ -340,9 +360,6 @@ def main() -> None:
     parser.add_argument("--min_anchor_contact_count", type=int, default=2)
     parser.add_argument("--max_anchors_per_task", type=int, default=3)
     parser.add_argument("--max_candidates_per_task", type=int, default=16)
-    parser.add_argument("--max_candidates_len_8_10", type=int, default=6)
-    parser.add_argument("--max_candidates_len_11_14", type=int, default=6)
-    parser.add_argument("--max_candidates_len_15_20", type=int, default=4)
     args = parser.parse_args()
 
     cfg = Step3Config(
@@ -355,9 +372,6 @@ def main() -> None:
         min_anchor_contact_count=args.min_anchor_contact_count,
         max_anchors_per_task=args.max_anchors_per_task,
         max_candidates_per_task=args.max_candidates_per_task,
-        max_candidates_len_8_10=args.max_candidates_len_8_10,
-        max_candidates_len_11_14=args.max_candidates_len_11_14,
-        max_candidates_len_15_20=args.max_candidates_len_15_20,
     )
 
     tasks: List[Dict[str, Any]] = []
@@ -417,14 +431,7 @@ def main() -> None:
             "candidates_written": n_written,
             "errors": n_errors,
             "elapsed_sec": round(time.time() - start, 3),
-            "algorithm": "local_window_avg_contact_anchor_ranked_length_band_retention",
-            "length_band_retention": {
-                "8_10": cfg.max_candidates_len_8_10,
-                "11_14": cfg.max_candidates_len_11_14,
-                "15_20": cfg.max_candidates_len_15_20,
-                "max_candidates_per_task": cfg.max_candidates_per_task,
-                "backfill_by": "avg_contact_count",
-            },
+            "algorithm": "center_out_hotspot_growth_topk_avg_contact",
             "tasks_with_zero_candidates": sum(1 for x in task_candidate_counts if x == 0),
             "avg_candidates_per_task": (sum(task_candidate_counts) / len(task_candidate_counts)) if task_candidate_counts else 0.0,
             "max_candidates_single_task": max(task_candidate_counts) if task_candidate_counts else 0,

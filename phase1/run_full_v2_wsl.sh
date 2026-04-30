@@ -204,15 +204,14 @@ run_step \
     --workers "${WORKERS}"
 
 run_step \
-  "Step5 weighted sampling with 8-mer cap" \
+  "Step5 weighted sampling by avg_contact_count" \
   "${STEP5_OUT}" \
   "${RUN_ROOT}/step5/step5_summary.json" \
   "${RUN_ROOT}/step5/step5.log" \
   "${PYTHON_BIN}" "${PHASE1_ROOT}/step5_sample_by_avg_contacts.py" \
     --input_jsonl "${STEP4_OUT}" \
     --output_jsonl "${STEP5_OUT}" \
-    --max_keep_per_task 4 \
-    --max_len8_per_task 2
+    --max_keep_per_task 4
 
 run_step \
   "Step6 joint receptor+peptide homology dedup" \

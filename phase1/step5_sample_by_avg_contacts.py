@@ -18,31 +18,18 @@ def compute_sampling_weight(row: Dict[str, Any]) -> Dict[str, float]:
     }
 
 
-def select_with_len8_cap(
+def select_weighted_candidates(
     pool: List[Dict[str, Any]],
     max_keep_per_task: int,
-    max_len8_per_task: int,
     rng: random.Random,
 ) -> List[Dict[str, Any]]:
     chosen: List[Dict[str, Any]] = []
     working_pool = list(pool)
-    n_len8_chosen = 0
 
     while working_pool and len(chosen) < max_keep_per_task:
-        # Lightweight diversity constraint: do not let 8-mers consume all per-task
-        # slots when longer candidates are still available. If only 8-mers remain,
-        # they are allowed to backfill so we do not empty otherwise valid tasks.
-        non_len8_pool = [x for x in working_pool if int(x.get("peptide_length", 0)) != 8]
-        if n_len8_chosen >= max_len8_per_task and non_len8_pool:
-            eligible_pool = non_len8_pool
-        else:
-            eligible_pool = working_pool
-
-        working_weights = [max(1e-6, float(x["sampling_weight"])) for x in eligible_pool]
-        picked = rng.choices(eligible_pool, weights=working_weights, k=1)[0]
+        working_weights = [max(1e-6, float(x["sampling_weight"])) for x in working_pool]
+        picked = rng.choices(working_pool, weights=working_weights, k=1)[0]
         chosen.append(picked)
-        if int(picked.get("peptide_length", 0)) == 8:
-            n_len8_chosen += 1
         working_pool = [x for x in working_pool if x["candidate_id"] != picked["candidate_id"]]
 
     return chosen
@@ -53,12 +40,6 @@ def main() -> None:
     parser.add_argument("--input_jsonl", required=True)
     parser.add_argument("--output_jsonl", required=True)
     parser.add_argument("--max_keep_per_task", type=int, default=4)
-    parser.add_argument(
-        "--max_len8_per_task",
-        type=int,
-        default=2,
-        help="Maximum number of 8-mer candidates kept per task when longer candidates are available.",
-    )
     parser.add_argument("--seed", type=int, default=20260416)
     args = parser.parse_args()
 
@@ -90,10 +71,9 @@ def main() -> None:
             selected.extend(pool)
             continue
 
-        chosen = select_with_len8_cap(
+        chosen = select_weighted_candidates(
             pool=pool,
             max_keep_per_task=args.max_keep_per_task,
-            max_len8_per_task=args.max_len8_per_task,
             rng=rng,
         )
         selected.extend(chosen)
@@ -111,9 +91,7 @@ def main() -> None:
             "selected_candidates": len(selected),
             "tasks": len(by_task),
             "max_keep_per_task": args.max_keep_per_task,
-            "sampling_basis": "avg_contact_count_with_len8_per_task_cap",
-            "max_len8_per_task": args.max_len8_per_task,
-            "len8_cap_note": "8-mers are capped only when longer candidates are available in the same task.",
+            "sampling_basis": "avg_contact_count_only",
             "seed": args.seed,
         },
     )
