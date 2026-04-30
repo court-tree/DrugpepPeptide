@@ -8,52 +8,54 @@ from typing import Dict
 import torch
 from torch.utils.data import DataLoader
 
-from .data import AA_TO_ID, PepCLIPDataset, collate_pepclip
+from .data import ATOM_NAME_TO_ID, ELEMENT_TO_ID, RESIDUE_NAME_TO_ID, PepCLIP3DDataset, collate_pepclip_3d
 from .losses import symmetric_in_batch_softmax_loss
 from .metrics import retrieval_metrics_from_embeddings
-from .model import PepCLIPModel
+from .model_3d import PepCLIP3DModel
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Train a minimal PepCLIP 1D skeleton.")
-    parser.add_argument("--train_track_a")
-    parser.add_argument("--valid_track_a")
-    parser.add_argument("--data_format", choices=["jsonl", "lmdb"], default="jsonl")
-    parser.add_argument("--metadata_jsonl", help="Legacy Step7 final_metadata.jsonl input")
+    parser = argparse.ArgumentParser(description="Train a minimal PepCLIP 3D-only skeleton from Step8 Track B.")
+    parser.add_argument("--train_track_b", required=True)
+    parser.add_argument("--valid_track_b", required=True)
+    parser.add_argument("--data_format", choices=["jsonl", "lmdb"], default="lmdb")
     parser.add_argument("--output_dir", required=True)
-    parser.add_argument("--train_split", default="main_train")
-    parser.add_argument("--valid_split", default="monitor")
-    parser.add_argument("--receptor_field", default="receptor_patch_sequence")
-    parser.add_argument("--encoder_type", choices=["mean_pool", "hf_esm"], default="mean_pool")
-    parser.add_argument("--hf_model_name_or_path")
-    parser.add_argument("--freeze_hf_backbone", action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument("--hf_max_length", type=int, default=512)
+    parser.add_argument("--train_split", default=None)
+    parser.add_argument("--valid_split", default=None)
+    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--eval_chunk_size", type=int, default=1024)
+    parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument("--lr", type=float, default=1e-3)
+    parser.add_argument("--weight_decay", type=float, default=1e-4)
+    parser.add_argument("--encoder_type", choices=["radial", "unimol_style"], default="radial")
+    parser.add_argument("--element_dim", type=int, default=32)
+    parser.add_argument("--hidden_dim", type=int, default=256)
+    parser.add_argument("--output_dim", type=int, default=128)
+    parser.add_argument("--dropout", type=float, default=0.1)
+    parser.add_argument("--coord_scale", type=float, default=10.0)
+    parser.add_argument("--num_layers", type=int, default=4)
+    parser.add_argument("--num_heads", type=int, default=8)
+    parser.add_argument("--num_rbf", type=int, default=32)
+    parser.add_argument("--distance_cutoff", type=float, default=20.0)
+    parser.add_argument("--max_receptor_atoms", type=int, default=None)
+    parser.add_argument("--max_peptide_atoms", type=int, default=None)
     parser.add_argument(
         "--freeze_peptide_encoder",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="DrugCLIP-style option: freeze the peptide/molecule tower and train receptor/pocket alignment.",
+        help="DrugCLIP-style option: freeze the peptide/molecule 3D encoder.",
     )
     parser.add_argument(
         "--freeze_receptor_encoder",
         action=argparse.BooleanOptionalAction,
         default=False,
-        help="Usually false for DrugCLIP-style training.",
+        help="Usually false for DrugCLIP-style training because the pocket/receptor encoder is learned.",
     )
     parser.add_argument(
         "--peptide_encoder_checkpoint",
         default=None,
         help="Optional checkpoint used to initialize the peptide encoder before freezing.",
     )
-    parser.add_argument("--batch_size", type=int, default=64)
-    parser.add_argument("--eval_chunk_size", type=int, default=1024)
-    parser.add_argument("--epochs", type=int, default=10)
-    parser.add_argument("--lr", type=float, default=1e-3)
-    parser.add_argument("--weight_decay", type=float, default=1e-4)
-    parser.add_argument("--embed_dim", type=int, default=128)
-    parser.add_argument("--hidden_dim", type=int, default=256)
-    parser.add_argument("--output_dim", type=int, default=128)
-    parser.add_argument("--dropout", type=float, default=0.1)
     parser.add_argument("--num_workers", type=int, default=0)
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--seed", type=int, default=1)
@@ -62,21 +64,39 @@ def parse_args() -> argparse.Namespace:
 
 def move_batch(batch: Dict, device: torch.device) -> Dict:
     batch = dict(batch)
-    batch["receptor_tokens"] = batch["receptor_tokens"].to(device)
-    batch["peptide_tokens"] = batch["peptide_tokens"].to(device)
+    tensor_keys = [
+        "receptor_coords",
+        "receptor_elements",
+        "receptor_atom_names",
+        "receptor_residue_names",
+        "receptor_mask",
+        "peptide_coords",
+        "peptide_elements",
+        "peptide_atom_names",
+        "peptide_residue_names",
+        "peptide_mask",
+    ]
+    for key in tensor_keys:
+        batch[key] = batch[key].to(device)
     return batch
 
 
-def forward_model(model, batch: Dict) -> Dict[str, torch.Tensor]:
+def forward_model(model: PepCLIP3DModel, batch: Dict) -> Dict[str, torch.Tensor]:
     return model(
-        receptor_tokens=batch["receptor_tokens"],
-        peptide_tokens=batch["peptide_tokens"],
-        receptor_sequences=batch["receptor_sequence"],
-        peptide_sequences=batch["peptide_sequence"],
+        receptor_coords=batch["receptor_coords"],
+        receptor_elements=batch["receptor_elements"],
+        receptor_mask=batch["receptor_mask"],
+        receptor_atom_names=batch["receptor_atom_names"],
+        receptor_residue_names=batch["receptor_residue_names"],
+        peptide_coords=batch["peptide_coords"],
+        peptide_elements=batch["peptide_elements"],
+        peptide_mask=batch["peptide_mask"],
+        peptide_atom_names=batch["peptide_atom_names"],
+        peptide_residue_names=batch["peptide_residue_names"],
     )
 
 
-def load_peptide_encoder_checkpoint(model: PepCLIPModel, checkpoint_path: str, device: torch.device) -> None:
+def load_peptide_encoder_checkpoint(model: PepCLIP3DModel, checkpoint_path: str, device: torch.device) -> None:
     state = torch.load(checkpoint_path, map_location=device)
     raw_state = state.get("model_state_dict", state)
     peptide_state = {}
@@ -105,9 +125,9 @@ def set_trainable(module: torch.nn.Module, trainable: bool) -> None:
 
 
 def run_epoch(
-    model,
-    loader,
-    optimizer,
+    model: PepCLIP3DModel,
+    loader: DataLoader,
+    optimizer: torch.optim.Optimizer,
     device: torch.device,
     train: bool,
     eval_chunk_size: int = 1024,
@@ -140,7 +160,7 @@ def run_epoch(
                 torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
                 optimizer.step()
 
-        batch_size = batch["receptor_tokens"].size(0)
+        batch_size = batch["receptor_coords"].size(0)
         total_loss += float(loss.item()) * batch_size
         total_items += batch_size
         if not train:
@@ -169,60 +189,49 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     device = torch.device(args.device)
 
-    if args.metadata_jsonl:
-        train_path = args.metadata_jsonl
-        valid_path = args.metadata_jsonl
-        train_split = args.train_split
-        valid_split = args.valid_split
-        data_format = "jsonl"
-        receptor_field = "receptor_sequence" if args.receptor_field == "receptor_patch_sequence" else args.receptor_field
-    else:
-        if not args.train_track_a or not args.valid_track_a:
-            raise ValueError("Provide --train_track_a and --valid_track_a, or use legacy --metadata_jsonl")
-        train_path = args.train_track_a
-        valid_path = args.valid_track_a
-        train_split = None
-        valid_split = None
-        data_format = args.data_format
-        receptor_field = args.receptor_field
-
-    train_dataset = PepCLIPDataset(
-        train_path,
-        split=train_split,
-        data_format=data_format,
-        receptor_field=receptor_field,
+    train_dataset = PepCLIP3DDataset(
+        args.train_track_b,
+        split=args.train_split,
+        data_format=args.data_format,
+        max_receptor_atoms=args.max_receptor_atoms,
+        max_peptide_atoms=args.max_peptide_atoms,
     )
-    valid_dataset = PepCLIPDataset(
-        valid_path,
-        split=valid_split,
-        data_format=data_format,
-        receptor_field=receptor_field,
+    valid_dataset = PepCLIP3DDataset(
+        args.valid_track_b,
+        split=args.valid_split,
+        data_format=args.data_format,
+        max_receptor_atoms=args.max_receptor_atoms,
+        max_peptide_atoms=args.max_peptide_atoms,
     )
     train_loader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
         shuffle=True,
         num_workers=args.num_workers,
-        collate_fn=collate_pepclip,
+        collate_fn=collate_pepclip_3d,
     )
     valid_loader = DataLoader(
         valid_dataset,
         batch_size=args.batch_size,
         shuffle=False,
         num_workers=args.num_workers,
-        collate_fn=collate_pepclip,
+        collate_fn=collate_pepclip_3d,
     )
 
-    model = PepCLIPModel(
-        vocab_size=max(AA_TO_ID.values()) + 1,
+    model = PepCLIP3DModel(
+        num_elements=max(ELEMENT_TO_ID.values()) + 1,
+        num_atom_names=max(ATOM_NAME_TO_ID.values()) + 1,
+        num_residue_names=max(RESIDUE_NAME_TO_ID.values()) + 1,
         encoder_type=args.encoder_type,
-        hf_model_name_or_path=args.hf_model_name_or_path,
-        freeze_hf_backbone=args.freeze_hf_backbone,
-        hf_max_length=args.hf_max_length,
-        embed_dim=args.embed_dim,
+        element_dim=args.element_dim,
         hidden_dim=args.hidden_dim,
         output_dim=args.output_dim,
         dropout=args.dropout,
+        coord_scale=args.coord_scale,
+        num_layers=args.num_layers,
+        num_heads=args.num_heads,
+        num_rbf=args.num_rbf,
+        distance_cutoff=args.distance_cutoff,
     ).to(device)
 
     if args.peptide_encoder_checkpoint:
