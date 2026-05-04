@@ -36,6 +36,7 @@ class Step3Config:
         min_anchor_contact_count: int = 2,
         max_anchors_per_task: int = 3,
         max_candidates_per_task: int = 16,
+        min_longest_contact_run: int = 4,
     ) -> None:
         self.anchor_cutoff = anchor_cutoff
         self.contact_cutoff = contact_cutoff
@@ -46,6 +47,7 @@ class Step3Config:
         self.min_anchor_contact_count = min_anchor_contact_count
         self.max_anchors_per_task = max_anchors_per_task
         self.max_candidates_per_task = max_candidates_per_task
+        self.min_longest_contact_run = min_longest_contact_run
 
 
 _WORKER_CFG: Optional[Step3Config] = None
@@ -163,6 +165,10 @@ def better_candidate(a: Dict[str, Any], b: Dict[str, Any]) -> bool:
     return float(a["avg_contact_count"]) > float(b["avg_contact_count"])
 
 
+def candidate_passes_step3_window_gate(candidate: Dict[str, Any], cfg: Step3Config) -> bool:
+    return int(candidate["longest_contact_run"]) >= cfg.min_longest_contact_run
+
+
 def centered_window_bound_candidates(anchor_idx: int, length: int, n_residues: int) -> List[Tuple[int, int]]:
     """Generate a few near-symmetric windows by expanding around the anchor.
 
@@ -244,6 +250,8 @@ def best_centered_window_for_length(
             "start_res": window[0].residue,
             "end_res": window[-1].residue,
         }
+        if not candidate_passes_step3_window_gate(candidate, cfg):
+            continue
         if best is None or better_candidate(candidate, best):
             best = candidate
     return best
@@ -360,6 +368,7 @@ def main() -> None:
     parser.add_argument("--min_anchor_contact_count", type=int, default=2)
     parser.add_argument("--max_anchors_per_task", type=int, default=3)
     parser.add_argument("--max_candidates_per_task", type=int, default=16)
+    parser.add_argument("--min_longest_contact_run", type=int, default=4)
     args = parser.parse_args()
 
     cfg = Step3Config(
@@ -372,6 +381,7 @@ def main() -> None:
         min_anchor_contact_count=args.min_anchor_contact_count,
         max_anchors_per_task=args.max_anchors_per_task,
         max_candidates_per_task=args.max_candidates_per_task,
+        min_longest_contact_run=args.min_longest_contact_run,
     )
 
     tasks: List[Dict[str, Any]] = []
@@ -431,7 +441,9 @@ def main() -> None:
             "candidates_written": n_written,
             "errors": n_errors,
             "elapsed_sec": round(time.time() - start, 3),
-            "algorithm": "center_out_hotspot_growth_topk_avg_contact",
+            "algorithm": "center_out_hotspot_growth_topk_avg_contact_with_min_longest_contact_run",
+            "score_basis": "avg_contact_count",
+            "min_longest_contact_run": cfg.min_longest_contact_run,
             "tasks_with_zero_candidates": sum(1 for x in task_candidate_counts if x == 0),
             "avg_candidates_per_task": (sum(task_candidate_counts) / len(task_candidate_counts)) if task_candidate_counts else 0.0,
             "max_candidates_single_task": max(task_candidate_counts) if task_candidate_counts else 0,
