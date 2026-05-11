@@ -168,10 +168,6 @@ def better_candidate(a: Dict[str, Any], b: Dict[str, Any]) -> bool:
     return float(a["avg_contact_count"]) > float(b["avg_contact_count"])
 
 
-def candidate_passes_step3_window_gate(candidate: Dict[str, Any], cfg: Step3Config) -> bool:
-    return int(candidate["longest_contact_run"]) >= cfg.min_longest_contact_run
-
-
 def centered_window_bound_candidates(anchor_idx: int, length: int, n_residues: int) -> List[Tuple[int, int]]:
     """Generate a few near-symmetric windows by expanding around the anchor.
 
@@ -253,8 +249,6 @@ def best_centered_window_for_length(
             "start_res": window[0].residue,
             "end_res": window[-1].residue,
         }
-        if not candidate_passes_step3_window_gate(candidate, cfg):
-            continue
         if best is None or better_candidate(candidate, best):
             best = candidate
     return best
@@ -444,9 +438,11 @@ def main() -> None:
             "candidates_written": n_written,
             "errors": n_errors,
             "elapsed_sec": round(time.time() - start, 3),
-            "algorithm": "center_out_hotspot_growth_topk_avg_contact_with_min_longest_contact_run",
+            "algorithm": "center_out_hotspot_growth_topk_avg_contact",
             "score_basis": "avg_contact_count",
+            "step3_window_gate": "none",
             "min_longest_contact_run": cfg.min_longest_contact_run,
+            "min_longest_contact_run_applied": False,
             "tasks_with_zero_candidates": sum(1 for x in task_candidate_counts if x == 0),
             "avg_candidates_per_task": (sum(task_candidate_counts) / len(task_candidate_counts)) if task_candidate_counts else 0.0,
             "max_candidates_single_task": max(task_candidate_counts) if task_candidate_counts else 0,

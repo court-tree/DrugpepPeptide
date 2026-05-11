@@ -47,7 +47,6 @@ These are the current recommended working defaults after `smoke_5`, `smoke_10`, 
 - `min_anchor_contact_count = 2`
 - `max_anchors_per_task = 6`
 - `max_candidates_per_task = 16`
-- `min_longest_contact_run = 4`
 
 Current Step 3 behavior:
 
@@ -58,8 +57,8 @@ Current Step 3 behavior:
 - for each anchor/length pair, only the few near-symmetric centered windows are considered, and the better one is kept
 - duplicate windows are removed by `(left_idx, right_idx)`
 - window scoring uses `avg_contact_count`
-- candidate windows must satisfy `longest_contact_run >= 4`
-- final task-level candidate selection is pure `avg_contact_count` top-K after the `longest_contact_run` gate
+- `longest_contact_run` is recorded as a quality feature but is not used as a Step 3 hard gate
+- final task-level candidate selection is pure `avg_contact_count` top-K
 - task-level candidate count is capped at `16`
 
 ### Step 4
