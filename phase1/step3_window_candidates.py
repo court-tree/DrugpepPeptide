@@ -34,7 +34,7 @@ class Step3Config:
         anchor_local_radius: int = 3,
         anchor_nms_gap: int = 2,
         min_anchor_contact_count: int = 2,
-        max_anchors_per_task: int = 3,
+        max_anchors_per_task: int = 6,
         max_candidates_per_task: int = 16,
         min_longest_contact_run: int = 4,
     ) -> None:
@@ -136,13 +136,16 @@ def rank_anchor_indices(peptide_residues, receptor_tree, atom_to_res_idx, seed_i
             }
         )
 
-    # A hotspot anchor should be strong at the anchor residue itself, not only
-    # embedded in a good surrounding window. We therefore rank first by direct
-    # receptor-residue contacts, then use the local window average as tie-breaker.
+    # A peptide-window anchor should represent the best local interface region,
+    # not only the strongest single contacting residue. Rank by surrounding
+    # window contact quality first; use direct residue contacts only as the
+    # final tie-breaker.
     ranked.sort(
         key=lambda x: (
-            int(x["anchor_direct_contact_count"]),
             float(x["local_avg_contact_count"]),
+            float(x["local_contact_coverage"]),
+            int(x["local_longest_contact_run"]),
+            int(x["anchor_direct_contact_count"]),
         ),
         reverse=True,
     )
@@ -366,7 +369,7 @@ def main() -> None:
     parser.add_argument("--anchor_local_radius", type=int, default=3)
     parser.add_argument("--anchor_nms_gap", type=int, default=2)
     parser.add_argument("--min_anchor_contact_count", type=int, default=2)
-    parser.add_argument("--max_anchors_per_task", type=int, default=3)
+    parser.add_argument("--max_anchors_per_task", type=int, default=6)
     parser.add_argument("--max_candidates_per_task", type=int, default=16)
     parser.add_argument("--min_longest_contact_run", type=int, default=4)
     args = parser.parse_args()
