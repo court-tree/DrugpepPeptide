@@ -76,8 +76,15 @@ Current Step 4 behavior:
 ### Step 5
 
 - `max_keep_per_task = 4`
-- `sampling_basis = avg_contact_count_only`
+- `selection_mode = length_bucket_retention`
 - `seed = 20260416`
+
+Current Step 5 behavior:
+
+- per task, candidates are grouped into length buckets: `8-10`, `11-14`, `15-20`
+- one candidate is sampled from each available bucket using `avg_contact_count` as the sampling weight
+- remaining task slots are backfilled by `avg_contact_count` weighted sampling
+- `--selection_mode avg_contact_only` is available as a pure contact-quality control mode
 
 ### Step 6
 
@@ -103,9 +110,10 @@ Current Step 6 behavior:
 If we need one concise baseline to refer to, it is:
 
 - Step 3: `max_candidates_per_task = 16`
-- Step 3: `min_longest_contact_run = 4`
+- Step 3: no `longest_contact_run` hard gate
 - Step 4: `min_avg_contact_count = 3.5`, `min_contact_coverage = 0.5`
 - Step 5: `max_keep_per_task = 4`
+- Step 5: `selection_mode = length_bucket_retention`
 - Step 6: `receptor_identity_threshold = 0.85`, `peptide_identity_threshold = 0.85`, `peptide_min_coverage = 0.70`
 - Step 7: `patch_cutoff = 6.0`
 
