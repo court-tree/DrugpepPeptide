@@ -46,7 +46,9 @@ These are the current recommended working defaults after `smoke_5`, `smoke_10`, 
 - `anchor_nms_gap = 2`
 - `min_anchor_contact_count = 2`
 - `max_anchors_per_task = 6`
-- `max_candidates_per_task = 16`
+- `max_candidates_per_task = 24`
+- `quality_top_k = 16`
+- length-band minimum retention: `11-14 aa >= 4`, `15-20 aa >= 4`
 
 Current Step 3 behavior:
 
@@ -58,8 +60,8 @@ Current Step 3 behavior:
 - duplicate windows are removed by `(left_idx, right_idx)`
 - window scoring uses `avg_contact_count`
 - `longest_contact_run` is recorded as a quality feature but is not used as a Step 3 hard gate
-- final task-level candidate selection is pure `avg_contact_count` top-K
-- task-level candidate count is capped at `16`
+- final task-level candidate selection first keeps the global `avg_contact_count` top 16, then fills missing mid/long length-band minimums, then backfills by `avg_contact_count`
+- task-level candidate count is capped at `24`
 
 ### Step 4
 
@@ -109,7 +111,8 @@ Current Step 6 behavior:
 
 If we need one concise baseline to refer to, it is:
 
-- Step 3: `max_candidates_per_task = 16`
+- Step 3: `max_candidates_per_task = 24`, `quality_top_k = 16`
+- Step 3: length-band minimum retention `11-14 >= 4`, `15-20 >= 4`
 - Step 3: no `longest_contact_run` hard gate
 - Step 4: `min_avg_contact_count = 3.5`, `min_contact_coverage = 0.5`
 - Step 5: `max_keep_per_task = 4`

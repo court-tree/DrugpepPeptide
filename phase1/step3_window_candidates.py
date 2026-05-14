@@ -7,7 +7,7 @@ import time
 import traceback
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from common import (
     build_receptor_tree,
@@ -35,8 +35,11 @@ class Step3Config:
         anchor_nms_gap: int = 2,
         min_anchor_contact_count: int = 2,
         max_anchors_per_task: int = 6,
-        max_candidates_per_task: int = 16,
+        max_candidates_per_task: int = 24,
         min_longest_contact_run: int = 4,
+        quality_top_k: int = 16,
+        length_band_mid_min_keep: int = 4,
+        length_band_long_min_keep: int = 4,
     ) -> None:
         self.anchor_cutoff = anchor_cutoff
         self.contact_cutoff = contact_cutoff
@@ -48,6 +51,12 @@ class Step3Config:
         self.max_anchors_per_task = max_anchors_per_task
         self.max_candidates_per_task = max_candidates_per_task
         self.min_longest_contact_run = min_longest_contact_run
+        self.quality_top_k = quality_top_k
+        self.length_band_mid_min_keep = length_band_mid_min_keep
+        self.length_band_long_min_keep = length_band_long_min_keep
+
+
+LengthBand = Tuple[str, int, int]
 
 
 _WORKER_CFG: Optional[Step3Config] = None
@@ -166,6 +175,75 @@ def select_anchor_indices(ranked_anchors: List[Dict[str, Any]], cfg: Step3Config
 
 def better_candidate(a: Dict[str, Any], b: Dict[str, Any]) -> bool:
     return float(a["avg_contact_count"]) > float(b["avg_contact_count"])
+
+
+def length_band_name(peptide_length: int, bands: Sequence[LengthBand]) -> Optional[str]:
+    for name, min_len, max_len in bands:
+        if min_len <= peptide_length <= max_len:
+            return name
+    return None
+
+
+def length_bands_from_config(cfg: Step3Config) -> List[LengthBand]:
+    return [("short_8_10", 8, 10), ("mid_11_14", 11, 14), ("long_15_20", 15, 20)]
+
+
+def length_band_min_keep(cfg: Step3Config) -> Dict[str, int]:
+    return {
+        "mid_11_14": cfg.length_band_mid_min_keep,
+        "long_15_20": cfg.length_band_long_min_keep,
+    }
+
+
+def select_candidates_with_length_band_retention(
+    candidates: List[Dict[str, Any]],
+    cfg: Step3Config,
+) -> List[Dict[str, Any]]:
+    sorted_candidates = sorted(
+        candidates,
+        key=lambda x: float(x["avg_contact_count"]),
+        reverse=True,
+    )
+    selected: List[Dict[str, Any]] = []
+    selected_ids = set()
+
+    for row in sorted_candidates[:cfg.quality_top_k]:
+        if len(selected) >= cfg.max_candidates_per_task:
+            break
+        row["step3_selection_stage"] = "quality_top_k"
+        selected.append(row)
+        selected_ids.add(row["candidate_id"])
+
+    for band_name, min_keep in length_band_min_keep(cfg).items():
+        if min_keep <= 0 or len(selected) >= cfg.max_candidates_per_task:
+            continue
+        current_count = sum(1 for x in selected if x.get("length_band") == band_name)
+        needed = max(0, min_keep - current_count)
+        if needed == 0:
+            continue
+        bucket = [
+            x for x in sorted_candidates
+            if x["candidate_id"] not in selected_ids
+            and x.get("length_band") == band_name
+        ]
+        for row in bucket[:needed]:
+            row["step3_selection_stage"] = "length_band_min_keep"
+            selected.append(row)
+            selected_ids.add(row["candidate_id"])
+            if len(selected) >= cfg.max_candidates_per_task:
+                break
+
+    for row in sorted_candidates:
+        if len(selected) >= cfg.max_candidates_per_task:
+            break
+        if row["candidate_id"] in selected_ids:
+            continue
+        row["step3_selection_stage"] = "avg_contact_backfill"
+        selected.append(row)
+        selected_ids.add(row["candidate_id"])
+
+    selected.sort(key=lambda x: float(x["avg_contact_count"]), reverse=True)
+    return selected
 
 
 def centered_window_bound_candidates(anchor_idx: int, length: int, n_residues: int) -> List[Tuple[int, int]]:
@@ -304,6 +382,10 @@ def enumerate_windows(task: Dict[str, Any], pdb_dir: Path, cfg: Step3Config) -> 
                 "final_left_index": left_idx,
                 "final_right_index": right_idx,
                 "peptide_length": int(window_candidate["peptide_length"]),
+                "length_band": length_band_name(
+                    int(window_candidate["peptide_length"]),
+                    length_bands_from_config(cfg),
+                ),
                 "peptide_start_resseq": residue_seqid_num(start_res),
                 "peptide_start_icode": residue_seqid_icode(start_res),
                 "peptide_end_resseq": residue_seqid_num(end_res),
@@ -325,8 +407,7 @@ def enumerate_windows(task: Dict[str, Any], pdb_dir: Path, cfg: Step3Config) -> 
                 candidates_by_bounds[bounds_key] = candidate
 
     candidates = list(candidates_by_bounds.values())
-    candidates.sort(key=lambda x: float(x["avg_contact_count"]), reverse=True)
-    return candidates[:cfg.max_candidates_per_task]
+    return select_candidates_with_length_band_retention(candidates, cfg)
 
 
 def worker(payload: Tuple[Dict[str, Any], str]) -> Dict[str, Any]:
@@ -364,8 +445,11 @@ def main() -> None:
     parser.add_argument("--anchor_nms_gap", type=int, default=2)
     parser.add_argument("--min_anchor_contact_count", type=int, default=2)
     parser.add_argument("--max_anchors_per_task", type=int, default=6)
-    parser.add_argument("--max_candidates_per_task", type=int, default=16)
+    parser.add_argument("--max_candidates_per_task", type=int, default=24)
     parser.add_argument("--min_longest_contact_run", type=int, default=4)
+    parser.add_argument("--quality_top_k", type=int, default=16)
+    parser.add_argument("--length_band_mid_min_keep", type=int, default=4)
+    parser.add_argument("--length_band_long_min_keep", type=int, default=4)
     args = parser.parse_args()
 
     cfg = Step3Config(
@@ -379,6 +463,9 @@ def main() -> None:
         max_anchors_per_task=args.max_anchors_per_task,
         max_candidates_per_task=args.max_candidates_per_task,
         min_longest_contact_run=args.min_longest_contact_run,
+        quality_top_k=args.quality_top_k,
+        length_band_mid_min_keep=args.length_band_mid_min_keep,
+        length_band_long_min_keep=args.length_band_long_min_keep,
     )
 
     tasks: List[Dict[str, Any]] = []
@@ -440,6 +527,13 @@ def main() -> None:
             "elapsed_sec": round(time.time() - start, 3),
             "algorithm": "center_out_hotspot_growth_topk_avg_contact",
             "score_basis": "avg_contact_count",
+            "candidate_selection": "quality_top_k_then_length_band_min_keep_then_avg_contact_backfill",
+            "quality_top_k": cfg.quality_top_k,
+            "length_bands": [
+                {"name": name, "min_len": min_len, "max_len": max_len}
+                for name, min_len, max_len in length_bands_from_config(cfg)
+            ],
+            "length_band_min_keep": length_band_min_keep(cfg),
             "step3_window_gate": "none",
             "min_longest_contact_run": cfg.min_longest_contact_run,
             "min_longest_contact_run_applied": False,
