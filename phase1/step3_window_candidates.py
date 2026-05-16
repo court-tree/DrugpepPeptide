@@ -145,11 +145,15 @@ def rank_anchor_indices(peptide_residues, receptor_tree, atom_to_res_idx, seed_i
             }
         )
 
-    # Rank anchors by local window contact quality first, then by the anchor
-    # residue's direct receptor-residue contacts.
+    # A peptide-window anchor should represent the best local interface region,
+    # not only the strongest single contacting residue. Rank by surrounding
+    # window contact quality first; use direct residue contacts only as the
+    # final tie-breaker.
     ranked.sort(
         key=lambda x: (
             float(x["local_avg_contact_count"]),
+            float(x["local_contact_coverage"]),
+            int(x["local_longest_contact_run"]),
             int(x["anchor_direct_contact_count"]),
         ),
         reverse=True,
