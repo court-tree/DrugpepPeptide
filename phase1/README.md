@@ -90,6 +90,7 @@ Current Step 5 behavior:
 - remaining task slots are backfilled by `avg_contact_count` weighted sampling with the strict overlap thresholds
 - `--selection_mode avg_contact_only` is available as a pure contact-quality control mode
 - `--selection_mode length_bucket_cap --length_bucket_max_per_bucket 2` is available for v10/v11 diagnostic runs that retain up to two candidates per length bucket before avg-contact backfill
+- `--selection_mode length_bucket_seed_then_overlap_backfill --max_keep_per_task 6` is available for v12 runs that seed one candidate from each bucket without overlap rejection, then use strict-overlap avg-contact backfill
 
 ### Step 6
 

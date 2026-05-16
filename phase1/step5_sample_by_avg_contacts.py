@@ -273,6 +273,57 @@ def select_with_length_bucket_cap(
     return chosen
 
 
+def select_with_bucket_seed_then_overlap_backfill(
+    pool: List[Dict[str, Any]],
+    max_keep_per_task: int,
+    rng: random.Random,
+    buckets: Sequence[LengthBucket] = DEFAULT_LENGTH_BUCKETS,
+    strict_jaccard: float = 0.70,
+    short_containment_threshold: float = 0.80,
+) -> List[Dict[str, Any]]:
+    chosen: List[Dict[str, Any]] = []
+    chosen_ids = set()
+
+    # First pass: seed one weighted-random representative per available bucket
+    # without overlap rejection, so long windows cannot be blocked by short ones.
+    for bucket_name, _min_len, _max_len in buckets:
+        if len(chosen) >= max_keep_per_task:
+            break
+        bucket_pool = [
+            x for x in pool
+            if x["candidate_id"] not in chosen_ids
+            and x.get("length_bucket") == bucket_name
+        ]
+        if not bucket_pool:
+            continue
+        picked = weighted_pick(bucket_pool, rng)
+        picked["step5_selection_stage"] = "length_bucket_seed"
+        annotate_overlap(picked, chosen, "accepted_seed_no_overlap_check")
+        chosen.append(picked)
+        chosen_ids.add(picked["candidate_id"])
+
+    # Second pass: fill remaining slots by weighted random sampling with strict
+    # overlap rejection to avoid same-hotspot crop variants.
+    while len(chosen) < max_keep_per_task:
+        remaining = [x for x in pool if x["candidate_id"] not in chosen_ids]
+        if not remaining:
+            break
+        picked = weighted_pick_with_overlap(
+            remaining,
+            chosen,
+            rng,
+            jaccard_threshold=strict_jaccard,
+            short_containment_threshold=short_containment_threshold,
+        )
+        if picked is None:
+            break
+        picked["step5_selection_stage"] = "avg_contact_backfill"
+        chosen.append(picked)
+        chosen_ids.add(picked["candidate_id"])
+
+    return chosen
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Phase1 Step5: sample by average contact count")
     parser.add_argument("--input_jsonl", required=True)
@@ -280,7 +331,12 @@ def main() -> None:
     parser.add_argument("--max_keep_per_task", type=int, default=4)
     parser.add_argument(
         "--selection_mode",
-        choices=["avg_contact_only", "length_bucket_retention", "length_bucket_cap"],
+        choices=[
+            "avg_contact_only",
+            "length_bucket_retention",
+            "length_bucket_cap",
+            "length_bucket_seed_then_overlap_backfill",
+        ],
         default="length_bucket_retention",
     )
     parser.add_argument("--length_bucket_max_per_bucket", type=int, default=2)
@@ -344,6 +400,14 @@ def main() -> None:
                 strict_jaccard=args.overlap_jaccard_threshold,
                 short_containment_threshold=args.short_containment_threshold,
             )
+        elif args.selection_mode == "length_bucket_seed_then_overlap_backfill":
+            chosen = select_with_bucket_seed_then_overlap_backfill(
+                pool=pool,
+                max_keep_per_task=args.max_keep_per_task,
+                rng=rng,
+                strict_jaccard=args.overlap_jaccard_threshold,
+                short_containment_threshold=args.short_containment_threshold,
+            )
         else:
             chosen = select_weighted_candidates(
                 pool=pool,
@@ -383,7 +447,7 @@ def main() -> None:
                 }
                 for name, min_len, max_len in DEFAULT_LENGTH_BUCKETS
             ],
-            "length_bucket_note": "length_bucket_retention samples one candidate from each available length bucket, then backfills by avg_contact_count. length_bucket_cap samples up to length_bucket_max_per_bucket candidates from each bucket, then backfills by avg_contact_count.",
+            "length_bucket_note": "length_bucket_retention samples one candidate from each available length bucket, then backfills by avg_contact_count. length_bucket_cap samples up to length_bucket_max_per_bucket candidates from each bucket, then backfills by avg_contact_count. length_bucket_seed_then_overlap_backfill seeds one candidate from each bucket without overlap rejection, then backfills with strict overlap rejection.",
             "seed": args.seed,
         },
     )
