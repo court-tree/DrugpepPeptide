@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PepCLIP Phase-3 版本路线</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17202a;
+      --muted: #5c6672;
+      --line: #d9dee7;
+      --soft: #f6f8fb;
+      --panel: #ffffff;
+      --blue: #2458a6;
+      --teal: #087f83;
+      --green: #327a4b;
+      --amber: #946200;
+      --red: #a23b3b;
+      --code: #eef3f8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #fbfcfe;
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+      line-height: 1.65;
+    }
+
+    header {
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #ffffff 0%, #f4f7fb 100%);
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      padding: 42px 0 30px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--blue);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 4vw, 46px);
+      line-height: 1.16;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      max-width: 860px;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    main {
+      padding: 28px 0 56px;
+    }
+
+    section {
+      margin: 34px 0;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 28px 0 10px;
+      font-size: 20px;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 10px 0;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      background: var(--code);
+      color: #14324f;
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      font-size: 0.94em;
+    }
+
+    pre {
+      margin: 12px 0;
+      padding: 15px 16px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--code);
+      color: #182534;
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      font-size: 14px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .note {
+      margin: 18px 0;
+      padding: 16px 18px;
+      border-left: 5px solid var(--blue);
+      background: #f1f5fb;
+      border-radius: 8px;
+    }
+
+    .version-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin: 18px 0 24px;
+    }
+
+    .version-card {
+      min-height: 210px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-top: 5px solid var(--blue);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .version-card h3 {
+      margin: 0 0 8px;
+      font-size: 19px;
+    }
+
+    .version-card p {
+      margin: 8px 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .version-card strong {
+      display: block;
+      margin-top: 12px;
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .v1 { border-top-color: var(--green); }
+    .v15 { border-top-color: var(--teal); }
+    .v2 { border-top-color: var(--amber); }
+    .v3 { border-top-color: var(--red); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      background: var(--panel);
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 12px 10px;
+      border: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef3f8;
+      font-weight: 700;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .panel {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .panel h3 {
+      margin-top: 0;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .flow span {
+      display: block;
+      padding: 12px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    footer {
+      padding: 22px 0 34px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      background: #f6f8fb;
+      font-size: 14px;
+    }
+
+    @media (max-width: 900px) {
+      .version-grid,
+      .two-col,
+      .flow {
+        grid-template-columns: 1fr;
+      }
+
+      .wrap {
+        width: min(100% - 24px, 1120px);
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap hero">
+      <p class="eyebrow">PepCLIP Phase-3</p>
+      <h1>版本路线与构象增强边界</h1>
+      <p class="subtitle">
+        用于区分当前可落地的数据集版本与后续构象增强微调方案，避免把真实强监督、同序列构象证据、hard negative 和 similar/motif prior 混在同一个实验版本里。
+      </p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section>
+      <h2>核心原则</h2>
+      <pre>V1 先证明真实 bound conformer 微调是否有效；
+V1.5 只补齐 exact same-sequence 构象证据与审计；
+V2 再启用同序列构象增强训练；
+V3 最后引入 similar sequence / motif prior。</pre>
+      <div class="note">
+        不要把 V2/V3 的构象增强逻辑直接并入最小可用 V1。否则数据构建、训练损失和评估语义会同时变化，实验结果很难归因。
+      </div>
+    </section>
+
+    <section>
+      <h2>总体版本划分</h2>
+      <div class="version-grid">
+        <article class="version-card v1">
+          <h3>Phase-3 V1</h3>
+          <p>真实 bound pair 微调集。</p>
+          <strong>训练监督</strong>
+          <p><code>positive_strong_bound</code></p>
+          <strong>主要目的</strong>
+          <p>验证真实复合物强监督能否提升 receptor-peptide 检索。</p>
+        </article>
+        <article class="version-card v15">
+          <h3>Phase-3 V1.5</h3>
+          <p>exact same-sequence 构象证据层。</p>
+          <strong>训练监督</strong>
+          <p><code>positive_strong_bound</code>，构象证据仅审计。</p>
+          <strong>主要目的</strong>
+          <p>统计同序列构象覆盖率、聚类质量和 bound conformer 映射。</p>
+        </article>
+        <article class="version-card v2">
+          <h3>Phase-3 V2</h3>
+          <p>构象增强训练。</p>
+          <strong>训练监督</strong>
+          <p><code>positive_strong_bound</code>、<code>positive_aug_same_cluster</code>、<code>conformer_hard_negative</code></p>
+          <strong>主要目的</strong>
+          <p>训练模型区分同一 peptide 的不同构象适配性。</p>
+        </article>
+        <article class="version-card v3">
+          <h3>Phase-3 V3</h3>
+          <p>similar / motif prior 扩展。</p>
+          <strong>训练监督</strong>
+          <p>V2 监督 + 独立 <code>conformer_prior</code>，prior 不作为强监督。</p>
+          <strong>主要目的</strong>
+          <p>引入相似序列或 motif family 的构象先验。</p>
+        </article>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Version</th>
+            <th>定位</th>
+            <th>训练监督</th>
+            <th>默认训练使用</th>
+            <th>主要目的</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Phase-3 V1</td>
+            <td>真实 bound pair 微调集</td>
+            <td><code>positive_strong_bound</code></td>
+            <td>是</td>
+            <td>验证真实复合物强监督能否提升 receptor-peptide 检索</td>
+          </tr>
+          <tr>
+            <td>Phase-3 V1.5</td>
+            <td>exact same-sequence 构象证据层</td>
+            <td><code>positive_strong_bound</code>，构象证据仅审计</td>
+            <td>否</td>
+            <td>统计同序列构象覆盖率、聚类质量和 bound conformer 映射</td>
+          </tr>
+          <tr>
+            <td>Phase-3 V2</td>
+            <td>构象增强训练</td>
+            <td><code>positive_strong_bound</code>、<code>positive_aug_same_cluster</code>、<code>conformer_hard_negative</code></td>
+            <td>仅 train split</td>
+            <td>训练模型区分同一 peptide 的不同构象适配性</td>
+          </tr>
+          <tr>
+            <td>Phase-3 V3</td>
+            <td>similar / motif prior 扩展</td>
+            <td>V2 监督 + 独立 <code>conformer_prior</code></td>
+            <td>可选 prior，不作为强监督</td>
+            <td>引入相似序列或 motif family 的构象先验</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Phase-3 V1：真实 Bound Pair 微调集</h2>
+      <p>V1 是当前最小可用版本。只使用真实 receptor-peptide complex 中的强监督：</p>
+      <pre>receptor_interface_i &lt;-&gt; true_bound_conformer_i</pre>
+      <div class="two-col">
+        <div class="panel">
+          <h3>V1 做</h3>
+          <pre>真实 receptor-peptide complex
+-> anchor
+-> true_bound_conformer
+-> QC
+-> split
+-> positive_strong_bound
+-> ordinary CLIP fine-tuning</pre>
+        </div>
+        <div class="panel">
+          <h3>V1 不做</h3>
+          <pre>positive_aug_same_cluster
+conformer_hard_negative
+similar sequence prior
+motif prior
+multi-positive contrastive loss
+ranking loss</pre>
+        </div>
+      </div>
+      <p>V1 的实验问题是：真实 bound conformer 微调能不能提升 receptor-peptide 检索？</p>
+    </section>
+
+    <section>
+      <h2>Phase-3 V1.5：Exact Same-Sequence 构象证据</h2>
+      <p>V1.5 在 V1 的 anchor 基础上增加完整的同序列构象证据，但默认不改变训练目标。</p>
+      <div class="two-col">
+        <div class="panel">
+          <h3>V1.5 做</h3>
+          <pre>exact_pool = [true_bound_conformer] + searched_exact_conformers
+exact same-sequence conformer QC
+exact same-sequence RMSD clustering
+bound_cluster_id mapping
+conformer evidence statistics
+coverage / leakage / cluster audit</pre>
+        </div>
+        <div class="panel">
+          <h3>V1.5 默认不做</h3>
+          <pre>positive_aug_same_cluster training
+conformer_hard_negative training
+multi-positive loss
+ranking loss</pre>
+        </div>
+      </div>
+      <p>当前 <code>phase3/conformer_v1</code> 更接近这一层：它补齐 full-PDB exact-match conformer evidence，并且不把外部构象变成新的 receptor-positive pair。</p>
+    </section>
+
+    <section>
+      <h2>Phase-3 V2：构象增强训练</h2>
+      <p>V2 是构象增强微调主体。它开始把同一 peptide sequence 的构象簇结构用于训练。</p>
+      <pre>positive_strong_bound
+positive_aug_same_cluster
+conformer_hard_negative
+multi-positive contrastive loss
+conformer/fusion ranking loss
+train-only augmentation</pre>
+      <h3>关键语义</h3>
+      <pre>positive_aug_same_cluster:
+    同一 peptide sequence
+    与 true_bound_conformer 属于同一构象簇
+    只作为 train split 的弱正增强
+
+conformer_hard_negative:
+    同一 peptide sequence
+    但属于不同构象簇
+    表示该构象状态对当前 receptor interface 不如 true_bound_conformer 匹配</pre>
+      <div class="note">
+        <code>conformer_hard_negative</code> 不是 peptide-level negative，不能进入 1D sequence branch、普通 CLIP loss、普通 batch negative pool，或 multi-positive contrastive loss 的 denominator。它只能进入 conformer branch ranking loss 和 fusion branch ranking loss。
+      </div>
+    </section>
+
+    <section>
+      <h2>Phase-3 V3：Similar / Motif Prior 扩展</h2>
+      <p>V3 才引入相似序列和 motif family 的构象先验。它们不是同一条 peptide 的真实构象，不能作为 supervised positive edge。</p>
+      <div class="two-col">
+        <div class="panel">
+          <h3>只允许写入</h3>
+          <pre>conformer_prior.parquet</pre>
+          <pre>similar_sequence_conformer_prior
+motif_conformer_prior</pre>
+        </div>
+        <div class="panel">
+          <h3>不允许参与</h3>
+          <pre>exact_same_sequence cluster
+supervised_edges 生成
+positive_aug_same_cluster
+conformer_hard_negative</pre>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>跨版本硬规则</h2>
+      <pre>1. Phase-3 peptide length 固定为 8-20 aa。
+2. length < 8 直接丢弃。
+3. length > 20 不进入当前 Phase-3，保存到 future_long_peptide_set。
+4. true_bound_conformer 是 anchor 核心。
+5. 如果 true_bound_conformer 质量不合格，删除整个 anchor。
+6. true_bound_conformer 必须强制加入 exact_pool。
+7. split / 去重 / 防泄露必须在构象增强前完成。
+8. train augmentation 不能使用 val/test 的 true_bound_conformer。
+9. val/test 主评估只使用 positive_strong_bound。
+10. ordinary in-batch negatives 不提前写入 supervised_edges，由 dataloader / loss 动态生成，并使用 conflict mask。</pre>
+    </section>
+
+    <section>
+      <h2>允许的监督边</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Edge type</th>
+            <th>启用版本</th>
+            <th>使用范围</th>
+            <th>语义边界</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>positive_strong_bound</code></td>
+            <td>V1 起</td>
+            <td>train / val / test 主评估均可使用</td>
+            <td>真实 receptor interface 与真实 bound conformer 的强正监督</td>
+          </tr>
+          <tr>
+            <td><code>positive_aug_same_cluster</code></td>
+            <td>V2 起</td>
+            <td>默认只用于 train split</td>
+            <td>同序列、同构象簇的弱正增强</td>
+          </tr>
+          <tr>
+            <td><code>conformer_hard_negative</code></td>
+            <td>V2 起</td>
+            <td>默认只用于 train split；只进入 conformer/fusion ranking loss</td>
+            <td>同序列、不同构象簇；不是 peptide-level negative</td>
+          </tr>
+        </tbody>
+      </table>
+      <p><code>similar_sequence_conformer_prior</code> 和 <code>motif_conformer_prior</code> 不属于 supervised edge。</p>
+    </section>
+
+    <section>
+      <h2>推荐落地顺序</h2>
+      <div class="flow">
+        <span>1. 固化 V1 / V1-beta baseline</span>
+        <span>2. 跑通 V1.5 evidence audit</span>
+        <span>3. 实现 V2 edges 与 losses</span>
+        <span>4. 有稳定收益后再做 V3 prior</span>
+      </div>
+      <pre>V1 解决真实强监督；
+V1.5 解决同序列构象证据；
+V2 解决构象增强训练；
+V3 解决相似序列 / motif 先验。</pre>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      PepCLIP Phase-3 version plan preview. Source markdown: phase3/phase3_version_plan.md
+    </div>
+  </footer>
+</body>
+</html>

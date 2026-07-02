@@ -1,0 +1,440 @@
+{"kind":"deck","id":"pr/m6y3tx","name":"Deck"}
+{"kind":"layout","layoutId":"9fc5935d-5253-494d-aa1d-cf9f79fa88f5","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"a1ac56fe-de61-4b36-837b-163b5d5af664","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/0sboc8","slide":1,"title":"PepCLIP Phase-3","textShapes":6}
+{"kind":"textbox","id":"sh/tcj6tova","slide":1,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[72,62,500,34]}
+{"kind":"textbox","id":"sh/il0rqd4v","slide":1,"text":"数据集构建算法","textPreview":"数据集构建算法","textChars":7,"textLines":1,"bbox":[72,150,780,78]}
+{"kind":"textbox","id":"sh/b6xkf6dc","slide":1,"text":"从真实受体-肽复合物到构象增强微调数据集","textPreview":"从真实受体-肽复合物到构象增强微调数据集","textChars":20,"textLines":1,"bbox":[72,246,760,40]}
+{"kind":"shape","id":"sh/0je9cvix","slide":1,"bbox":[72,330,560,2]}
+{"kind":"textbox","id":"sh/t47y1kre","slide":1,"text":"V1 基线 + V1.5/V2/V3 扩展路线","textPreview":"V1 基线 + V1.5/V2/V3 扩展路线","textChars":23,"textLines":1,"bbox":[72,360,710,32]}
+{"kind":"shape","id":"sh/idonyd0z","slide":1,"bbox":[850,96,300,424]}
+{"kind":"textbox","id":"sh/byhgn29g","slide":1,"text":"本 PPT 回答","textPreview":"本 PPT 回答","textChars":8,"textLines":1,"bbox":[884,130,230,34]}
+{"kind":"textbox","id":"sh/0fepkzup","slide":1,"text":"• 第一版数据集怎么构建\n• 每一步输入、处理、输出是什么\n• 后续构象增强如何接到同一条流水线","textPreview":"• 第一版数据集怎么构建 | • 每一步输入、处理、输出是什么 | • 后续构象增强如何接到同一条流水线","textChars":48,"textLines":3,"bbox":[884,190,230,230]}
+{"kind":"notes","id":"nt/0sboc8","slide":1,"text":""}
+{"kind":"slide","id":"sl/cte21c","slide":2,"title":"PepCLIP Phase-3","textShapes":9}
+{"kind":"textbox","id":"sh/mtwra5gb","slide":2,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/xkf6dcbu","slide":2,"text":"Phase-3 的目标：真实结构监督微调","textPreview":"Phase-3 的目标：真实结构监督微调","textChars":20,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/4zidonyd","slide":2,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/f6dcbulw","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/mlkjm1cf","slide":2,"bbox":[72,168,510,130]}
+{"kind":"shape","id":"sh/xc3ylc7u","slide":2,"bbox":[72,168,7,130]}
+{"kind":"textbox","id":"sh/4r65wjud","slide":2,"text":"Phase-2 已完成","textPreview":"Phase-2 已完成","textChars":11,"textLines":1,"bbox":[92,184,472,32]}
+{"kind":"textbox","id":"sh/fu18jqh0","slide":2,"text":"教师数据 -> 双塔预训练 -> 配对检索验证 -> 原始 Top-K 检索","textPreview":"教师数据 -> 双塔预训练 -> 配对检索验证 -> 原始 Top-K 检索","textChars":38,"textLines":1,"bbox":[92,222,472,64]}
+{"kind":"shape","id":"sh/m94fu18j","slide":2,"bbox":[72,332,510,130]}
+{"kind":"shape","id":"sh/sji5snel","slide":2,"bbox":[72,332,7,130]}
+{"kind":"textbox","id":"sh/h4byhgn2","slide":2,"text":"Phase-3 要补上的监督","textPreview":"Phase-3 要补上的监督","textChars":14,"textLines":1,"bbox":[92,348,472,32]}
+{"kind":"textbox","id":"sh/adsji5sn","slide":2,"text":"受体界面 <-> 真实肽结合构象","textPreview":"受体界面 <-> 真实肽结合构象","textChars":16,"textLines":1,"bbox":[92,386,472,64]}
+{"kind":"shape","id":"sh/3ylc7u54","slide":2,"bbox":[666,168,490,294]}
+{"kind":"textbox","id":"sh/s72x4nap","slide":2,"text":"核心目标","textPreview":"核心目标","textChars":4,"textLines":1,"bbox":[696,196,240,34]}
+{"kind":"textbox","id":"sh/lszqtcj6","slide":2,"text":"让模型不仅知道哪条肽可能结合当前受体界面，还要知道这条肽的哪种结合构象更适合当前界面。","textPreview":"让模型不仅知道哪条肽可能结合当前受体界面，还要知道这条肽的哪种结合构象更适合当前界面。","textChars":43,"textLines":1,"bbox":[696,252,420,142]}
+{"kind":"notes","id":"nt/cte21c","slide":2,"text":""}
+{"kind":"slide","id":"sl/2aextw","slide":3,"title":"PepCLIP Phase-3","textShapes":22}
+{"kind":"textbox","id":"sh/5gbq1ory","slide":3,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/upwb2hwf","slide":3,"text":"总体路线：先构建可信 V1，再逐步增强构象监督","textPreview":"总体路线：先构建可信 V1，再逐步增强构象监督","textChars":23,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/nap4r65w","slide":3,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/cj6tovah","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/54zidony","slide":3,"bbox":[72,172,272,170]}
+{"kind":"textbox","id":"sh/udg7adsj","slide":3,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[86,184,44,26]}
+{"kind":"textbox","id":"sh/nyd0z610","slide":3,"text":"V1\n真实结合配对\n只用强正样本","textPreview":"V1 | 真实结合配对 | 只用强正样本","textChars":16,"textLines":3,"bbox":[128,184,202,150]}
+{"kind":"shape","id":"sh/cfa9w3m9","slide":3,"bbox":[360,172,272,170]}
+{"kind":"textbox","id":"sh/1032lszq","slide":3,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[374,184,44,26]}
+{"kind":"textbox","id":"sh/xs72x4na","slide":3,"text":"V1.5\n完全同序列构象证据\n证据统计和审计","textPreview":"V1.5 | 完全同序列构象证据 | 证据统计和审计","textChars":22,"textLines":3,"bbox":[416,184,202,150]}
+{"kind":"shape","id":"sh/87ed8bat","slide":3,"bbox":[648,172,272,170]}
+{"kind":"textbox","id":"sh/fmlkjm1c","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[662,184,44,26]}
+{"kind":"textbox","id":"sh/q1orytsv","slide":3,"text":"V2\n同簇弱正样本\n构象困难负样本排序","textPreview":"V2 | 同簇弱正样本 | 构象困难负样本排序","textChars":19,"textLines":3,"bbox":[704,184,202,150]}
+{"kind":"shape","id":"sh/1gvy90je","slide":3,"bbox":[936,172,272,170]}
+{"kind":"textbox","id":"sh/8z25kb6x","slide":3,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[950,184,44,26]}
+{"kind":"textbox","id":"sh/je9cvixc","slide":3,"text":"V3\n相似序列 / 模体先验\n只作为先验","textPreview":"V3 | 相似序列 / 模体先验 | 只作为先验","textChars":20,"textLines":3,"bbox":[992,184,202,150]}
+{"kind":"textbox","id":"sh/qtcj6tov","slide":3,"text":"为什么要分版本","textPreview":"为什么要分版本","textChars":7,"textLines":1,"bbox":[72,396,320,34]}
+{"kind":"shape","id":"sh/xczed8v6","slide":3,"bbox":[72,448,1010,44]}
+{"kind":"textbox","id":"sh/8v6psfil","slide":3,"text":"版本","textPreview":"版本","textChars":2,"textLines":1,"bbox":[82,457,100,32]}
+{"kind":"textbox","id":"sh/47y1kre1","slide":3,"text":"回答的问题","textPreview":"回答的问题","textChars":5,"textLines":1,"bbox":[202,457,870,32]}
+{"kind":"shape","id":"sh/tsvu9kni","slide":3,"bbox":[72,492,1010,44]}
+{"kind":"textbox","id":"sh/m1cfa9w3","slide":3,"text":"V1","textPreview":"V1","textChars":2,"textLines":1,"bbox":[82,500,100,32]}
+{"kind":"textbox","id":"sh/bm58z25k","slide":3,"text":"真实结合构象微调有没有用？","textPreview":"真实结合构象微调有没有用？","textChars":13,"textLines":1,"bbox":[202,500,870,32]}
+{"kind":"shape","id":"sh/4vmtwra5","slide":3,"bbox":[72,536,1010,44]}
+{"kind":"textbox","id":"sh/tgfmlkjm","slide":3,"text":"V1.5","textPreview":"V1.5","textChars":4,"textLines":1,"bbox":[82,544,100,32]}
+{"kind":"textbox","id":"sh/mp0bi9s3","slide":3,"text":"同序列构象证据够不够支撑增强？","textPreview":"同序列构象证据够不够支撑增强？","textChars":15,"textLines":1,"bbox":[202,544,870,32]}
+{"kind":"shape","id":"sh/bat47y1k","slide":3,"bbox":[72,580,1010,44]}
+{"kind":"textbox","id":"sh/4nap4r65","slide":3,"text":"V2","textPreview":"V2","textChars":2,"textLines":1,"bbox":[82,588,100,32]}
+{"kind":"textbox","id":"sh/t83itgfm","slide":3,"text":"构象增强训练是否提升受体-构象匹配？","textPreview":"构象增强训练是否提升受体-构象匹配？","textChars":18,"textLines":1,"bbox":[202,588,870,32]}
+{"kind":"shape","id":"sh/nyd0z610","slide":3,"bbox":[72,624,1010,44]}
+{"kind":"textbox","id":"sh/udg7adsj","slide":3,"text":"V3","textPreview":"V3","textChars":2,"textLines":1,"bbox":[82,632,100,32]}
+{"kind":"textbox","id":"sh/54zidony","slide":3,"text":"相似序列 / 模体先验是否提供额外信息？","textPreview":"相似序列 / 模体先验是否提供额外信息？","textChars":20,"textLines":1,"bbox":[202,632,870,32]}
+{"kind":"notes","id":"nt/2aextw","slide":3,"text":""}
+{"kind":"slide","id":"sl/9cx1y7","slide":4,"title":"PepCLIP Phase-3","textShapes":10}
+{"kind":"textbox","id":"sh/v6psfil0","slide":4,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/knih4byh","slide":4,"text":"V1 是 Phase-3 的最小可用数据集","textPreview":"V1 是 Phase-3 的最小可用数据集","textChars":21,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/d8bat47y","slide":4,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/29gr2p8n","slide":4,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/vu9knih4","slide":4,"bbox":[88,178,720,76]}
+{"kind":"textbox","id":"sh/kf6dcbul","slide":4,"text":"锚点样本 = 受体界面 + 真实肽结合构象","textPreview":"锚点样本 = 受体界面 + 真实肽结合构象","textChars":21,"textLines":1,"bbox":[106,194,684,48]}
+{"kind":"shape","id":"sh/d0z61032","slide":4,"bbox":[88,290,520,150]}
+{"kind":"shape","id":"sh/2x4nap4r","slide":4,"bbox":[88,290,7,150]}
+{"kind":"textbox","id":"sh/vixczed8","slide":4,"text":"V1 只生成一种训练监督边","textPreview":"V1 只生成一种训练监督边","textChars":13,"textLines":1,"bbox":[108,306,482,32]}
+{"kind":"textbox","id":"sh/vmtwra5g","slide":4,"text":"强正样本：\n受体界面 <-> 真实肽结合构象","textPreview":"强正样本： | 受体界面 <-> 真实肽结合构象","textChars":22,"textLines":2,"bbox":[108,344,482,84]}
+{"kind":"shape","id":"sh/61032lsz","slide":4,"bbox":[660,290,480,150]}
+{"kind":"shape","id":"sh/dsji5sne","slide":4,"bbox":[660,290,7,150]}
+{"kind":"textbox","id":"sh/o7qpg3ex","slide":4,"text":"V1 的目的","textPreview":"V1 的目的","textChars":6,"textLines":1,"bbox":[680,306,442,32]}
+{"kind":"textbox","id":"sh/vy90je9c","slide":4,"text":"先建立一个干净问题：真实复合物里的受体界面和肽结合构象，能否作为 Phase-3 微调的有效强监督？","textPreview":"先建立一个干净问题：真实复合物里的受体界面和肽结合构象，能否作为 Phase-3 微调的有效强监督？","textChars":50,"textLines":1,"bbox":[680,344,442,84]}
+{"kind":"textbox","id":"sh/6dcbulwv","slide":4,"text":"V1 不做","textPreview":"V1 不做","textChars":5,"textLines":1,"bbox":[88,492,160,30]}
+{"kind":"textbox","id":"sh/d4vmtwra","slide":4,"text":"同簇弱正样本 / 构象困难负样本 / 相似序列先验 / 模体先验 / 多正样本损失 / 排序损失","textPreview":"同簇弱正样本 / 构象困难负样本 / 相似序列先验 / 模体先验 / 多正样本损失 / 排序损失","textChars":48,"textLines":1,"bbox":[248,493,880,64]}
+{"kind":"notes","id":"nt/9cx1y7","slide":4,"text":""}
+{"kind":"slide","id":"sl/tlz60s","slide":5,"title":"PepCLIP Phase-3","textShapes":15}
+{"kind":"textbox","id":"sh/tsvu9kni","slide":5,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/m1cfa9w3","slide":5,"text":"第一步：收集真实受体-肽复合物候选","textPreview":"第一步：收集真实受体-肽复合物候选","textChars":17,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/bm58z25k","slide":5,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/4vmtwra5","slide":5,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/tgfmlkjm","slide":5,"bbox":[72,168,620,58]}
+{"kind":"textbox","id":"sh/mp0bi9s3","slide":5,"text":"优先数据源","textPreview":"优先数据源","textChars":5,"textLines":1,"bbox":[82,177,240,46]}
+{"kind":"textbox","id":"sh/bat47y1k","slide":5,"text":"原因","textPreview":"原因","textChars":2,"textLines":1,"bbox":[342,177,340,46]}
+{"kind":"shape","id":"sh/4nap4r65","slide":5,"bbox":[72,226,620,58]}
+{"kind":"textbox","id":"sh/t83itgfm","slide":5,"text":"Q-BioLiP / BioLiP","textPreview":"Q-BioLiP / BioLiP","textChars":17,"textLines":1,"bbox":[82,234,240,46]}
+{"kind":"textbox","id":"sh/9gr2p8nq","slide":5,"text":"已有受体-肽复合物注释","textPreview":"已有受体-肽复合物注释","textChars":11,"textLines":1,"bbox":[342,234,340,46]}
+{"kind":"shape","id":"sh/gvy90je9","slide":5,"bbox":[72,284,620,58]}
+{"kind":"textbox","id":"sh/ra5gbq1o","slide":5,"text":"PepBDB / Propedia","textPreview":"PepBDB / Propedia","textChars":17,"textLines":1,"bbox":[82,292,240,46]}
+{"kind":"textbox","id":"sh/2p8nqxs7","slide":5,"text":"补充真实肽结合结构","textPreview":"补充真实肽结合结构","textChars":9,"textLines":1,"bbox":[342,292,340,46]}
+{"kind":"shape","id":"sh/94fu18jq","slide":5,"bbox":[72,342,620,58]}
+{"kind":"textbox","id":"sh/kjm1cfa9","slide":5,"text":"PDB 蛋白-肽记录","textPreview":"PDB 蛋白-肽记录","textChars":10,"textLines":1,"bbox":[82,350,240,46]}
+{"kind":"textbox","id":"sh/r2p8nqxs","slide":5,"text":"作为结构级候选来源","textPreview":"作为结构级候选来源","textChars":9,"textLines":1,"bbox":[342,350,340,46]}
+{"kind":"shape","id":"sh/2hwfyxob","slide":5,"bbox":[730,168,430,210]}
+{"kind":"shape","id":"sh/9w3m94fu","slide":5,"bbox":[730,168,7,210]}
+{"kind":"textbox","id":"sh/kb6xkf6d","slide":5,"text":"每条候选记录需要包含","textPreview":"每条候选记录需要包含","textChars":10,"textLines":1,"bbox":[750,184,392,32]}
+{"kind":"textbox","id":"sh/0z61032l","slide":5,"text":"来源数据库、来源编号、PDB 编号、生物组装编号、结构文件、受体链、肽链、残基范围、来源可信度。","textPreview":"来源数据库、来源编号、PDB 编号、生物组装编号、结构文件、受体链、肽链、残基范围、来源可信度。","textChars":48,"textLines":1,"bbox":[750,222,392,144]}
+{"kind":"shape","id":"sh/pkzupwb2","slide":5,"bbox":[730,416,430,150]}
+{"kind":"shape","id":"sh/itgfmlkj","slide":5,"bbox":[730,416,7,150]}
+{"kind":"textbox","id":"sh/7ed8bat4","slide":5,"text":"不优先使用","textPreview":"不优先使用","textChars":5,"textLines":1,"bbox":[750,432,392,32]}
+{"kind":"textbox","id":"sh/0nuxc3yl","slide":5,"text":"只有肽序列、只有活性信息、没有明确受体结合结构、没有受体链-肽链对应关系的数据。","textPreview":"只有肽序列、只有活性信息、没有明确受体结合结构、没有受体链-肽链对应关系的数据。","textChars":40,"textLines":1,"bbox":[750,470,392,84]}
+{"kind":"notes","id":"nt/tlz60s","slide":5,"text":""}
+{"kind":"slide","id":"sl/2hq3lf","slide":6,"title":"PepCLIP Phase-3","textShapes":27}
+{"kind":"textbox","id":"sh/epkzupwb","slide":6,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/pg3ex0nu","slide":6,"text":"V1 数据集构建流水线","textPreview":"V1 数据集构建流水线","textChars":11,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/wval87ed","slide":6,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/7mp0bi9s","slide":6,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/e1w7mp0b","slide":6,"bbox":[72,164,272,129.33]}
+{"kind":"textbox","id":"sh/psfil0rq","slide":6,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[86,176,44,26]}
+{"kind":"textbox","id":"sh/w7mp0bi9","slide":6,"text":"收集真实复合物候选","textPreview":"收集真实复合物候选","textChars":9,"textLines":1,"bbox":[128,176,202,109.33]}
+{"kind":"shape","id":"sh/7u54zido","slide":6,"bbox":[360,164,272,129.33]}
+{"kind":"textbox","id":"sh/ed8bat47","slide":6,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[374,176,44,26]}
+{"kind":"textbox","id":"sh/onyd0z61","slide":6,"text":"多数据库候选去重","textPreview":"多数据库候选去重","textChars":8,"textLines":1,"bbox":[416,176,202,109.33]}
+{"kind":"shape","id":"sh/d8v6psfi","slide":6,"bbox":[648,164,272,129.33]}
+{"kind":"textbox","id":"sh/6hcrmhk3","slide":6,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[662,176,44,26]}
+{"kind":"textbox","id":"sh/z25kb6xk","slide":6,"text":"重建生物组装结构","textPreview":"重建生物组装结构","textChars":8,"textLines":1,"bbox":[704,176,202,109.33]}
+{"kind":"shape","id":"sh/ovahoza1","slide":6,"bbox":[936,164,272,129.33]}
+{"kind":"textbox","id":"sh/dg7adsji","slide":6,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[950,176,44,26]}
+{"kind":"textbox","id":"sh/6tovahoz","slide":6,"text":"定位受体链 / 肽链","textPreview":"定位受体链 / 肽链","textChars":10,"textLines":1,"bbox":[992,176,202,109.33]}
+{"kind":"shape","id":"sh/vahoza1g","slide":6,"bbox":[72,309.33,272,129.33]}
+{"kind":"textbox","id":"sh/o7qpg3ex","slide":6,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[86,321.33,44,26]}
+{"kind":"textbox","id":"sh/dsji5sne","slide":6,"text":"过滤肽链","textPreview":"过滤肽链","textChars":4,"textLines":1,"bbox":[128,321.33,202,109.33]}
+{"kind":"shape","id":"sh/hk3q5o7q","slide":6,"bbox":[360,309.33,272,129.33]}
+{"kind":"textbox","id":"sh/oza1gvy9","slide":6,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[374,321.33,44,26]}
+{"kind":"textbox","id":"sh/zed8v6ps","slide":6,"text":"验证受体-肽接触","textPreview":"验证受体-肽接触","textChars":8,"textLines":1,"bbox":[416,321.33,202,109.33]}
+{"kind":"shape","id":"sh/6xkf6dcb","slide":6,"bbox":[648,309.33,272,129.33]}
+{"kind":"textbox","id":"sh/hwfyxobm","slide":6,"text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[662,321.33,44,26]}
+{"kind":"textbox","id":"sh/obm58z25","slide":6,"text":"定义受体界面","textPreview":"定义受体界面","textChars":6,"textLines":1,"bbox":[704,321.33,202,109.33]}
+{"kind":"shape","id":"sh/zqtcj6to","slide":6,"bbox":[936,309.33,272,129.33]}
+{"kind":"textbox","id":"sh/65wjudg7","slide":6,"text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[950,321.33,44,26]}
+{"kind":"textbox","id":"sh/h0fepkzu","slide":6,"text":"提取真实结合构象","textPreview":"提取真实结合构象","textChars":8,"textLines":1,"bbox":[992,321.33,202,109.33]}
+{"kind":"shape","id":"sh/sfil0rqd","slide":6,"bbox":[72,454.67,272,129.33]}
+{"kind":"textbox","id":"sh/ixczed8v","slide":6,"text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[86,466.67,44,26]}
+{"kind":"textbox","id":"sh/bi9s36hc","slide":6,"text":"质量检查与锚点生成","textPreview":"质量检查与锚点生成","textChars":9,"textLines":1,"bbox":[128,466.67,202,109.33]}
+{"kind":"shape","id":"sh/032lszqt","slide":6,"bbox":[360,454.67,272,129.33]}
+{"kind":"textbox","id":"sh/tovahoza","slide":6,"text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[374,466.67,44,26]}
+{"kind":"textbox","id":"sh/i9s36hcr","slide":6,"text":"防泄露划分","textPreview":"防泄露划分","textChars":5,"textLines":1,"bbox":[416,466.67,202,109.33]}
+{"kind":"shape","id":"sh/bulwval8","slide":6,"bbox":[648,454.67,272,129.33]}
+{"kind":"textbox","id":"sh/0fepkzup","slide":6,"text":"11","textPreview":"11","textChars":2,"textLines":1,"bbox":[662,466.67,44,26]}
+{"kind":"textbox","id":"sh/p0bi9s36","slide":6,"text":"导出训练数据 A / B","textPreview":"导出训练数据 A / B","textChars":12,"textLines":1,"bbox":[704,466.67,202,109.33]}
+{"kind":"shape","id":"sh/idonyd0z","slide":6,"bbox":[936,454.67,272,129.33]}
+{"kind":"textbox","id":"sh/byhgn29g","slide":6,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[950,466.67,44,26]}
+{"kind":"textbox","id":"sh/fil0rqd4","slide":6,"text":"生成数据集审计","textPreview":"生成数据集审计","textChars":7,"textLines":1,"bbox":[992,466.67,202,109.33]}
+{"kind":"notes","id":"nt/2hq3lf","slide":6,"text":""}
+{"kind":"slide","id":"sl/stvv7h","slide":7,"title":"PepCLIP Phase-3","textShapes":9}
+{"kind":"textbox","id":"sh/u18jqh0f","slide":7,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/1orytsvu","slide":7,"text":"V1 步骤 1-2：候选收集与去重","textPreview":"V1 步骤 1-2：候选收集与去重","textChars":17,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/c7u54zid","slide":7,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/judg7ads","slide":7,"text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/u9knih4b","slide":7,"bbox":[72,170,520,178]}
+{"kind":"shape","id":"sh/1032lszq","slide":7,"bbox":[72,170,7,178]}
+{"kind":"textbox","id":"sh/cfa9w3m9","slide":7,"text":"步骤 1：候选收集","textPreview":"步骤 1：候选收集","textChars":9,"textLines":1,"bbox":[92,186,482,32]}
+{"kind":"textbox","id":"sh/nyd0z610","slide":7,"text":"每条记录必须能定位到 PDB 编号、生物组装编号、受体链、肽链、肽序列 / 残基范围和结构文件。","textPreview":"每条记录必须能定位到 PDB 编号、生物组装编号、受体链、肽链、肽序列 / 残基范围和结构文件。","textChars":48,"textLines":1,"bbox":[92,224,482,112]}
+{"kind":"shape","id":"sh/udg7adsj","slide":7,"bbox":[72,388,520,178]}
+{"kind":"shape","id":"sh/czed8v6p","slide":7,"bbox":[72,388,7,178]}
+{"kind":"textbox","id":"sh/5kb6xkf6","slide":7,"text":"步骤 2：多数据库去重","textPreview":"步骤 2：多数据库去重","textChars":11,"textLines":1,"bbox":[92,404,482,32]}
+{"kind":"textbox","id":"sh/ytsvu9kn","slide":7,"text":"最低去重键：PDB 编号 + 生物组装编号 + 受体链 + 肽链。同一个复合物只保留一条主记录，同时保存来源列表。","textPreview":"最低去重键：PDB 编号 + 生物组装编号 + 受体链 + 肽链。同一个复合物只保留一条主记录，同时保存来源列表。","textChars":57,"textLines":1,"bbox":[92,442,482,112]}
+{"kind":"shape","id":"sh/neloj2t8","slide":7,"bbox":[670,176,420,280]}
+{"kind":"textbox","id":"sh/cbulwval","slide":7,"text":"目的","textPreview":"目的","textChars":2,"textLines":1,"bbox":[704,210,220,34]}
+{"kind":"textbox","id":"sh/5sneloj2","slide":7,"text":"• 避免同一个锚点样本重复进入训练\n• 避免同一个真实复合物跨数据划分泄露\n• 保留多来源证据，便于后续审计","textPreview":"• 避免同一个锚点样本重复进入训练 | • 避免同一个真实复合物跨数据划分泄露 | • 保留多来源证据，便于后续审计","textChars":54,"textLines":3,"bbox":[704,270,330,142]}
+{"kind":"notes","id":"nt/stvv7h","slide":7,"text":""}
+{"kind":"slide","id":"sl/4mqdmm","slide":8,"title":"PepCLIP Phase-3","textShapes":15}
+{"kind":"textbox","id":"sh/ed8v6psf","slide":8,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/p4r65wju","slide":8,"text":"V1 步骤 3-5：结构重建与肽链过滤","textPreview":"V1 步骤 3-5：结构重建与肽链过滤","textChars":19,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/wjudg7ad","slide":8,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/7qpg3ex0","slide":8,"text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/i5sneloj","slide":8,"bbox":[72,166,520,176]}
+{"kind":"shape","id":"sh/pwb2hwfy","slide":8,"bbox":[72,166,7,176]}
+{"kind":"textbox","id":"sh/0bi9s36h","slide":8,"text":"步骤 3：生物组装结构","textPreview":"步骤 3：生物组装结构","textChars":11,"textLines":1,"bbox":[92,182,482,32]}
+{"kind":"textbox","id":"sh/7ed8bat4","slide":8,"text":"读取 PDB/mmCIF -> 使用生物组装结构 -> 定位受体链和肽链。避免非对称单元带来的晶体接触误判。","textPreview":"读取 PDB/mmCIF -> 使用生物组装结构 -> 定位受体链和肽链。避免非对称单元带来的晶体接触误判。","textChars":54,"textLines":1,"bbox":[92,220,482,110]}
+{"kind":"shape","id":"sh/itgfmlkj","slide":8,"bbox":[72,382,520,176]}
+{"kind":"shape","id":"sh/cvixczed","slide":8,"bbox":[72,382,7,176]}
+{"kind":"textbox","id":"sh/5gbq1ory","slide":8,"text":"步骤 4：肽链过滤","textPreview":"步骤 4：肽链过滤","textChars":9,"textLines":1,"bbox":[92,398,482,32]}
+{"kind":"textbox","id":"sh/upwb2hwf","slide":8,"text":"只保留 8 <= 肽长度 <= 20；过滤残基不连续、主链缺失、非标准残基过多、缺失过多、非独立肽链等情况。","textPreview":"只保留 8 <= 肽长度 <= 20；过滤残基不连续、主链缺失、非标准残基过多、缺失过多、非独立肽链等情况。","textChars":54,"textLines":1,"bbox":[92,436,482,110]}
+{"kind":"shape","id":"sh/nap4r65w","slide":8,"bbox":[684,212,420,54]}
+{"kind":"textbox","id":"sh/cj6tovah","slide":8,"text":"长度","textPreview":"长度","textChars":2,"textLines":1,"bbox":[694,221,130,42]}
+{"kind":"textbox","id":"sh/54zidony","slide":8,"text":"长度分组","textPreview":"长度分组","textChars":4,"textLines":1,"bbox":[844,221,250,42]}
+{"kind":"shape","id":"sh/udg7adsj","slide":8,"bbox":[684,266,420,54]}
+{"kind":"textbox","id":"sh/nyd0z610","slide":8,"text":"8-10 aa","textPreview":"8-10 aa","textChars":7,"textLines":1,"bbox":[694,274,130,42]}
+{"kind":"textbox","id":"sh/cfa9w3m9","slide":8,"text":"短肽组","textPreview":"短肽组","textChars":3,"textLines":1,"bbox":[844,274,250,42]}
+{"kind":"shape","id":"sh/1032lszq","slide":8,"bbox":[684,320,420,54]}
+{"kind":"textbox","id":"sh/5sneloj2","slide":8,"text":"11-15 aa","textPreview":"11-15 aa","textChars":8,"textLines":1,"bbox":[694,328,130,42]}
+{"kind":"textbox","id":"sh/cbulwval","slide":8,"text":"中短肽组","textPreview":"中短肽组","textChars":4,"textLines":1,"bbox":[844,328,250,42]}
+{"kind":"shape","id":"sh/nqxs72x4","slide":8,"bbox":[684,374,420,54]}
+{"kind":"textbox","id":"sh/u54zidon","slide":8,"text":"16-20 aa","textPreview":"16-20 aa","textChars":8,"textLines":1,"bbox":[694,382,130,42]}
+{"kind":"textbox","id":"sh/5kb6xkf6","slide":8,"text":"中长肽组","textPreview":"中长肽组","textChars":4,"textLines":1,"bbox":[844,382,250,42]}
+{"kind":"notes","id":"nt/4mqdmm","slide":8,"text":""}
+{"kind":"slide","id":"sl/st55qw","slide":9,"title":"PepCLIP Phase-3","textShapes":9}
+{"kind":"textbox","id":"sh/dsji5sne","slide":9,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/61032lsz","slide":9,"text":"V1 步骤 6-7：接触验证与界面定义","textPreview":"V1 步骤 6-7：接触验证与界面定义","textChars":19,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/vmtwra5g","slide":9,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/oj2t83it","slide":9,"text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/d4vmtwra","slide":9,"bbox":[88,168,520,72]}
+{"kind":"textbox","id":"sh/6dcbulwv","slide":9,"text":"最小重原子距离 <= 5.0 A","textPreview":"最小重原子距离 <= 5.0 A","textChars":16,"textLines":1,"bbox":[106,184,484,44]}
+{"kind":"textbox","id":"sh/vy90je9c","slide":9,"text":"并按肽长度检查接触数量与界面残基数量。短肽接触数自然较少但每个残基更关键，中长肽需要更高接触数量保证真实界面。","textPreview":"并按肽长度检查接触数量与界面残基数量。短肽接触数自然较少但每个残基更关键，中长肽需要更高接触数量保证真实界面。","textChars":55,"textLines":1,"bbox":[88,268,520,116]}
+{"kind":"shape","id":"sh/onyd0z61","slide":9,"bbox":[680,168,430,130]}
+{"kind":"shape","id":"sh/d8v6psfi","slide":9,"bbox":[680,168,7,130]}
+{"kind":"textbox","id":"sh/twra5gbq","slide":9,"text":"5A 核心界面","textPreview":"5A 核心界面","textChars":7,"textLines":1,"bbox":[700,184,392,32]}
+{"kind":"textbox","id":"sh/4byhgn29","slide":9,"text":"受体中距离肽重原子 <= 5 A 的残基；用于质量控制和核心接触统计。","textPreview":"受体中距离肽重原子 <= 5 A 的残基；用于质量控制和核心接触统计。","textChars":35,"textLines":1,"bbox":[700,222,392,64]}
+{"kind":"shape","id":"sh/bq1oryts","slide":9,"bbox":[680,336,430,130]}
+{"kind":"shape","id":"sh/m58z25kb","slide":9,"bbox":[680,336,7,130]}
+{"kind":"textbox","id":"sh/t83itgfm","slide":9,"text":"10A 上下文区域","textPreview":"10A 上下文区域","textChars":9,"textLines":1,"bbox":[700,352,392,32]}
+{"kind":"textbox","id":"sh/4nap4r65","slide":9,"text":"受体中距离肽重原子 <= 10 A 的残基；用于模型输入，提供周围结构环境。","textPreview":"受体中距离肽重原子 <= 10 A 的残基；用于模型输入，提供周围结构环境。","textChars":38,"textLines":1,"bbox":[700,390,392,64]}
+{"kind":"notes","id":"nt/st55qw","slide":9,"text":""}
+{"kind":"slide","id":"sl/giyil5","slide":10,"title":"PepCLIP Phase-3","textShapes":9}
+{"kind":"textbox","id":"sh/dsji5sne","slide":10,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/61032lsz","slide":10,"text":"V1 步骤 8-9：真实结合构象与锚点样本","textPreview":"V1 步骤 8-9：真实结合构象与锚点样本","textChars":21,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/vmtwra5g","slide":10,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/oj2t83it","slide":10,"text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/d4vmtwra","slide":10,"bbox":[72,166,520,168]}
+{"kind":"shape","id":"sh/6dcbulwv","slide":10,"bbox":[72,166,7,168]}
+{"kind":"textbox","id":"sh/vy90je9c","slide":10,"text":"提取真实结合构象","textPreview":"提取真实结合构象","textChars":8,"textLines":1,"bbox":[92,182,482,32]}
+{"kind":"textbox","id":"sh/onyd0z61","slide":10,"text":"从真实复合物肽链中提取肽序列、主链坐标 N/CA/C/O、全部非氢重原子坐标。","textPreview":"从真实复合物肽链中提取肽序列、主链坐标 N/CA/C/O、全部非氢重原子坐标。","textChars":39,"textLines":1,"bbox":[92,220,482,102]}
+{"kind":"shape","id":"sh/d8v6psfi","slide":10,"bbox":[72,374,520,168]}
+{"kind":"shape","id":"sh/twra5gbq","slide":10,"bbox":[72,374,7,168]}
+{"kind":"textbox","id":"sh/4byhgn29","slide":10,"text":"质量检查失败则删除整个锚点","textPreview":"质量检查失败则删除整个锚点","textChars":13,"textLines":1,"bbox":[92,390,482,32]}
+{"kind":"textbox","id":"sh/bq1oryts","slide":10,"text":"主链原子缺失、残基不连续、序列对不上、缺失比例超标或坐标质量太差时，不保留该锚点样本。","textPreview":"主链原子缺失、残基不连续、序列对不上、缺失比例超标或坐标质量太差时，不保留该锚点样本。","textChars":43,"textLines":1,"bbox":[92,428,482,102]}
+{"kind":"shape","id":"sh/m58z25kb","slide":10,"bbox":[670,204,470,86]}
+{"kind":"textbox","id":"sh/t83itgfm","slide":10,"text":"锚点样本 = 受体界面 + 真实结合构象","textPreview":"锚点样本 = 受体界面 + 真实结合构象","textChars":20,"textLines":1,"bbox":[688,220,434,58]}
+{"kind":"textbox","id":"sh/4nap4r65","slide":10,"text":"不能删除真实结合构象后继续保留受体界面。V1 的强正样本标签就来自这个真实结合构象。","textPreview":"不能删除真实结合构象后继续保留受体界面。V1 的强正样本标签就来自这个真实结合构象。","textChars":42,"textLines":1,"bbox":[690,334,410,118]}
+{"kind":"notes","id":"nt/giyil5","slide":10,"text":""}
+{"kind":"slide","id":"sl/a5lx5k","slide":11,"title":"PepCLIP Phase-3","textShapes":16}
+{"kind":"textbox","id":"sh/w3m94fu1","slide":11,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/3itgfmlk","slide":11,"text":"V1 步骤 10：数据划分与防泄露","textPreview":"V1 步骤 10：数据划分与防泄露","textChars":17,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/ex0nuxc3","slide":11,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/lwval87e","slide":11,"text":"11","textPreview":"11","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"textbox","id":"sh/wb2hwfyx","slide":11,"text":"为什么不能随机切配对","textPreview":"为什么不能随机切配对","textChars":10,"textLines":1,"bbox":[72,168,380,34]}
+{"kind":"textbox","id":"sh/3q5o7qpg","slide":11,"text":"• 同一肽序列可能同时出现在训练集和测试集\n• 同一受体家族可能同时出现在训练集和测试集\n• 同一 PDB 或高度相似结构可能跨划分泄露","textPreview":"• 同一肽序列可能同时出现在训练集和测试集 | • 同一受体家族可能同时出现在训练集和测试集 | • 同一 PDB 或高度相似结构可能跨划分泄露","textChars":68,"textLines":3,"bbox":[72,224,520,150]}
+{"kind":"shape","id":"sh/e9cvixcz","slide":11,"bbox":[650,168,500,52]}
+{"kind":"textbox","id":"sh/l87ed8ba","slide":11,"text":"推荐划分层级","textPreview":"推荐划分层级","textChars":6,"textLines":1,"bbox":[660,177,190,40]}
+{"kind":"textbox","id":"sh/sneloj2t","slide":11,"text":"作用","textPreview":"作用","textChars":2,"textLines":1,"bbox":[870,177,270,40]}
+{"kind":"shape","id":"sh/qd4vmtwr","slide":11,"bbox":[650,220,500,52]}
+{"kind":"textbox","id":"sh/fyxobm58","slide":11,"text":"配对级划分","textPreview":"配对级划分","textChars":5,"textLines":1,"bbox":[660,228,190,40]}
+{"kind":"textbox","id":"sh/8jqh0fep","slide":11,"text":"基础合理性检查","textPreview":"基础合理性检查","textChars":7,"textLines":1,"bbox":[870,228,270,40]}
+{"kind":"shape","id":"sh/x4nap4r6","slide":11,"bbox":[650,272,500,52]}
+{"kind":"textbox","id":"sh/qpg3ex0n","slide":11,"text":"肽精确序列划分","textPreview":"肽精确序列划分","textChars":7,"textLines":1,"bbox":[660,280,190,40]}
+{"kind":"textbox","id":"sh/fa9w3m94","slide":11,"text":"避免同序列泄露","textPreview":"避免同序列泄露","textChars":7,"textLines":1,"bbox":[870,280,270,40]}
+{"kind":"shape","id":"sh/8v6psfil","slide":11,"bbox":[650,324,500,52]}
+{"kind":"textbox","id":"sh/xczed8v6","slide":11,"text":"受体家族划分","textPreview":"受体家族划分","textChars":6,"textLines":1,"bbox":[660,332,190,40]}
+{"kind":"textbox","id":"sh/qtcj6tov","slide":11,"text":"避免受体家族泄露","textPreview":"避免受体家族泄露","textChars":8,"textLines":1,"bbox":[870,332,270,40]}
+{"kind":"shape","id":"sh/je9cvixc","slide":11,"bbox":[650,376,500,52]}
+{"kind":"textbox","id":"sh/rqd4vmtw","slide":11,"text":"严格划分","textPreview":"严格划分","textChars":4,"textLines":1,"bbox":[660,384,190,40]}
+{"kind":"textbox","id":"sh/25kb6xkf","slide":11,"text":"同时控制肽和受体相似性","textPreview":"同时控制肽和受体相似性","textChars":11,"textLines":1,"bbox":[870,384,270,40]}
+{"kind":"shape","id":"sh/9w3m94fu","slide":11,"bbox":[72,470,1000,76]}
+{"kind":"textbox","id":"sh/kb6xkf6d","slide":11,"text":"每个样本保存：划分分组 / 所属集合 / 肽序列键 / 受体家族键 / PDB 键","textPreview":"每个样本保存：划分分组 / 所属集合 / 肽序列键 / 受体家族键 / PDB 键","textChars":41,"textLines":1,"bbox":[90,486,964,48]}
+{"kind":"notes","id":"nt/a5lx5k","slide":11,"text":""}
+{"kind":"slide","id":"sl/b70qdz","slide":12,"title":"PepCLIP Phase-3","textShapes":20}
+{"kind":"textbox","id":"sh/gn29gr2p","slide":12,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/n29gr2p8","slide":12,"text":"V1 输出表与训练入口","textPreview":"V1 输出表与训练入口","textChars":11,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/yhgn29gr","slide":12,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/5wjudg7a","slide":12,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/gbq1oryt","slide":12,"bbox":[72,164,760,48]}
+{"kind":"textbox","id":"sh/nuxc3ylc","slide":12,"text":"输出","textPreview":"输出","textChars":2,"textLines":1,"bbox":[82,173,310,36]}
+{"kind":"textbox","id":"sh/y90je9cv","slide":12,"text":"作用","textPreview":"作用","textChars":2,"textLines":1,"bbox":[412,173,410,36]}
+{"kind":"shape","id":"sh/5sneloj2","slide":12,"bbox":[72,212,760,48]}
+{"kind":"textbox","id":"sh/cbulwval","slide":12,"text":"receptor_peptide_pair.jsonl","textPreview":"receptor_peptide_pair.jsonl","textChars":27,"textLines":1,"bbox":[82,220,310,36]}
+{"kind":"textbox","id":"sh/e9cvixcz","slide":12,"text":"锚点 / 受体 / 肽配对信息","textPreview":"锚点 / 受体 / 肽配对信息","textChars":15,"textLines":1,"bbox":[412,220,410,36]}
+{"kind":"shape","id":"sh/3q5o7qpg","slide":12,"bbox":[72,260,760,48]}
+{"kind":"textbox","id":"sh/wb2hwfyx","slide":12,"text":"peptide_conformer_evidence.jsonl","textPreview":"peptide_conformer_evidence.jsonl","textChars":32,"textLines":1,"bbox":[82,268,310,36]}
+{"kind":"textbox","id":"sh/lwval87e","slide":12,"text":"真实结合构象证据","textPreview":"真实结合构象证据","textChars":8,"textLines":1,"bbox":[412,268,410,36]}
+{"kind":"shape","id":"sh/ex0nuxc3","slide":12,"bbox":[72,308,760,48]}
+{"kind":"textbox","id":"sh/3itgfmlk","slide":12,"text":"conformer_cluster.jsonl","textPreview":"conformer_cluster.jsonl","textChars":23,"textLines":1,"bbox":[82,316,310,36]}
+{"kind":"textbox","id":"sh/w3m94fu1","slide":12,"text":"结合构象的初始聚类 / 相似性信息","textPreview":"结合构象的初始聚类 / 相似性信息","textChars":17,"textLines":1,"bbox":[412,316,410,36]}
+{"kind":"shape","id":"sh/loj2t83i","slide":12,"bbox":[72,356,760,48]}
+{"kind":"textbox","id":"sh/at47y1kr","slide":12,"text":"track_a_<split>.jsonl","textPreview":"track_a_<split>.jsonl","textChars":21,"textLines":1,"bbox":[82,364,310,36]}
+{"kind":"textbox","id":"sh/3ex0nuxc","slide":12,"text":"序列侧 / 受体侧训练输入","textPreview":"序列侧 / 受体侧训练输入","textChars":13,"textLines":1,"bbox":[412,364,410,36]}
+{"kind":"shape","id":"sh/z25kb6xk","slide":12,"bbox":[72,404,760,48]}
+{"kind":"textbox","id":"sh/6hcrmhk3","slide":12,"text":"track_b_<split>.jsonl","textPreview":"track_b_<split>.jsonl","textChars":21,"textLines":1,"bbox":[82,412,310,36]}
+{"kind":"textbox","id":"sh/d8v6psfi","slide":12,"text":"构象侧 / 三维训练输入","textPreview":"构象侧 / 三维训练输入","textChars":12,"textLines":1,"bbox":[412,412,410,36]}
+{"kind":"shape","id":"sh/onyd0z61","slide":12,"bbox":[72,452,760,48]}
+{"kind":"textbox","id":"sh/vahoza1g","slide":12,"text":"dataset_audit.json","textPreview":"dataset_audit.json","textChars":18,"textLines":1,"bbox":[82,460,310,36]}
+{"kind":"textbox","id":"sh/6tovahoz","slide":12,"text":"数量、过滤、划分统计、泄露检查","textPreview":"数量、过滤、划分统计、泄露检查","textChars":15,"textLines":1,"bbox":[412,460,410,36]}
+{"kind":"shape","id":"sh/dg7adsji","slide":12,"bbox":[868,198,324,184]}
+{"kind":"shape","id":"sh/ovahoza1","slide":12,"bbox":[868,198,7,184]}
+{"kind":"textbox","id":"sh/vmtwra5g","slide":12,"text":"V1 训练与评估","textPreview":"V1 训练与评估","textChars":8,"textLines":1,"bbox":[896,224,250,30]}
+{"kind":"textbox","id":"sh/61032lsz","slide":12,"text":"训练集：\n只用强正样本\n\n验证/测试集：\n只用强正样本","textPreview":"训练集： | 只用强正样本 |  | 验证/测试集： | 只用强正样本","textChars":27,"textLines":5,"bbox":[896,268,260,100]}
+{"kind":"shape","id":"sh/cbulwval","slide":12,"bbox":[868,416,324,124]}
+{"kind":"textbox","id":"sh/5sneloj2","slide":12,"text":"V1 的成果是一套可以训练、可以评估、可以审计的真实结构强监督数据集。","textPreview":"V1 的成果是一套可以训练、可以评估、可以审计的真实结构强监督数据集。","textChars":35,"textLines":1,"bbox":[896,438,260,76]}
+{"kind":"notes","id":"nt/b70qdz","slide":12,"text":""}
+{"kind":"slide","id":"sl/26muzc","slide":13,"title":"PepCLIP Phase-3","textShapes":11}
+{"kind":"textbox","id":"sh/dsji5sne","slide":13,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/61032lsz","slide":13,"text":"V1.5：完全同序列构象证据层","textPreview":"V1.5：完全同序列构象证据层","textChars":15,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/vmtwra5g","slide":13,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/oj2t83it","slide":13,"text":"13","textPreview":"13","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/d4vmtwra","slide":13,"bbox":[72,168,330,150]}
+{"kind":"shape","id":"sh/6dcbulwv","slide":13,"bbox":[72,168,7,150]}
+{"kind":"textbox","id":"sh/vy90je9c","slide":13,"text":"输入","textPreview":"输入","textChars":2,"textLines":1,"bbox":[92,184,292,32]}
+{"kind":"textbox","id":"sh/onyd0z61","slide":13,"text":"V1 锚点样本\nV1 真实结合构象\nPDB 序列与 mmCIF 精确匹配证据","textPreview":"V1 锚点样本 | V1 真实结合构象 | PDB 序列与 mmCIF 精确匹配证据","textChars":38,"textLines":3,"bbox":[92,222,292,84]}
+{"kind":"shape","id":"sh/d8v6psfi","slide":13,"bbox":[450,168,370,150]}
+{"kind":"shape","id":"sh/twra5gbq","slide":13,"bbox":[450,168,7,150]}
+{"kind":"textbox","id":"sh/4byhgn29","slide":13,"text":"处理","textPreview":"处理","textChars":2,"textLines":1,"bbox":[470,184,332,32]}
+{"kind":"textbox","id":"sh/bq1oryts","slide":13,"text":"对每个锚点肽序列搜索完全同序列构象：序列一致、覆盖完整、长度相同、无缺口。","textPreview":"对每个锚点肽序列搜索完全同序列构象：序列一致、覆盖完整、长度相同、无缺口。","textChars":37,"textLines":1,"bbox":[470,222,332,84]}
+{"kind":"shape","id":"sh/m58z25kb","slide":13,"bbox":[868,168,300,150]}
+{"kind":"shape","id":"sh/t83itgfm","slide":13,"bbox":[868,168,7,150]}
+{"kind":"textbox","id":"sh/4nap4r65","slide":13,"text":"硬规则","textPreview":"硬规则","textChars":3,"textLines":1,"bbox":[888,184,262,32]}
+{"kind":"textbox","id":"sh/b2hwfyxo","slide":13,"text":"同序列构象池 = 真实结合构象 + 外部完全同序列构象","textPreview":"同序列构象池 = 真实结合构象 + 外部完全同序列构象","textChars":27,"textLines":1,"bbox":[888,222,262,84]}
+{"kind":"shape","id":"sh/mhk3q5o7","slide":13,"bbox":[72,384,1050,104]}
+{"kind":"textbox","id":"sh/tgfmlkjm","slide":13,"text":"输出：外部精确匹配构象 / 肽构象证据 / 构象聚类 / 真实结合构象到聚类的映射 / 构象挖掘摘要 / 数据集审计","textPreview":"输出：外部精确匹配构象 / 肽构象证据 / 构象聚类 / 真实结合构象到聚类的映射 / 构象挖掘摘要 / 数据集审计","textChars":58,"textLines":1,"bbox":[90,400,1014,76]}
+{"kind":"textbox","id":"sh/4vmtwra5","slide":13,"text":"V1.5 默认只做覆盖率、聚类质量、真实构象映射和泄露审计，为 V2 做准备。","textPreview":"V1.5 默认只做覆盖率、聚类质量、真实构象映射和泄露审计，为 V2 做准备。","textChars":39,"textLines":1,"bbox":[72,526,980,42]}
+{"kind":"notes","id":"nt/26muzc","slide":13,"text":""}
+{"kind":"slide","id":"sl/9tkqu8","slide":14,"title":"PepCLIP Phase-3","textShapes":14}
+{"kind":"textbox","id":"sh/2x4nap4r","slide":14,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/donyd0z6","slide":14,"text":"V2：构象增强训练怎么接入","textPreview":"V2：构象增强训练怎么接入","textChars":13,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/k3q5o7qp","slide":14,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/val87ed8","slide":14,"text":"14","textPreview":"14","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/6psfil0r","slide":14,"bbox":[72,168,330,190]}
+{"kind":"shape","id":"sh/dcbulwva","slide":14,"bbox":[72,168,7,190]}
+{"kind":"textbox","id":"sh/kre1w7mp","slide":14,"text":"V2 输入","textPreview":"V2 输入","textChars":5,"textLines":1,"bbox":[92,184,292,32]}
+{"kind":"textbox","id":"sh/v6psfil0","slide":14,"text":"V1 锚点样本\nV1.5 同序列构象池\n完全同序列构象聚类\n真实结合构象所属聚类","textPreview":"V1 锚点样本 | V1.5 同序列构象池 | 完全同序列构象聚类 | 真实结合构象所属聚类","textChars":40,"textLines":4,"bbox":[92,222,292,124]}
+{"kind":"shape","id":"sh/2lszqtcj","slide":14,"bbox":[450,168,700,68]}
+{"kind":"textbox","id":"sh/szqtcj6t","slide":14,"text":"监督边","textPreview":"监督边","textChars":3,"textLines":1,"bbox":[460,177,230,56]}
+{"kind":"textbox","id":"sh/lkjm1cfa","slide":14,"text":"来源与训练语义","textPreview":"来源与训练语义","textChars":7,"textLines":1,"bbox":[710,177,430,56]}
+{"kind":"shape","id":"sh/at47y1kr","slide":14,"bbox":[450,236,700,68]}
+{"kind":"textbox","id":"sh/3ex0nuxc","slide":14,"text":"强正样本","textPreview":"强正样本","textChars":4,"textLines":1,"bbox":[460,244,230,56]}
+{"kind":"textbox","id":"sh/sneloj2t","slide":14,"text":"真实结合构象；权重 = 1.0","textPreview":"真实结合构象；权重 = 1.0","textChars":15,"textLines":1,"bbox":[710,244,430,56]}
+{"kind":"shape","id":"sh/l87ed8ba","slide":14,"bbox":[450,304,700,68]}
+{"kind":"textbox","id":"sh/ahoza1gv","slide":14,"text":"同簇弱正样本","textPreview":"同簇弱正样本","textChars":6,"textLines":1,"bbox":[460,312,230,56]}
+{"kind":"textbox","id":"sh/32lszqtc","slide":14,"text":"同序列 + 同构象簇；只用于训练；权重 0.3-0.5","textPreview":"同序列 + 同构象簇；只用于训练；权重 0.3-0.5","textChars":27,"textLines":1,"bbox":[710,312,430,56]}
+{"kind":"shape","id":"sh/wb2hwfyx","slide":14,"bbox":[450,372,700,68]}
+{"kind":"textbox","id":"sh/lwval87e","slide":14,"text":"构象困难负样本","textPreview":"构象困难负样本","textChars":7,"textLines":1,"bbox":[460,380,230,56]}
+{"kind":"textbox","id":"sh/pkzupwb2","slide":14,"text":"同序列 + 不同构象簇；只用于训练；只进排序损失","textPreview":"同序列 + 不同构象簇；只用于训练；只进排序损失","textChars":24,"textLines":1,"bbox":[710,380,430,56]}
+{"kind":"textbox","id":"sh/0z61032l","slide":14,"text":"V2 不重新定义正样本来源。真实强正样本仍来自 V1 的真实结合构象；V2 只是在其周围增加同序列构象增强。","textPreview":"V2 不重新定义正样本来源。真实强正样本仍来自 V1 的真实结合构象；V2 只是在其周围增加同序列构象增强。","textChars":54,"textLines":1,"bbox":[72,450,960,76]}
+{"kind":"notes","id":"nt/9tkqu8","slide":14,"text":""}
+{"kind":"slide","id":"sl/fmzzrj","slide":15,"title":"PepCLIP Phase-3","textShapes":21}
+{"kind":"textbox","id":"sh/loj2t83i","slide":15,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/ex0nuxc3","slide":15,"text":"V2 的训练改变在损失函数，不在 V1 强监督定义","textPreview":"V2 的训练改变在损失函数，不在 V1 强监督定义","textChars":25,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/3itgfmlk","slide":15,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/wb2hwfyx","slide":15,"text":"15","textPreview":"15","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/lwval87e","slide":15,"bbox":[72,162,1060,76]}
+{"kind":"textbox","id":"sh/e9cvixcz","slide":15,"text":"总损失 = 一维序列检索损失 + 三维多正样本损失 + 融合多正样本损失 + 构象排序损失","textPreview":"总损失 = 一维序列检索损失 + 三维多正样本损失 + 融合多正样本损失 + 构象排序损失","textChars":45,"textLines":1,"bbox":[90,178,1024,48]}
+{"kind":"shape","id":"sh/3q5o7qpg","slide":15,"bbox":[72,286,840,52]}
+{"kind":"textbox","id":"sh/sneloj2t","slide":15,"text":"分支","textPreview":"分支","textChars":2,"textLines":1,"bbox":[82,295,170,40]}
+{"kind":"textbox","id":"sh/l87ed8ba","slide":15,"text":"使用样本","textPreview":"使用样本","textChars":4,"textLines":1,"bbox":[272,295,390,40]}
+{"kind":"textbox","id":"sh/5kb6xkf6","slide":15,"text":"损失","textPreview":"损失","textChars":2,"textLines":1,"bbox":[682,295,220,40]}
+{"kind":"shape","id":"sh/czed8v6p","slide":15,"bbox":[72,338,840,52]}
+{"kind":"textbox","id":"sh/neloj2t8","slide":15,"text":"一维序列分支","textPreview":"一维序列分支","textChars":6,"textLines":1,"bbox":[82,346,170,40]}
+{"kind":"textbox","id":"sh/ytsvu9kn","slide":15,"text":"只用强正样本","textPreview":"只用强正样本","textChars":6,"textLines":1,"bbox":[272,346,390,40]}
+{"kind":"textbox","id":"sh/5sneloj2","slide":15,"text":"普通对比学习","textPreview":"普通对比学习","textChars":6,"textLines":1,"bbox":[682,346,220,40]}
+{"kind":"shape","id":"sh/cbulwval","slide":15,"bbox":[72,390,840,52]}
+{"kind":"textbox","id":"sh/nqxs72x4","slide":15,"text":"三维构象分支","textPreview":"三维构象分支","textChars":6,"textLines":1,"bbox":[82,398,170,40]}
+{"kind":"textbox","id":"sh/u54zidon","slide":15,"text":"强正样本 + 同簇弱正样本","textPreview":"强正样本 + 同簇弱正样本","textChars":13,"textLines":1,"bbox":[272,398,390,40]}
+{"kind":"textbox","id":"sh/5wjudg7a","slide":15,"text":"多正样本对比学习","textPreview":"多正样本对比学习","textChars":8,"textLines":1,"bbox":[682,398,220,40]}
+{"kind":"shape","id":"sh/gbq1oryt","slide":15,"bbox":[72,442,840,52]}
+{"kind":"textbox","id":"sh/cj6tovah","slide":15,"text":"融合分支","textPreview":"融合分支","textChars":4,"textLines":1,"bbox":[82,450,170,40]}
+{"kind":"textbox","id":"sh/54zidony","slide":15,"text":"强正样本 + 同簇弱正样本","textPreview":"强正样本 + 同簇弱正样本","textChars":13,"textLines":1,"bbox":[272,450,390,40]}
+{"kind":"textbox","id":"sh/udg7adsj","slide":15,"text":"多正样本对比学习","textPreview":"多正样本对比学习","textChars":8,"textLines":1,"bbox":[682,450,220,40]}
+{"kind":"shape","id":"sh/nyd0z610","slide":15,"bbox":[72,494,840,52]}
+{"kind":"textbox","id":"sh/cvixczed","slide":15,"text":"排序分支","textPreview":"排序分支","textChars":4,"textLines":1,"bbox":[82,502,170,40]}
+{"kind":"textbox","id":"sh/5gbq1ory","slide":15,"text":"真实结合构象 vs 同序列异簇构象","textPreview":"真实结合构象 vs 同序列异簇构象","textChars":17,"textLines":1,"bbox":[272,502,390,40]}
+{"kind":"textbox","id":"sh/upwb2hwf","slide":15,"text":"间隔排序损失","textPreview":"间隔排序损失","textChars":6,"textLines":1,"bbox":[682,502,220,40]}
+{"kind":"shape","id":"sh/nap4r65w","slide":15,"bbox":[930,276,280,260]}
+{"kind":"shape","id":"sh/c7u54zid","slide":15,"bbox":[930,276,7,260]}
+{"kind":"textbox","id":"sh/1orytsvu","slide":15,"text":"语义边界","textPreview":"语义边界","textChars":4,"textLines":1,"bbox":[960,302,210,30]}
+{"kind":"textbox","id":"sh/rqd4vmtw","slide":15,"text":"• 不是肽序列级负样本\n• 不进一维序列分支\n• 不进普通负样本池\n• 不进多正样本分母","textPreview":"• 不是肽序列级负样本 | • 不进一维序列分支 | • 不进普通负样本池 | • 不进多正样本分母","textChars":44,"textLines":4,"bbox":[960,350,220,166]}
+{"kind":"notes","id":"nt/fmzzrj","slide":15,"text":""}
+{"kind":"slide","id":"sl/bm8o75","slide":16,"title":"PepCLIP Phase-3","textShapes":10}
+{"kind":"textbox","id":"sh/qpg3ex0n","slide":16,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/xczed8v6","slide":16,"text":"V3：相似序列 / 模体先验怎么接入","textPreview":"V3：相似序列 / 模体先验怎么接入","textChars":18,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/8v6psfil","slide":16,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/fyxobm58","slide":16,"text":"16","textPreview":"16","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/qd4vmtwr","slide":16,"bbox":[72,166,390,150]}
+{"kind":"shape","id":"sh/x4nap4r6","slide":16,"bbox":[72,166,7,150]}
+{"kind":"textbox","id":"sh/8jqh0fep","slide":16,"text":"V3 动机","textPreview":"V3 动机","textChars":5,"textLines":1,"bbox":[92,182,352,32]}
+{"kind":"textbox","id":"sh/fmlkjm1c","slide":16,"text":"当完全同序列构象较少时，可以搜索相似序列构象和模体家族构象。","textPreview":"当完全同序列构象较少时，可以搜索相似序列构象和模体家族构象。","textChars":30,"textLines":1,"bbox":[92,220,352,84]}
+{"kind":"shape","id":"sh/q1orytsv","slide":16,"bbox":[72,356,390,150]}
+{"kind":"shape","id":"sh/4nap4r65","slide":16,"bbox":[72,356,7,150]}
+{"kind":"textbox","id":"sh/t83itgfm","slide":16,"text":"它代表什么","textPreview":"它代表什么","textChars":5,"textLines":1,"bbox":[92,372,352,32]}
+{"kind":"textbox","id":"sh/mhk3q5o7","slide":16,"text":"相似肽 / 模体家族的构象先验；不是当前肽序列的真实构象监督。","textPreview":"相似肽 / 模体家族的构象先验；不是当前肽序列的真实构象监督。","textChars":31,"textLines":1,"bbox":[92,410,352,84]}
+{"kind":"shape","id":"sh/b2hwfyxo","slide":16,"bbox":[540,166,560,190]}
+{"kind":"textbox","id":"sh/4byhgn29","slide":16,"text":"构象先验表\n\n锚点编号 / 构象编号 / 先验类型 / 序列一致性 / 序列相似性 / 覆盖度 / 接触核心一致性 / 接触核心相似性 / 原因","textPreview":"构象先验表 |  | 锚点编号 / 构象编号 / 先验类型 / 序列一致性 / 序列相似性 / 覆盖度 / 接触核心一致性 / 接触核心相似性 / 原因","textChars":72,"textLines":3,"bbox":[558,182,524,162]}
+{"kind":"shape","id":"sh/twra5gbq","slide":16,"bbox":[540,402,560,124]}
+{"kind":"shape","id":"sh/m58z25kb","slide":16,"bbox":[540,402,7,124]}
+{"kind":"textbox","id":"sh/bq1oryts","slide":16,"text":"硬边界","textPreview":"硬边界","textChars":3,"textLines":1,"bbox":[560,418,522,32]}
+{"kind":"textbox","id":"sh/47y1kre1","slide":16,"text":"V3 先验不参与同序列构象聚类、监督边生成、同簇弱正样本或构象困难负样本。","textPreview":"V3 先验不参与同序列构象聚类、监督边生成、同簇弱正样本或构象困难负样本。","textChars":37,"textLines":1,"bbox":[560,456,522,58]}
+{"kind":"notes","id":"nt/bm8o75","slide":16,"text":""}
+{"kind":"slide","id":"sl/f6yili","slide":17,"title":"PepCLIP Phase-3","textShapes":12}
+{"kind":"textbox","id":"sh/hcrmhk3q","slide":17,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/al87ed8b","slide":17,"text":"无论哪个版本，主评估都必须保持清洁","textPreview":"无论哪个版本，主评估都必须保持清洁","textChars":17,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/z61032ls","slide":17,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/sfil0rqd","slide":17,"text":"17","textPreview":"17","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/h0fepkzu","slide":17,"bbox":[72,168,330,116]}
+{"kind":"shape","id":"sh/a9w3m94f","slide":17,"bbox":[72,168,7,116]}
+{"kind":"textbox","id":"sh/zupwb2hw","slide":17,"text":"主评估只使用","textPreview":"主评估只使用","textChars":6,"textLines":1,"bbox":[92,184,292,32]}
+{"kind":"textbox","id":"sh/obm58z25","slide":17,"text":"强正样本","textPreview":"强正样本","textChars":4,"textLines":1,"bbox":[92,222,292,50]}
+{"kind":"shape","id":"sh/hwfyxobm","slide":17,"bbox":[72,330,330,116]}
+{"kind":"shape","id":"sh/t83itgfm","slide":17,"bbox":[72,330,7,116]}
+{"kind":"textbox","id":"sh/4nap4r65","slide":17,"text":"主评估回答","textPreview":"主评估回答","textChars":5,"textLines":1,"bbox":[92,346,292,32]}
+{"kind":"textbox","id":"sh/b2hwfyxo","slide":17,"text":"模型能否识别真实受体-肽结合配对？","textPreview":"模型能否识别真实受体-肽结合配对？","textChars":17,"textLines":1,"bbox":[92,384,292,50]}
+{"kind":"shape","id":"sh/mhk3q5o7","slide":17,"bbox":[470,168,340,200]}
+{"kind":"shape","id":"sh/twra5gbq","slide":17,"bbox":[470,168,7,200]}
+{"kind":"textbox","id":"sh/4byhgn29","slide":17,"text":"不进入主评估","textPreview":"不进入主评估","textChars":6,"textLines":1,"bbox":[490,184,302,32]}
+{"kind":"textbox","id":"sh/bq1oryts","slide":17,"text":"同簇弱正样本\n构象困难负样本\n相似序列构象先验\n模体构象先验","textPreview":"同簇弱正样本 | 构象困难负样本 | 相似序列构象先验 | 模体构象先验","textChars":30,"textLines":4,"bbox":[490,222,302,134]}
+{"kind":"shape","id":"sh/m58z25kb","slide":17,"bbox":[860,168,300,250]}
+{"kind":"shape","id":"sh/tsvu9kni","slide":17,"bbox":[860,168,7,250]}
+{"kind":"textbox","id":"sh/47y1kre1","slide":17,"text":"可选诊断","textPreview":"可选诊断","textChars":4,"textLines":1,"bbox":[880,184,262,32]}
+{"kind":"textbox","id":"sh/g3ex0nux","slide":17,"text":"构象排序诊断：比较真实结合构象和同序列异簇构象的分数。\n\n先验诊断：分析先验是否提供额外排序信息。","textPreview":"构象排序诊断：比较真实结合构象和同序列异簇构象的分数。 |  | 先验诊断：分析先验是否提供额外排序信息。","textChars":49,"textLines":3,"bbox":[880,222,262,184]}
+{"kind":"textbox","id":"sh/5o7qpg3e","slide":17,"text":"主指标衡量真实配对检索；诊断指标衡量构象增强策略。两者必须分开汇报。","textPreview":"主指标衡量真实配对检索；诊断指标衡量构象增强策略。两者必须分开汇报。","textChars":34,"textLines":1,"bbox":[72,522,920,38]}
+{"kind":"notes","id":"nt/f6yili","slide":17,"text":""}
+{"kind":"slide","id":"sl/nbadt6","slide":18,"title":"PepCLIP Phase-3","textShapes":23}
+{"kind":"textbox","id":"sh/jqh0fepk","slide":18,"text":"PepCLIP Phase-3","textPreview":"PepCLIP Phase-3","textChars":15,"textLines":1,"bbox":[64,30,420,26]}
+{"kind":"textbox","id":"sh/8bat47y1","slide":18,"text":"阶段三数据集构建的实际实施顺序","textPreview":"阶段三数据集构建的实际实施顺序","textChars":15,"textLines":1,"bbox":[64,62,960,58]}
+{"kind":"shape","id":"sh/1w7mp0bi","slide":18,"bbox":[64,128,1152,2]}
+{"kind":"textbox","id":"sh/qh0fepkz","slide":18,"text":"18","textPreview":"18","textChars":2,"textLines":1,"bbox":[1180,48,44,28]}
+{"kind":"shape","id":"sh/j2t83itg","slide":18,"bbox":[72,164,309.33,117]}
+{"kind":"textbox","id":"sh/8nqxs72x","slide":18,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[86,176,44,26]}
+{"kind":"textbox","id":"sh/18jqh0fe","slide":18,"text":"完成 V1 数据集\n只用强正样本","textPreview":"完成 V1 数据集 | 只用强正样本","textChars":16,"textLines":2,"bbox":[128,176,239.33,97]}
+{"kind":"shape","id":"sh/ulwval87","slide":18,"bbox":[397.33,164,309.33,117]}
+{"kind":"textbox","id":"sh/j6tovaho","slide":18,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[411.33,176,44,26]}
+{"kind":"textbox","id":"sh/j2t83itg","slide":18,"text":"用 V1 跑基线训练\n得到第一组结果","textPreview":"用 V1 跑基线训练 | 得到第一组结果","textChars":18,"textLines":2,"bbox":[453.33,176,239.33,97]}
+{"kind":"shape","id":"sh/qh0fepkz","slide":18,"bbox":[722.67,164,309.33,117]}
+{"kind":"textbox","id":"sh/18jqh0fe","slide":18,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[736.67,176,44,26]}
+{"kind":"textbox","id":"sh/8nqxs72x","slide":18,"text":"构建 V1.5 精确构象证据\n覆盖率 / 聚类 / 泄露审计","textPreview":"构建 V1.5 精确构象证据 | 覆盖率 / 聚类 / 泄露审计","textChars":30,"textLines":2,"bbox":[778.67,176,239.33,97]}
+{"kind":"shape","id":"sh/jqh0fepk","slide":18,"bbox":[72,297,309.33,117]}
+{"kind":"textbox","id":"sh/q5o7qpg3","slide":18,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[86,309,44,26]}
+{"kind":"textbox","id":"sh/1w7mp0bi","slide":18,"text":"实现 V2 监督边\n同簇弱正 + 困难负样本","textPreview":"实现 V2 监督边 | 同簇弱正 + 困难负样本","textChars":22,"textLines":2,"bbox":[128,309,239.33,97]}
+{"kind":"shape","id":"sh/8bat47y1","slide":18,"bbox":[397.33,297,309.33,117]}
+{"kind":"textbox","id":"sh/ji5snelo","slide":18,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[411.33,309,44,26]}
+{"kind":"textbox","id":"sh/uxc3ylc7","slide":18,"text":"V2 稳定后实现 V3 先验\n消融 / 重排序","textPreview":"V2 稳定后实现 V3 先验 | 消融 / 重排序","textChars":23,"textLines":2,"bbox":[453.33,309,239.33,97]}
+{"kind":"shape","id":"sh/2t83itgf","slide":18,"bbox":[72,464,860,44]}
+{"kind":"textbox","id":"sh/re1w7mp0","slide":18,"text":"阶段","textPreview":"阶段","textChars":2,"textLines":1,"bbox":[82,473,120,32]}
+{"kind":"textbox","id":"sh/kzupwb2h","slide":18,"text":"交付物","textPreview":"交付物","textChars":3,"textLines":1,"bbox":[222,473,700,32]}
+{"kind":"shape","id":"sh/9knih4by","slide":18,"bbox":[72,508,860,44]}
+{"kind":"textbox","id":"sh/25kb6xkf","slide":18,"text":"V1","textPreview":"V1","textChars":2,"textLines":1,"bbox":[82,516,120,32]}
+{"kind":"textbox","id":"sh/rqd4vmtw","slide":18,"text":"基线数据集 + 数据审计 + 基线训练结果","textPreview":"基线数据集 + 数据审计 + 基线训练结果","textChars":21,"textLines":1,"bbox":[222,516,700,32]}
+{"kind":"shape","id":"sh/kb6xkf6d","slide":18,"bbox":[72,552,860,44]}
+{"kind":"textbox","id":"sh/9w3m94fu","slide":18,"text":"V1.5","textPreview":"V1.5","textChars":4,"textLines":1,"bbox":[82,560,120,32]}
+{"kind":"textbox","id":"sh/2hwfyxob","slide":18,"text":"构象证据报告 + 聚类映射 + 审计","textPreview":"构象证据报告 + 聚类映射 + 审计","textChars":18,"textLines":1,"bbox":[222,560,700,32]}
+{"kind":"shape","id":"sh/r2p8nqxs","slide":18,"bbox":[72,596,860,44]}
+{"kind":"textbox","id":"sh/1gvy90je","slide":18,"text":"V2","textPreview":"V2","textChars":2,"textLines":1,"bbox":[82,604,120,32]}
+{"kind":"textbox","id":"sh/8z25kb6x","slide":18,"text":"监督边 + 多正样本 / 排序训练消融","textPreview":"监督边 + 多正样本 / 排序训练消融","textChars":19,"textLines":1,"bbox":[222,604,700,32]}
+{"kind":"shape","id":"sh/je9cvixc","slide":18,"bbox":[72,640,860,44]}
+{"kind":"textbox","id":"sh/qtcj6tov","slide":18,"text":"V3","textPreview":"V3","textChars":2,"textLines":1,"bbox":[82,648,120,32]}
+{"kind":"textbox","id":"sh/xs72x4na","slide":18,"text":"构象先验 + 先验消融 / 重排序分析","textPreview":"构象先验 + 先验消融 / 重排序分析","textChars":19,"textLines":1,"bbox":[222,648,700,32]}
+{"kind":"notes","id":"nt/nbadt6","slide":18,"text":""}

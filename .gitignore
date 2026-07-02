@@ -1,4 +1,4 @@
-# Python cache and virtualenvs
+﻿# Python cache and virtualenvs
 __pycache__/
 *.py[cod]
 .venv/
@@ -30,3 +30,24 @@ phase2/drugclip/Drug-The-Whole-Genome/
 phase2/drugclip/ProFSA/
 phase2/drugclip/ProFSADB/
 model_weights.zip
+
+# Local model assets and ad-hoc report build helpers
+models/
+phase1/1/
+phase1/build_phase1_teacher_final.py
+phase1/codex-history-sanitized-*/
+
+# Presentation / report build artifacts
+phase1/ppt_phase1_teacher/figures/
+phase1/ppt_phase1_teacher/tmp/
+phase1/ppt_phase1_teacher/*.pptx
+
+# Local trace exports and screenshots
+phase1/trace_*/
+phase1/**/screenshots/
+phase1/**/step5_patch_exports/
+phase3/archive/
+phase3/data/
+phase3/data_sources_raw/
+phase3/tools/mmseqs2_deb/
+phase3/tools/mmseqs2_local/
