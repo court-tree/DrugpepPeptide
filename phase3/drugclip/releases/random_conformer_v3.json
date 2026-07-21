@@ -1,0 +1,21 @@
+{
+  "schema_version": "pepclip-release-descriptor-v1",
+  "dataset_version": "random_conformer_v3",
+  "parent_dataset": "random_conformer_v2",
+  "manifest_schema": "pepclip-data-manifest-v2",
+  "manifest_sha256": "043278F18EFC9B9C3238788D4C6B34C35641C9C26895E5045D8598FA99D5C309",
+  "build_code_version": "pepclip-random-conformer-v3-build-v1",
+  "generator_id": "internal-coordinate-rama-v2-clash15",
+  "cache_schema": "drugclip-random-conformer-cache-v2",
+  "relation_schema": "drugclip-random-augmentation-pairs-v3",
+  "counts": {
+    "pairs": 24633,
+    "caches": 6979,
+    "conformers": 69790,
+    "replaced": 516
+  },
+  "validation_status": "PASS",
+  "semantic_differences": 0,
+  "independent_clash15_failures": 0,
+  "determinism_mismatches": 0
+}
