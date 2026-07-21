@@ -45,6 +45,7 @@ def build_model(checkpoint: str, device: torch.device) -> Tuple[PepCLIP3DModel, 
         num_heads=int(model_args.get("num_heads", 8)),
         num_rbf=int(model_args.get("num_rbf", 32)),
         distance_cutoff=float(model_args.get("distance_cutoff", 20.0)),
+        num_neighbors=int(model_args.get("num_neighbors", 32)),
     ).to(device)
     model.load_state_dict(state["model_state_dict"])
     model.eval()

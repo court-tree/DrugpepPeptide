@@ -225,6 +225,157 @@ class DistanceBiasedTransformerLayer(nn.Module):
         return hidden
 
 
+class EGNNLayer(nn.Module):
+    def __init__(
+        self,
+        hidden_dim: int,
+        edge_dim: int,
+        dropout: float,
+        coord_update_scale: float = 0.1,
+    ) -> None:
+        super().__init__()
+        self.coord_update_scale = coord_update_scale
+        self.edge_mlp = nn.Sequential(
+            nn.Linear(hidden_dim * 2 + edge_dim + 1, hidden_dim),
+            nn.SiLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.SiLU(),
+        )
+        self.node_mlp = nn.Sequential(
+            nn.Linear(hidden_dim * 2, hidden_dim),
+            nn.SiLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, hidden_dim),
+        )
+        self.coord_mlp = nn.Sequential(
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.SiLU(),
+            nn.Linear(hidden_dim, 1),
+            nn.Tanh(),
+        )
+        self.norm = nn.LayerNorm(hidden_dim)
+
+    def forward(
+        self,
+        h: torch.Tensor,
+        coords: torch.Tensor,
+        edge_index: torch.Tensor,
+        edge_rbf: torch.Tensor,
+        edge_dist: torch.Tensor,
+        edge_mask: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        batch_size, num_nodes, hidden_dim = h.shape
+        gather_index = edge_index.unsqueeze(-1).expand(-1, -1, -1, hidden_dim)
+        h_j = torch.gather(h.unsqueeze(1).expand(-1, num_nodes, -1, -1), 2, gather_index)
+        h_i = h.unsqueeze(2).expand_as(h_j)
+        edge_input = torch.cat([h_i, h_j, edge_rbf, edge_dist.unsqueeze(-1)], dim=-1)
+        messages = self.edge_mlp(edge_input) * edge_mask.unsqueeze(-1).float()
+        denom = edge_mask.sum(dim=2, keepdim=True).clamp_min(1).float()
+        aggregated = messages.sum(dim=2) / denom
+        h = self.norm(h + self.node_mlp(torch.cat([h, aggregated], dim=-1)))
+
+        gather_coord_index = edge_index.unsqueeze(-1).expand(-1, -1, -1, 3)
+        coord_j = torch.gather(coords.unsqueeze(1).expand(-1, num_nodes, -1, -1), 2, gather_coord_index)
+        coord_i = coords.unsqueeze(2)
+        coord_diff = coord_i - coord_j
+        coord_weight = self.coord_mlp(messages) * edge_mask.unsqueeze(-1).float()
+        coord_delta = (coord_diff * coord_weight).sum(dim=2) / denom
+        coords = coords + self.coord_update_scale * coord_delta
+        return h, coords
+
+
+class EGNNAtomEncoder(nn.Module):
+    def __init__(
+        self,
+        num_elements: int,
+        num_atom_names: int,
+        num_residue_names: int,
+        element_dim: int = 128,
+        hidden_dim: int = 512,
+        output_dim: int = 128,
+        dropout: float = 0.1,
+        num_layers: int = 4,
+        num_rbf: int = 32,
+        distance_cutoff: float = 20.0,
+        num_neighbors: int = 32,
+    ) -> None:
+        super().__init__()
+        self.num_neighbors = num_neighbors
+        self.element_embedding = nn.Embedding(num_elements, element_dim, padding_idx=ELEMENT_PAD_TOKEN)
+        self.atom_name_embedding = nn.Embedding(num_atom_names, element_dim, padding_idx=ATOM_NAME_PAD_TOKEN)
+        self.residue_name_embedding = nn.Embedding(
+            num_residue_names,
+            element_dim,
+            padding_idx=RESIDUE_NAME_PAD_TOKEN,
+        )
+        self.input_project = nn.Sequential(
+            nn.LayerNorm(element_dim),
+            nn.Linear(element_dim, hidden_dim),
+            nn.SiLU(),
+        )
+        self.rbf = DistanceRBF(num_kernels=num_rbf, cutoff=distance_cutoff)
+        self.layers = nn.ModuleList(
+            [EGNNLayer(hidden_dim=hidden_dim, edge_dim=num_rbf, dropout=dropout) for _ in range(num_layers)]
+        )
+        self.final_norm = nn.LayerNorm(hidden_dim)
+        self.project = nn.Sequential(
+            nn.Linear(hidden_dim * 2 + 1, hidden_dim),
+            nn.SiLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, output_dim),
+        )
+
+    def build_edges(
+        self,
+        coords: torch.Tensor,
+        mask: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        batch_size, num_nodes, _ = coords.shape
+        k = min(self.num_neighbors, max(num_nodes - 1, 1))
+        distances = torch.cdist(coords, coords)
+        valid_pair = mask.unsqueeze(1) & mask.unsqueeze(2)
+        eye = torch.eye(num_nodes, dtype=torch.bool, device=coords.device).unsqueeze(0)
+        valid_pair = valid_pair & ~eye
+        masked_distances = distances.masked_fill(~valid_pair, 1.0e6)
+        edge_dist, edge_index = masked_distances.topk(k=k, dim=-1, largest=False)
+        edge_mask = edge_dist < 1.0e5
+        edge_rbf = self.rbf(edge_dist.clamp_max(1.0e3))
+        return edge_index, edge_rbf, edge_dist, edge_mask
+
+    def forward(
+        self,
+        coords: torch.Tensor,
+        elements: torch.Tensor,
+        atom_names: torch.Tensor | None,
+        residue_names: torch.Tensor | None,
+        mask: torch.Tensor,
+    ) -> torch.Tensor:
+        mask_f = mask.unsqueeze(-1).float()
+        lengths = mask_f.sum(dim=1).clamp_min(1.0)
+        center = (coords * mask_f).sum(dim=1, keepdim=True) / lengths.unsqueeze(1)
+        coords = coords - center
+
+        h = self.element_embedding(elements)
+        if atom_names is not None:
+            h = h + self.atom_name_embedding(atom_names)
+        if residue_names is not None:
+            h = h + self.residue_name_embedding(residue_names)
+        h = self.input_project(h) * mask_f
+
+        edge_index, edge_rbf, edge_dist, edge_mask = self.build_edges(coords, mask)
+        for layer in self.layers:
+            h, coords = layer(h, coords, edge_index, edge_rbf, edge_dist, edge_mask)
+            h = h * mask_f
+
+        h = self.final_norm(h) * mask_f
+        mean_pool = h.sum(dim=1) / lengths
+        max_pool = h.masked_fill(~mask.unsqueeze(-1), -1.0e4).max(dim=1).values
+        atom_count = torch.log1p(lengths.squeeze(-1)).unsqueeze(-1) / 10.0
+        pooled = torch.cat([mean_pool, max_pool, atom_count], dim=-1)
+        return F.normalize(self.project(pooled), dim=-1)
+
+
 class PepCLIP3DModel(nn.Module):
     def __init__(
         self,
@@ -241,6 +392,7 @@ class PepCLIP3DModel(nn.Module):
         num_heads: int = 8,
         num_rbf: int = 32,
         distance_cutoff: float = 20.0,
+        num_neighbors: int = 32,
         init_temperature: float = 1.0 / 14.0,
     ) -> None:
         super().__init__()
@@ -291,6 +443,35 @@ class PepCLIP3DModel(nn.Module):
                 num_rbf=num_rbf,
                 distance_cutoff=distance_cutoff,
             )
+        elif encoder_type == "egnn":
+            if num_atom_names is None or num_residue_names is None:
+                raise ValueError("num_atom_names and num_residue_names are required for egnn")
+            self.receptor_encoder = EGNNAtomEncoder(
+                num_elements=num_elements,
+                num_atom_names=num_atom_names,
+                num_residue_names=num_residue_names,
+                element_dim=element_dim,
+                hidden_dim=hidden_dim,
+                output_dim=output_dim,
+                dropout=dropout,
+                num_layers=num_layers,
+                num_rbf=num_rbf,
+                distance_cutoff=distance_cutoff,
+                num_neighbors=num_neighbors,
+            )
+            self.peptide_encoder = EGNNAtomEncoder(
+                num_elements=num_elements,
+                num_atom_names=num_atom_names,
+                num_residue_names=num_residue_names,
+                element_dim=element_dim,
+                hidden_dim=hidden_dim,
+                output_dim=output_dim,
+                dropout=dropout,
+                num_layers=num_layers,
+                num_rbf=num_rbf,
+                distance_cutoff=distance_cutoff,
+                num_neighbors=num_neighbors,
+            )
         else:
             raise ValueError(f"Unsupported 3D encoder_type={encoder_type!r}")
         self.logit_scale = nn.Parameter(torch.tensor(math.log(1.0 / init_temperature)))
@@ -303,7 +484,7 @@ class PepCLIP3DModel(nn.Module):
         receptor_atom_names: torch.Tensor | None = None,
         receptor_residue_names: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        if self.encoder_type == "unimol_style":
+        if self.encoder_type in {"unimol_style", "egnn"}:
             return self.receptor_encoder(
                 receptor_coords,
                 receptor_elements,
@@ -321,7 +502,7 @@ class PepCLIP3DModel(nn.Module):
         peptide_atom_names: torch.Tensor | None = None,
         peptide_residue_names: torch.Tensor | None = None,
     ) -> torch.Tensor:
-        if self.encoder_type == "unimol_style":
+        if self.encoder_type in {"unimol_style", "egnn"}:
             return self.peptide_encoder(
                 peptide_coords,
                 peptide_elements,

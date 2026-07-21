@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import random
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
@@ -218,6 +219,11 @@ class PepCLIPDataset(Dataset):
             "split": str(row.get("split", "")),
             "receptor_key": receptor_key,
             "peptide_key": peptide_sequence,
+            "conformer_cluster_id": str(row.get("conformer_cluster_id", "")),
+            "peptide_sequence_id": str(row.get("peptide_sequence_id", peptide_sequence)),
+            "peptide_homology_80_id": str(row.get("peptide_homology_80_id", "")),
+            "receptor_family_30_id": str(row.get("receptor_family_30_id", "")),
+            "receptor_interface_key": str(row.get("receptor_interface_key", receptor_key)),
             "receptor_sequence": receptor_sequence,
             "peptide_sequence": peptide_sequence,
             "receptor_tokens": encode_sequence(receptor_sequence),
@@ -245,6 +251,11 @@ def collate_pepclip(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
         "split": [item["split"] for item in batch],
         "receptor_key": [item["receptor_key"] for item in batch],
         "peptide_key": [item["peptide_key"] for item in batch],
+        "conformer_cluster_id": [item["conformer_cluster_id"] for item in batch],
+        "peptide_sequence_id": [item["peptide_sequence_id"] for item in batch],
+        "peptide_homology_80_id": [item["peptide_homology_80_id"] for item in batch],
+        "receptor_family_30_id": [item["receptor_family_30_id"] for item in batch],
+        "receptor_interface_key": [item["receptor_interface_key"] for item in batch],
         "receptor_sequence": [item["receptor_sequence"] for item in batch],
         "peptide_sequence": [item["peptide_sequence"] for item in batch],
         "receptor_tokens": receptor_tokens,
@@ -312,7 +323,7 @@ class PepCLIP3DDataset(Dataset):
         for row in TrackBReader(self.track_b_path, data_format=data_format).rows():
             if split is not None and row.get("split") != split:
                 continue
-            if row.get("patch_atoms") and row.get("peptide_atoms"):
+            if (row.get("patch_atoms") or row.get("receptor_atoms")) and row.get("peptide_atoms"):
                 self.rows.append(row)
 
         if not self.rows:
@@ -323,7 +334,7 @@ class PepCLIP3DDataset(Dataset):
 
     def __getitem__(self, index: int) -> Dict[str, Any]:
         row = self.rows[index]
-        receptor_raw_atoms = row["patch_atoms"]
+        receptor_raw_atoms = row.get("patch_atoms") or row["receptor_atoms"]
         peptide_raw_atoms = row["peptide_atoms"]
         if self.max_receptor_atoms is not None:
             receptor_raw_atoms = receptor_raw_atoms[: self.max_receptor_atoms]
@@ -333,14 +344,14 @@ class PepCLIP3DDataset(Dataset):
         peptide_atoms = atom_tensors(peptide_raw_atoms)
         patch_residue_ids = row.get("patch_residue_ids", [])
         peptide_residue_ids = row.get("peptide_residue_ids", [])
-        receptor_key = "|".join(
+        receptor_key = row.get("receptor_key") or "|".join(
             [
                 str(row.get("source_file", "")),
                 str(row.get("receptor_chain_id", "")),
                 str(patch_residue_ids),
             ]
         )
-        peptide_key = "|".join(
+        peptide_key = row.get("peptide_key") or "|".join(
             [
                 str(row.get("source_file", "")),
                 str(row.get("peptide_source_chain_id", "")),
@@ -364,7 +375,73 @@ class PepCLIP3DDataset(Dataset):
             "peptide_residue_names": peptide_atoms["residue_names"],
             "num_receptor_atoms": receptor_atoms["coords"].shape[0],
             "num_peptide_atoms": peptide_atoms["coords"].shape[0],
+            "conformer_cluster_id": str(row.get("conformer_cluster_id", "")),
+            "peptide_homology_80_id": str(row.get("peptide_homology_80_id", "")),
+            "receptor_family_30_id": str(row.get("receptor_family_30_id", "")),
+            "receptor_interface_key": str(row.get("receptor_interface_key", receptor_key)),
+            "peptide_sequence_id": str(row.get("peptide_sequence_id", row.get("peptide_key", ""))),
         }
+
+
+class PepCLIP3DConformerDataset(Dataset):
+    def __init__(
+        self,
+        base: PepCLIP3DDataset,
+        conformer_views_path: str | Path,
+        conformer_evidence_path: str | Path,
+        max_auxiliary_conformers_per_sample: int = 1,
+    ) -> None:
+        if max_auxiliary_conformers_per_sample < 1:
+            raise ValueError("max_auxiliary_conformers_per_sample must be >= 1")
+        self.base = base
+        self.rows = base.rows
+        self.views = {str(row["sample_id"]): row for row in read_jsonl(conformer_views_path)}
+        self.evidence = {str(row["conformer_id"]): row for row in read_jsonl(conformer_evidence_path)}
+        self.max_auxiliary_conformers_per_sample = max_auxiliary_conformers_per_sample
+        missing = [
+            str(row.get("sample_id", row.get("candidate_id", index)))
+            for index, row in enumerate(base.rows)
+            if str(row.get("sample_id", row.get("candidate_id", index))) not in self.views
+        ]
+        if missing:
+            raise ValueError(f"Conformer views missing {len(missing)} base samples; first={missing[:3]}")
+
+    def __len__(self) -> int:
+        return len(self.base)
+
+    def __getitem__(self, index: int) -> Dict[str, Any]:
+        item = self.base[index]
+        view = self.views[item["sample_id"]]
+        primary = self.evidence[str(view["primary_bound_conformer_id"])]
+        auxiliary_ids = list(view.get("auxiliary_conformer_ids", []))
+        enabled = bool(view.get("auxiliary_consistency_enabled") and auxiliary_ids)
+        if enabled:
+            sample_count = min(self.max_auxiliary_conformers_per_sample, len(auxiliary_ids))
+            sampled_auxiliary_ids = random.sample(auxiliary_ids, k=sample_count)
+        else:
+            sampled_auxiliary_ids = []
+        auxiliary = self.evidence[sampled_auxiliary_ids[0]] if sampled_auxiliary_ids else primary
+        primary_atoms = atom_tensors(primary["backbone_atoms"])
+        auxiliary_atoms = atom_tensors(auxiliary["backbone_atoms"])
+        auxiliary_multi = [atom_tensors(self.evidence[conformer_id]["backbone_atoms"]) for conformer_id in sampled_auxiliary_ids]
+        item.update(
+            {
+                "view_primary_coords": primary_atoms["coords"],
+                "view_primary_elements": primary_atoms["elements"],
+                "view_primary_atom_names": primary_atoms["atom_names"],
+                "view_primary_residue_names": primary_atoms["residue_names"],
+                "view_auxiliary_coords": auxiliary_atoms["coords"],
+                "view_auxiliary_elements": auxiliary_atoms["elements"],
+                "view_auxiliary_atom_names": auxiliary_atoms["atom_names"],
+                "view_auxiliary_residue_names": auxiliary_atoms["residue_names"],
+                "view_auxiliary_multi": auxiliary_multi,
+                "view_auxiliary_sampled_count": len(sampled_auxiliary_ids),
+                "view_auxiliary_sampled_ids": sampled_auxiliary_ids,
+                "max_auxiliary_conformers_per_sample": self.max_auxiliary_conformers_per_sample,
+                "consistency_enabled": enabled,
+            }
+        )
+        return item
 
 
 def pad_atom_clouds(
@@ -409,7 +486,7 @@ def collate_pepclip_3d(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
         [item["peptide_atom_names"] for item in batch],
         [item["peptide_residue_names"] for item in batch],
     )
-    return {
+    output = {
         "sample_id": [item["sample_id"] for item in batch],
         "pdb_id": [item["pdb_id"] for item in batch],
         "split": [item["split"] for item in batch],
@@ -427,4 +504,62 @@ def collate_pepclip_3d(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
         "peptide_mask": peptide["mask"],
         "num_receptor_atoms": torch.tensor([item["num_receptor_atoms"] for item in batch], dtype=torch.long),
         "num_peptide_atoms": torch.tensor([item["num_peptide_atoms"] for item in batch], dtype=torch.long),
+        "conformer_cluster_id": [item.get("conformer_cluster_id", "") for item in batch],
+        "peptide_sequence_id": [item.get("peptide_sequence_id", "") for item in batch],
+        "peptide_homology_80_id": [item.get("peptide_homology_80_id", "") for item in batch],
+        "receptor_family_30_id": [item.get("receptor_family_30_id", "") for item in batch],
+        "receptor_interface_key": [item.get("receptor_interface_key", "") for item in batch],
     }
+    if "view_primary_coords" in batch[0]:
+        primary = pad_atom_clouds(
+            [item["view_primary_coords"] for item in batch],
+            [item["view_primary_elements"] for item in batch],
+            [item["view_primary_atom_names"] for item in batch],
+            [item["view_primary_residue_names"] for item in batch],
+        )
+        auxiliary = pad_atom_clouds(
+            [item["view_auxiliary_coords"] for item in batch],
+            [item["view_auxiliary_elements"] for item in batch],
+            [item["view_auxiliary_atom_names"] for item in batch],
+            [item["view_auxiliary_residue_names"] for item in batch],
+        )
+        for prefix, values in (("view_primary", primary), ("view_auxiliary", auxiliary)):
+            output[f"{prefix}_coords"] = values["coords"]
+            output[f"{prefix}_elements"] = values["elements"]
+            output[f"{prefix}_atom_names"] = values["atom_names"]
+            output[f"{prefix}_residue_names"] = values["residue_names"]
+            output[f"{prefix}_mask"] = values["mask"]
+        output["consistency_enabled"] = torch.tensor(
+            [bool(item["consistency_enabled"]) for item in batch],
+            dtype=torch.bool,
+        )
+        multi_coords = []
+        multi_elements = []
+        multi_atom_names = []
+        multi_residue_names = []
+        owner_index = []
+        for batch_index, item in enumerate(batch):
+            for auxiliary_item in item.get("view_auxiliary_multi", []):
+                multi_coords.append(auxiliary_item["coords"])
+                multi_elements.append(auxiliary_item["elements"])
+                multi_atom_names.append(auxiliary_item["atom_names"])
+                multi_residue_names.append(auxiliary_item["residue_names"])
+                owner_index.append(batch_index)
+        if multi_coords:
+            multi_auxiliary = pad_atom_clouds(
+                multi_coords,
+                multi_elements,
+                multi_atom_names,
+                multi_residue_names,
+            )
+            output["view_auxiliary_multi_coords"] = multi_auxiliary["coords"]
+            output["view_auxiliary_multi_elements"] = multi_auxiliary["elements"]
+            output["view_auxiliary_multi_atom_names"] = multi_auxiliary["atom_names"]
+            output["view_auxiliary_multi_residue_names"] = multi_auxiliary["residue_names"]
+            output["view_auxiliary_multi_mask"] = multi_auxiliary["mask"]
+            output["view_auxiliary_owner_index"] = torch.tensor(owner_index, dtype=torch.long)
+            output["view_auxiliary_sampled_count"] = torch.tensor(
+                [int(item.get("view_auxiliary_sampled_count", 0)) for item in batch],
+                dtype=torch.long,
+            )
+    return output
