@@ -250,3 +250,103 @@ or ten-conformer evaluation has completed.
 - Do not treat the clean-worktree checkpoint hardlink as a committed artifact
   or evidence that training/evaluation ran.
 - Do not expand training before the bounded v3 step-32 result is reviewed.
+
+## 2026-07-22: Formal v3 Bounded End-To-End Acceptance Is Complete
+
+### Evidence
+
+A detached clean worktree at `a88f0c1f0` loaded the frozen learned-concat
+checkpoint and formal `random_conformer_v3` contract, completed exactly 32
+successful optimizer updates, and produced a contract-complete `step_032.pt`.
+All optimizer parameter states recorded step 32. The sampler reported zero
+interface-pair loss, zero interface-pair duplication, and zero within-batch
+peptide uniqueness violations; the bidirectional known-positive-masked losses
+were finite. Fixed single-conformer and ten-conformer full-candidate retrieval
+completed for both the Phase-2 baseline and step 32, with conformer-0
+regression and candidate-bank consistency passing.
+
+The formal outputs are:
+
+- `E:\pep\phase3\runs\drugclip\v3_bounded_step032_pilot_review_pending_v1`
+- `E:\pep\phase3\runs\drugclip\v3_bounded_step032_full_retrieval_v1`
+- `E:\pep\phase3\runs\drugclip\v3_bounded_step032_multi_conformer_v1`
+
+### Decision
+
+The Phase-3 random-conformer fine-tuning implementation satisfies the minimum
+engineering conditions to be considered for formal Phase-3 fine-tuning. The
+bounded step-32 run is an end-to-end acceptance gate, not a new experimental
+research line and not proof of a complete useful-step window. Formal training
+still requires explicit user authorization and a new exact claim.
+
+### Do Not Repeat
+
+- Do not extend this acceptance to step 64 or convert it into a window study,
+  learning-rate search, cropping comparison, data audit, or ablation.
+- Do not add a data version, loss, model head, diagnostic framework, or model
+  redesign on the basis of this acceptance alone.
+- Do not rerun the bounded acceptance unless new contradictory evidence shows
+  that one of its recorded engineering contracts is invalid.
+
+## 2026-07-22: Formal Five-Epoch v3 Training Succeeds But Retrieval Is Mixed
+
+### Evidence
+
+The formal `random_conformer_v3` run completed all five epochs and exactly
+6,160 optimizer steps with zero pair loss, pair duplication, or within-batch
+peptide-uniqueness violations. Its trained epoch-4 best checkpoint has SHA256
+`B334BE1FAFF2518F94ADBF3A89632FF6E102402CA5CE7F88E9B56328167BCC93`.
+Validation loss decreased to 5.77681. On the fixed bounded-acceptance retrieval
+contract, r2p Recall@10 improved for conformer 0 and across ten conformers, but
+p2r head metrics did not improve and MRR decreased in both directions. The
+ten-conformer arithmetic-mean-score result likewise improved r2p Recall@10
+while reducing p2r Recall@10.
+
+### Decision
+
+Classify the formal run as an engineering and training-contract success with a
+directionally mixed retrieval outcome. Do not equate its lower validation loss
+with general retrieval improvement, and do not promote the epoch-4 checkpoint
+as a uniformly better bidirectional model without a separate downstream model
+selection decision.
+
+### Do Not Repeat
+
+- Do not describe the formal checkpoint as globally retrieval-improved based
+  only on r2p Recall@10 or validation loss.
+- Do not discard the run as an engineering failure; its data, sampler,
+  optimizer-step, checkpoint, and evaluator contracts all passed.
+- Do not start a new parameter search, training window, ablation, or evaluator
+  branch without separate authorization and a new exact claim.
+
+## 2026-07-22: Epoch 0 Is The Balanced Phase-3 v1 Selection Candidate
+
+### Evidence
+
+An authorized recovery repeated the formal v3 command with only
+`--stop_after_epoch 0`. It reproduced the original formal epoch-0 training and
+validation losses, sampling plan, and 1,232-step optimizer contract exactly.
+On the fixed 512-query evaluation, epoch 0 improved Recall@1/5/10 and MRR over
+the Phase-2 baseline in both directions and avoided the formal epoch-4 p2r
+head-metric regression. Across ten conformers, its arithmetic-mean-score
+Recall@10 was 0.20117 r2p and 0.16016 p2r, higher than the Phase-2 baseline,
+bounded step 32, and formal epoch 4 in both directions. Bootstrap intervals
+showed significant mean-rank improvement but crossed zero for Recall@10.
+
+### Decision
+
+Treat the recovered epoch-0 checkpoint with SHA256
+`5D2D326B634B38A4412950B08093F2152C974403A344AD8A7B2A59EAF8F33599`
+as the current balanced Phase-3 v1 model-selection candidate under the fixed
+bounded-acceptance retrieval contract. This supersedes epoch 4 for balanced
+candidate selection, but does not establish universal statistical superiority
+or authorize another epoch search.
+
+### Do Not Repeat
+
+- Do not evaluate additional epoch candidates or turn this recovery into a
+  step-window study without new authorization.
+- Do not promote epoch 4 as the balanced checkpoint merely because it has the
+  lowest validation loss.
+- Do not claim statistically conclusive Recall@10 improvement; the paired
+  bootstrap confidence intervals cross zero.
