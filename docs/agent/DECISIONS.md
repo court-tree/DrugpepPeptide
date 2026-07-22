@@ -350,3 +350,35 @@ or authorize another epoch search.
   lowest validation loss.
 - Do not claim statistically conclusive Recall@10 improvement; the paired
   bootstrap confidence intervals cross zero.
+
+## 2026-07-22: The Balanced Epoch-0 Checkpoint Has A Verifiable Release Contract
+
+### Evidence
+
+The repository descriptor `phase3/drugclip/releases/phase3_v1_selected_model.json`
+binds model version `pepclip-phase3-v1-balanced-epoch0` to checkpoint SHA256
+`5D2D326B634B38A4412950B08093F2152C974403A344AD8A7B2A59EAF8F33599`,
+`global_step=1232`, the v3 Manifest SHA, frozen Phase-2 learned-concat
+initialization SHA, code baseline, and the fixed single- and ten-conformer
+evaluation reports. The read-only validator passed against the retained
+artifacts, including checkpoint schema, 352-tensor finite model state, v3 data
+and Manifest contracts, initialization checkpoint, and five evaluation-report
+hashes. Focused validator and training-state tests pass.
+
+### Decision
+
+Define this descriptor/checkpoint pair as the verifiable Phase-3 v1 selected
+model release. The release formalizes the already-approved balanced
+fixed-contract selection; it does not modify or rerun training, evaluation,
+model structure, or data algorithms. Checkpoints, run directories, and
+evaluation artifacts remain external generated evidence and must not enter
+Git.
+
+### Do Not Repeat
+
+- Do not substitute a different checkpoint without a new model-selection
+  decision and a descriptor/hash update.
+- Do not weaken the validator by skipping checkpoint bytes/schema, model-state,
+  v3 Manifest/data-contract, or Phase-2 initialization checks.
+- Do not reinterpret the release label as universal or statistically certain
+  Recall@10 superiority outside the fixed evaluation contract.

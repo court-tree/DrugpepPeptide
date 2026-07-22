@@ -16,7 +16,10 @@ ten-conformer full-candidate evaluation then completed against the same
 recovery reproduced epoch 0 under the identical formal contract and found it
 to be the better-balanced fixed-contract candidate: it improves the main
 single-conformer head metrics in both directions and avoids epoch 4's p2r
-degradation, while retaining the formal training/evaluator contracts.
+degradation, while retaining the formal training/evaluator contracts. That
+checkpoint is now formalized by a tracked machine-readable selected-model
+release contract and a read-only validator; no new training or evaluation was
+performed for the release step.
 
 ## Committed Implementation Baseline
 
@@ -209,6 +212,26 @@ Evidence:
 - `E:\pep\phase3\runs\drugclip\v3_formal_epoch0_selection_recovery_full_retrieval_v1`
 - `E:\pep\phase3\runs\drugclip\v3_formal_epoch0_selection_recovery_multi_conformer_v1`
 
+## Phase-3 v1 Selected-Model Release Contract
+
+The selected epoch-0 checkpoint is formalized as model version
+`pepclip-phase3-v1-balanced-epoch0` by the machine-readable descriptor
+`phase3/drugclip/releases/phase3_v1_selected_model.json`. The descriptor binds
+the repository-relative checkpoint path and SHA256, `global_step=1232`, v3
+Manifest SHA, frozen Phase-2 learned-concat initialization SHA, clean code
+baseline, fixed single- and ten-conformer evaluation reports, and the bounded
+conclusion language.
+
+`python -m phase3.drugclip.validate_model_release` is a read-only release
+validator. Against the retained formal artifacts it passed the checkpoint
+byte/hash and `pepclip-phase3-drugclip-training-v1` schema checks, verified all
+352 model tensors and 28,575,002 parameter/buffer elements with finite model
+state, matched the `random_conformer_v3` Manifest and checkpoint data
+contract, matched the Phase-2 initialization checkpoint, and verified five
+recorded evaluation reports. Focused validator and training-state tests pass.
+The checkpoint and all run/evaluation artifacts remain ignored outputs and
+are not part of the tracked release contract.
+
 ## Verified Historical Phase-3 Diagnosis
 
 The existing 4096/512 Pilot and early-step diagnostics used data version v2.
@@ -260,20 +283,20 @@ Evidence:
 
 ## Current Problem
 
-Formal v3 fine-tuning, epoch-4 evaluation, and the one authorized epoch-0
-model-selection recovery are complete. Epoch 0 is the better-balanced fixed
-contract checkpoint: it improves conformer-0 head metrics in both directions
-and avoids the p2r degradation at epoch 4. Recall bootstrap intervals still
-cross zero, so downstream promotion remains a bounded model-selection choice,
-not proof of universal superiority.
+Formal v3 fine-tuning, epoch-4 evaluation, the one authorized epoch-0
+model-selection recovery, and the selected-model release contract are
+complete. Epoch 0 is the released balanced fixed-contract checkpoint: it
+improves conformer-0 head metrics in both directions and avoids the p2r
+degradation at epoch 4. Recall bootstrap intervals still cross zero, so this
+remains a bounded model-selection choice, not proof of universal superiority.
 
 ## Single Next Action
 
-Review and, if explicitly authorized, promote the recovered epoch-0 checkpoint
-as the current balanced Phase-3 v1 model-selection candidate. Do not start
-another training run, epoch candidate, parameter search, window study,
-ablation, or evaluator branch without a separate explicit authorization and
-exact claim.
+Use the selected-model release contract as the authoritative Phase-3 v1 model
+reference for any separately authorized downstream inference or embedding
+export work. Do not start another training run, epoch candidate, parameter
+search, window study, ablation, or evaluator branch without a separate
+explicit authorization and exact claim.
 
 ## Workspace Safety
 
@@ -283,11 +306,14 @@ exact claim.
 - The Session Bridge is maintained as a separate F-group commit on top of
   that implementation baseline. The bounded-acceptance state is maintained as
   a separate follow-up Session Bridge commit on top of the F-group baseline.
+- The selected-model release descriptor, validator, and focused test are
+  committed as `5c34cdbbb Add Phase 3 v1 model release contract`. This
+  state-bridge update is maintained as a separate commit on top of that
+  implementation boundary.
 - The working tree contains extensive pre-existing modified, deleted, and
-  untracked files. The A-E paths above are tracked by the current HEAD. This
-  bounded-acceptance update is limited to `PROJECT_STATE.md` and
-  `DECISIONS.md`; Phase-2 queue work, historical diagnostic sources, generated
-  artifacts, and other dirty content remain outside its scope.
+  untracked files. Phase-2 queue work, historical diagnostic sources,
+  generated artifacts, and other dirty content remain outside the selected-
+  model release scope.
 - The bounded acceptance temporary worktree and its junction were removed by
   ordinary `git worktree remove`; `--force` was not used. The three formal run
   directories were verified after junction and worktree removal.
