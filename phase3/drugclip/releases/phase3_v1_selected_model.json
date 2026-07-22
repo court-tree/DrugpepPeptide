@@ -1,0 +1,108 @@
+{
+  "schema_version": "pepclip-phase3-model-release-v1",
+  "release_id": "phase3_v1_selected_model",
+  "model_version": "pepclip-phase3-v1-balanced-epoch0",
+  "release_status": "selected",
+  "selection_basis": "balanced_under_fixed_512_query_retrieval_contract",
+  "checkpoint": {
+    "relative_path": "phase3/runs/drugclip/v3_formal_epoch0_selection_recovery_v1/checkpoint_best.pt",
+    "sha256": "5D2D326B634B38A4412950B08093F2152C974403A344AD8A7B2A59EAF8F33599",
+    "bytes": 178874731,
+    "schema_version": "pepclip-phase3-drugclip-training-v1",
+    "epoch": 0,
+    "global_step": 1232,
+    "global_seed": 1,
+    "best_validation_loss": 6.965936948843618,
+    "model_state": {
+      "state_dict_key": "model_state_dict",
+      "tensor_count": 352,
+      "parameter_and_buffer_numel": 28575002,
+      "all_floating_and_complex_tensors_finite": true
+    }
+  },
+  "data_contract": {
+    "data_version": "v3",
+    "dataset_version": "random_conformer_v3",
+    "manifest_relative_path": "phase3/runs/drugclip/random_conformer_v3/DATA_MANIFEST.json",
+    "manifest_sha256": "043278F18EFC9B9C3238788D4C6B34C35641C9C26895E5045D8598FA99D5C309",
+    "manifest_contract": {
+      "manifest_schema": "pepclip-data-manifest-v2",
+      "dataset_version": "random_conformer_v3",
+      "parent_dataset": "random_conformer_v2",
+      "relation_schema": "drugclip-random-augmentation-pairs-v3",
+      "cache_schema": "drugclip-random-conformer-cache-v2",
+      "generator_id": "internal-coordinate-rama-v2-clash15",
+      "absolute_paths_recorded": false
+    },
+    "checkpoint_contract": {
+      "database_contract": "drugclip-exact-peptide-random-conformer-v3",
+      "cache_schema": "drugclip-random-conformer-cache-v2",
+      "generator_id": "internal-coordinate-rama-v2-clash15",
+      "qc_id": "clash15-nca-c-gap2-distance-lt1.5-v1"
+    }
+  },
+  "initialization": {
+    "role": "frozen_phase2_learned_concat",
+    "checkpoint_relative_path": "phase2/runs/v9_concat_fusion_partial_unfreeze_1d3d_last1_from3d_e40_v1/checkpoint_best.pt",
+    "checkpoint_sha256": "9FB16C48BA715C6273341609D60725AE796AD4A78771744E19ECF2C13D38AE20",
+    "checkpoint_bytes": 177855494
+  },
+  "code_baseline": {
+    "training_and_evaluation_git_commit": "a88f0c1f0f044cf5ecf09d1756fc01bef8abd90e",
+    "phase3_implementation_commit": "7de86c0a3e2b3f52a026f31fb70c0aa8d61de79f"
+  },
+  "evaluation": {
+    "model_label": "formal_epoch0_recovery",
+    "query_count": 512,
+    "validation_interface_pair_ids_sha256": "6BF3206C391BEB590D2C9ED033D947E489CFBBEC5219D33B0F0383AA7D466BE4",
+    "fixed_plan": {
+      "relative_path": "phase3/runs/drugclip/v3_bounded_step032_pilot_review_pending_v1/validation_sampling_plan.jsonl",
+      "file_sha256": "45D4748CB56AB0DF91D8A0DE8FBE4F9013C4B30253E6F080DB04B3D3BB6C9A21",
+      "canonical_sha256": "9B132B4AE88D851C7A1709444C78F848D5343312163080E327CF8AD492034DE8"
+    },
+    "candidate_bank": {
+      "receptor_to_peptide_candidate_ids_sha256": "B3F50E0A5457F1997D5EF060A1B6B43306B580031A9F38867AB579587FE34311",
+      "peptide_to_receptor_candidate_ids_sha256": "5E9A1D761AC70F782BD0C6BF7A7473307830AC23C7FF87D983A23FC3B87F6E91"
+    },
+    "conformer_indices": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "reports": {
+      "single_conformer": {
+        "relative_path": "phase3/runs/drugclip/v3_formal_epoch0_selection_recovery_full_retrieval_v1/retrieval_report.json",
+        "sha256": "1D8208ECEA67F35188DD9D296492C2C9A8B5F4D7E34EA750C01662A4B865C340",
+        "schema_version": "phase3-drugclip-full-candidate-retrieval-v1"
+      },
+      "multi_conformer_config": {
+        "relative_path": "phase3/runs/drugclip/v3_formal_epoch0_selection_recovery_multi_conformer_v1/evaluation_config.json",
+        "sha256": "60FDAE38CFBEC8D30ECEA6ABCF64B25A76A31077DAA4747608D450B07FE9C6FF",
+        "schema_version": "phase3-drugclip-multi-conformer-full-retrieval-v1"
+      },
+      "multi_conformer_summary": {
+        "relative_path": "phase3/runs/drugclip/v3_formal_epoch0_selection_recovery_multi_conformer_v1/multi_conformer_summary.json",
+        "sha256": "55B9F42876FB65E7F9A774489C0501A82F3C7E8B5D771F5C9C0EB7351FC284C1"
+      },
+      "bootstrap_confidence_intervals": {
+        "relative_path": "phase3/runs/drugclip/v3_formal_epoch0_selection_recovery_multi_conformer_v1/bootstrap_confidence_intervals.json",
+        "sha256": "54402BBB266AA5C8834D8374C6B3A54379D4E77385C55B6BA73754B08538A4F5"
+      },
+      "mean_score_retrieval": {
+        "relative_path": "phase3/runs/drugclip/v3_formal_epoch0_selection_recovery_multi_conformer_v1/mean_score_retrieval_metrics.json",
+        "sha256": "F7DCAB33A3B38ABD2FDE4B5429F74C04012FF0496C631C1E35E7042964A9EE45"
+      }
+    }
+  },
+  "conclusion_boundary": {
+    "selected_definition": "current balanced Phase-3 v1 checkpoint under the fixed evaluation contract",
+    "preferred_over": ["formal_epoch4_best"],
+    "historical_controls_retained": ["bounded_step_032", "formal_epoch4_best"],
+    "last_checkpoint_policy": "not separately evaluated because its 352 model tensors are identical to checkpoint_best.pt",
+    "supported_claims": [
+      "The Phase-3 v3 data, training, recovery, evaluation, and bounded model-selection chain completed.",
+      "Epoch 0 is the selected balanced checkpoint under the fixed 512-query single- and ten-conformer evaluation contract."
+    ],
+    "unsupported_claims": [
+      "Universal retrieval improvement outside the fixed evaluation contract.",
+      "Statistically certain Recall@10 improvement.",
+      "Validation-loss reduction alone implies retrieval improvement."
+    ]
+  }
+}
