@@ -282,6 +282,61 @@ Evidence:
 
 - `E:\pep\phase3\runs\drugclip\v3_input_domain_ablation_fixed512_v1`
 
+## Full-Heavy Candidate-Independent Conformer Feasibility Audit
+
+The 2026-07-23 read-only audit is classified `INSUFFICIENT_EVIDENCE` for a
+fixed-512 all-heavy-random forward evaluation. This is not a model-contract
+block: the selected Phase-2 3D tower is an EGNN whose existing element,
+standard atom-name, and standard residue-name vocabularies cover N/CA/C/O,
+OXT, and all standard side-chain heavy atoms. The generic atom tensor and
+Phase-3 batching paths already accept those identities and coordinates, as
+also demonstrated by the completed bound-all-heavy diagnostic. No model
+architecture or vocabulary change is required.
+
+The formal `random_conformer_v3` data contract itself remains strictly
+backbone-only. Every conformer stores exactly three ordered atoms per residue
+under `backbone_atoms`: N, CA, C. Its loader rejects any other atom count or
+order, and its formal clash rule examines only N/CA/C. Therefore a future
+prototype must use an independent schema/namespace; it must not overwrite or
+reinterpret v3. A later formal release would require a new data schema and
+contract, even though the current model can consume full-heavy tensors.
+
+The current Python environment contains RDKit 2025.09.5 and Gemmi 0.7.5.
+OpenMM, PDBFixer, PeptideBuilder, PyRosetta, Biopython, OpenBabel, MDTraj,
+ParmEd, Modeller, Biotite, and MDAnalysis are unavailable, and no matching
+local executable was found on PATH. Existing DrugCLIP/ProFSA source includes
+generic RDKit ETKDG plus MMFF conformer helpers, but no peptide-specific
+side-chain or rotamer builder.
+
+An in-memory RDKit audit built all-heavy standard peptide topology for all 512
+fixed-plan rows with zero failures and zero PepCLIP vocabulary mismatches;
+heavy-atom counts were 44-175, below the 192-atom cap. A six-residue standard
+peptide produced ten finite, distinct, seed-deterministic conformers with
+stable atom identity/order and full MMFF parameters, although three of ten did
+not converge within 500 MMFF iterations. A larger three-sequence,
+ten-conformer, 1,000-iteration deterministic probe exceeded a five-minute
+tool window and left no process behind. Thus topology compatibility is proved,
+but robust fixed-512 ten-conformer generation throughput and convergence are
+not.
+
+The formal v3 sequence set contains 6,979 unique standard-alphabet peptides
+of length 8-20. It contains 355 sequences with at least two cysteines; the
+fixed-512 plan contains 31 such rows representing 22 unique sequences. The
+metadata contains no explicit linear/cyclic, disulfide, modification,
+crosslink, terminal-state, or other chemistry classification. Consequently,
+multiple-Cys, cyclic, modified, covalent, and other chemistry-ambiguous
+peptides cannot be silently treated as ordinary linear reduced peptides.
+Only records with an explicit ordinary linear, unmodified, standard-residue,
+defined-terminal chemistry contract are eligible for a first prototype.
+
+RDKit `MolFromSequence` plus deterministic ETKDGv3, explicit-hydrogen
+embedding, MMFF94s optimization, hydrogen removal, and strict convergence,
+geometry, chirality, clash, identity/order, and repeatability rejection is the
+single recommended minimal route. It is candidate-independent and requires no
+network, but it has no explicit protein rotamer library and still needs a
+separately authorized prototype to establish coverage and performance. No
+prototype, data, training, or retrieval output was created by this audit.
+
 ## Verified Historical Phase-3 Diagnosis
 
 The existing 4096/512 Pilot and early-step diagnostics used data version v2.
@@ -338,17 +393,19 @@ model-selection recovery, the selected-model release contract, and the
 fixed-512 input-domain ablation are complete. Epoch 0 remains the released
 balanced fixed-contract checkpoint, but the ablation shows that the current
 backbone-only random peptide input removes the full-heavy/side-chain signal
-that drives most of the observed 3D retrieval difference. Neither the
-ablation nor the release proves that chemically complete random conformers
-will work.
+that drives most of the observed 3D retrieval difference. The feasibility
+audit confirms that the current model can encode standard full-heavy atoms and
+that local RDKit can construct compatible topology, but chemistry metadata and
+robust ten-conformer generation remain unproved. Full-heavy-random retrieval
+is therefore not authorized or technically ready.
 
 ## Single Next Action
 
-Perform a separately claimed, no-training feasibility audit of whether
-chemically complete, candidate-independent peptide conformers can be generated
-locally from sequence/chemistry and consumed by the current 3D input contract.
-Do not run fixed-512 all-heavy-random retrieval until that audit succeeds and
-the user grants separate authorization. Do not continue Phase-3 v1 training.
+Have the review session decide whether to authorize a bounded RDKit prototype
+for explicitly ordinary linear, unmodified standard peptides, with
+deterministic retry and strict chemistry/geometry rejection. Do not implement
+the prototype or run fixed-512 all-heavy-random retrieval without that
+separate authorization, and do not continue Phase-3 v1 training.
 
 ## Workspace Safety
 

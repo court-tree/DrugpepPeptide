@@ -438,3 +438,56 @@ backbone-only 3D-only retrieval relative to Phase 2.
 - Do not start fixed-512 all-heavy-random forward evaluation without a
   successful chemistry/input-contract feasibility audit and separate user
   authorization.
+
+## 2026-07-23: Full-Heavy Generation Is Model-Compatible But Not Yet Fixed-512 Ready
+
+### Evidence
+
+The formal v3 generator and loader require exactly ordered N/CA/C triplets and
+apply only a backbone clash rule. In contrast, the selected EGNN input path
+already tensors elements, atom names, residue names, and coordinates using
+vocabularies that cover all standard peptide heavy atoms. The fixed-512
+bound-all-heavy diagnostic already completed through that model path without a
+model or vocabulary change.
+
+RDKit 2025.09.5 is installed locally and needs no network. Its standard peptide
+topology builder produced full-heavy, named, residue-indexed topology for all
+512 fixed-plan rows with zero vocabulary mismatches and a maximum of 175 heavy
+atoms. A short standard peptide produced ten finite, distinct, exactly
+seed-repeatable ETKDG conformers with stable atom identity/order and complete
+MMFF parameters. Three conformers did not converge within 500 iterations, and
+a broader long-peptide ten-conformer probe exceeded five minutes.
+
+The v3 metadata has only standard one-letter sequences, not explicit chemistry
+classification. Among 6,979 unique sequences, 355 contain at least two
+cysteines; the fixed-512 plan contains 31 multiple-Cys rows. There are no
+fields that determine linear versus cyclic topology, disulfide state,
+modification, crosslink, covalent state, or terminal chemistry.
+
+### Decision
+
+Classify the current fixed-512 readiness as `INSUFFICIENT_EVIDENCE`, not
+`BLOCKED_BY_MODEL_CONTRACT`: the model supports standard full-heavy input and
+the local stack has a plausible generator, but robust ten-conformer coverage
+and special-peptide eligibility are not established.
+
+If separately authorized, use only RDKit `MolFromSequence` plus deterministic
+ETKDGv3 and MMFF94s with explicit convergence, geometry, chirality, clash,
+identity/order, and repeatability rejection. Restrict the first prototype to
+records explicitly classified as ordinary linear, unmodified,
+standard-residue peptides with defined termini. Reject chemistry-ambiguous
+records, including unresolved multiple-Cys cases.
+
+### Do Not Repeat
+
+- Do not overwrite or relabel `random_conformer_v3`; a prototype needs an
+  independent namespace and a later formal release needs a new schema.
+- Do not copy bound side chains, translate side chains onto random C-alpha
+  coordinates, select rotamers from receptor/contact information, or vary a
+  peptide conformer by receptor.
+- Do not fill missing atoms with zero, repeated, invented, or vocabulary-only
+  coordinates.
+- Do not treat multiple-Cys, cyclic, modified, non-standard, covalent, or
+  otherwise chemistry-ambiguous peptides as ordinary linear peptides.
+- Do not infer that generic RDKit topology success proves reliable fixed-512
+  ten-conformer generation or retrieval improvement.
