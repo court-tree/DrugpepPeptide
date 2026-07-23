@@ -542,3 +542,54 @@ side-chain completion, avoiding global whole-molecule ETKDG/MMFF optimization.
 - Do not truncate a full-heavy peptide at 192 atoms; the larger 6,979-sequence
   release still contains a known 197-heavy-atom future-contract risk.
 - Do not claim retrieval improvement; no GPU retrieval or training was run.
+
+## 2026-07-23: Formal-v3 Fixed-Backbone RDKit Completion Is Performance-Blocked
+
+### Evidence
+
+The constrained prototype reproduced all 50 formal
+`random_conformer_v3` N/CA/C coordinate hashes for the five pre-registered
+sequences before launching side-chain workers. RDKit then used those
+coordinates as an exact ETKDG map and fixed every N/CA/C atom during MMFF94s
+optimization.
+
+The length-8 control `SAVTTVVN` completed two independent 10/10 runs in 4.56
+and 4.73 seconds. Atom-identity and coordinate-set hashes matched, all
+conformers were distinct, N/CA/C displacement was exactly zero, and complete
+topology, converged optimization, geometry, chirality, clash, vocabulary, and
+finite CPU EGNN-forward checks passed.
+
+The length-17 control and all three prior blocking sequences, through length
+20 and 175 heavy atoms, each exceeded the pre-registered 300-second limit
+before producing a first accepted conformer. Each process was terminated with
+no leftover child or evaluator process. No limit was raised and no failed
+sequence was retried. The earlier panel-v1 used a newly generated backbone
+split and is diagnostic only; panel-v2 using the formal seed plan is the
+decision-bearing evidence.
+
+### Decision
+
+Classify this exact fixed-backbone RDKit constrained-completion route as
+`PERFORMANCE_BLOCKED`, not `CONSTRAINED_COMPLETION_PASS`. Exact backbone
+preservation is demonstrated for the short control, and the current model
+input path succeeds for that control, but the required long-peptide coverage,
+double-run determinism, geometry, and CPU-forward evidence cannot be reached
+within the fixed performance contract.
+
+This result blocks the current whole-molecule constrained ETKDG completion
+strategy for the tested length-17-to-20 peptides; short-peptide success does
+not establish fixed-512 readiness. It does not disprove complete-heavy
+representation or rotamer-based packing on an already fixed backbone. The six
+non-ordinary chemistry classes remain explicitly excluded. No training, GPU
+retrieval, full-data generation, or v4 publication is authorized by this
+result. The sole next implementation action is a separately authorized FASPR
+fixed-backbone prototype on the same five-sequence panel.
+
+### Do Not Repeat
+
+- Do not raise the 300-second timeout, 10-attempt bound, or 500-iteration MMFF
+  limit and rerun this panel without a new authorization.
+- Do not treat the successful short control as long-peptide or fixed-512
+  readiness.
+- Do not use panel-v1's newly generated backbone split as formal-v3 evidence.
+- Do not run fixed-512 all-heavy-random retrieval from this prototype.

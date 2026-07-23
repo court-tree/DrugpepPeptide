@@ -403,6 +403,62 @@ Evidence:
 - `E:\pep\phase3\runs\drugclip\v2_full_atom_prototype_fixed512_audit_v1`
 - `E:\pep\phase3\runs\drugclip\v2_full_atom_prototype_fixed512_audit_v2`
 
+## Constrained Fixed-Backbone Side-Chain Completion Prototype
+
+The formal-v3-input prototype is classified `PERFORMANCE_BLOCKED`, not
+`CONSTRAINED_COMPLETION_PASS`. It used the unchanged
+`random_conformer_v3` seed plan to regenerate all 10 candidate-independent
+N/CA/C backbones for each of the five pre-registered sequences. All 50
+regenerated backbone coordinate hashes matched the formal cache before
+side-chain workers were launched.
+
+The prototype built the full peptide topology with RDKit, supplied the formal
+N/CA/C coordinates as an exact ETKDG coordinate map, fixed every N/CA/C atom
+during MMFF94s optimization, and allowed only O/OXT, side-chain atoms, and
+temporary hydrogens to move. It used at most 10 completion attempts, 500 MMFF
+iterations, and a 300-second hard limit per sequence and repeat. It never read
+receptor, interface, contact, evidence, or bound-coordinate data inside a
+worker.
+
+For the length-8, 55-heavy-atom control `SAVTTVVN`, two independent runs each
+completed 10/10 accepted conformers in 4.56 and 4.73 seconds. The canonical
+coordinate-set hash and atom-identity hash matched across repeats, all 10
+conformers were distinct, maximum N/CA/C displacement was 0.0 angstrom, and
+complete-heavy topology, MMFF convergence, geometry, chirality, clash,
+vocabulary, and finite CPU EGNN-forward checks passed.
+
+The remaining four sequences did not produce a first accepted conformer
+within their first authorized 300-second run:
+
+- `TLAPADGPTTDEVTLQV` (length 17, 121 heavy atoms)
+- `KVSKAAADLMAYCEAHAKE` (length 19, 141 heavy atoms)
+- `DDFTNELKAELDRYKRENQ` (length 19, 168 heavy atoms)
+- `ENYFQAEAYNLDKVLDEFEQ` (length 20, 175 heavy atoms)
+
+Each timed-out worker was terminated and left no child or evaluator process.
+No timeout, attempt, or MMFF bound was increased, and no failed sequence was
+retried. Because the formal N/CA/C hashes were reproduced before the workers
+and the short control preserved them exactly, the evidence localizes the
+remaining runtime block to the current whole-molecule RDKit constrained
+completion/embedding route rather than formal-v3 backbone generation. It
+does not establish long-peptide completion, determinism, geometry, or model
+input success.
+
+The earlier `v2_constrained_sidechain_completion_panel_v1` generated a new
+backbone split and is retained only as invalid-input diagnostic evidence. The
+decision-bearing run is
+`v2_constrained_sidechain_completion_panel_v2`. All six non-ordinary chemistry
+classes remain explicitly rejected. No training, GPU retrieval, full-data
+generation, v4 publication, atom truncation, or target-bound conformer input
+occurred. This result is specific to whole-molecule constrained ETKDG and does
+not reject rotamer-based packing on an already fixed backbone.
+
+Evidence:
+
+- `E:\pep\phase3\runs\drugclip\v2_constrained_sidechain_completion_panel_v2\backbone_seed_plan.json`
+- `E:\pep\phase3\runs\drugclip\v2_constrained_sidechain_completion_panel_v2\runs.json`
+- `E:\pep\phase3\runs\drugclip\v2_constrained_sidechain_completion_panel_v2\summary.json`
+
 ## Verified Historical Phase-3 Diagnosis
 
 The existing 4096/512 Pilot and early-step diagnostics used data version v2.
@@ -461,17 +517,21 @@ balanced fixed-contract checkpoint, but the ablation shows that the current
 backbone-only random peptide input removes the full-heavy/side-chain signal
 that drives most of the observed 3D retrieval difference. The feasibility
 audit confirms that the current model can encode standard full-heavy atoms and
-that local RDKit can construct compatible topology, but chemistry metadata and
-robust ten-conformer generation remain unproved. Full-heavy-random retrieval
-is therefore not authorized or technically ready.
+that local RDKit can construct compatible topology. The constrained prototype
+also proves exact fixed-backbone completion for one short control, but the
+current whole-molecule constrained ETKDG route times out before the first
+accepted conformer for every length-17-to-20 panel sequence. Robust
+ten-conformer generation remains unproved, so full-heavy-random retrieval is
+not authorized or technically ready.
 
 ## Single Next Action
 
-Have the review session decide whether to authorize a bounded RDKit prototype
-for explicitly ordinary linear, unmodified standard peptides, with
-deterministic retry and strict chemistry/geometry rejection. Do not implement
-the prototype or run fixed-512 all-heavy-random retrieval without that
-separate authorization, and do not continue Phase-3 v1 training.
+The sole next implementation action is a separately authorized five-sequence
+FASPR fixed-backbone prototype using the same formal-v3 backbone and chemistry
+boundaries. Do not increase the current whole-molecule constrained ETKDG
+prototype's 300-second timeout, 10-attempt bound, or 500-iteration MMFF limit,
+and do not run fixed-512 all-heavy-random retrieval or continue Phase-3 v1
+training without separate authorization.
 
 ## Workspace Safety
 
