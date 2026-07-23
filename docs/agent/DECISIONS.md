@@ -768,3 +768,51 @@ identity.
   source-slice map.
 - Do not install dependencies, download a source corpus/database, or start the
   five-sequence prototype without separate authorization.
+
+## 2026-07-23: Train-Only Torsion Prior Passes Coverage But Fails FASPR Packing
+
+### Evidence
+
+The formal Phase-3 train-only source audit accepted 9,594 ordinary-linear,
+standard, non-covalent peptide sources from 5,050 PDB IDs and 6,097 local
+structure files after project split, fixed-512, exact-sequence, similar
+8-residue-window, and chemistry exclusions. It retained 95,345 joint
+trans-like phi/psi/omega observations. Pro, Gly, and pre-Pro counts are 6,360,
+5,973, and 6,428, so the required 500-observation coverage gate passes.
+
+The resulting prior manifest SHA256 is
+`E93B24E59D5C18D7CC4213BC82D38C789CB32A279A3078AED738477246E80F94`.
+Each sampled torsion remains source-traceable, and generation uses only the
+manifest, peptide sequence, conformer index, and generator version. The new
+internal-coordinate path reproduces target phi/psi/omega without the
+formal-v3 sign reversal and does not reuse formal-v3 backbone hashes.
+
+Two controls completed deterministic double 10/10 FASPR runs with finite CPU
+EGNN forward and strict geometry. On the third sequence,
+`KVSKAAADLMAYCEAHAKE`, conformer index 3 reached FASPR exit code 0 but failed
+unchanged geometry QC with a 0.325159-angstrom nonlocal heavy-atom clash. The
+run stopped without retrying or evaluating the remaining two sequences.
+
+### Decision
+
+Classify the strict single-attempt prototype as `FASPR_PACKING_FAIL`, not
+`TRAIN_ONLY_TORSION_FASPR_PASS`. Train-only residue-aware backbone coverage,
+provenance, dihedral convention, deterministic controls, Pro geometry and
+planarity, runtime, and CPU model input all pass for the evidence actually
+executed; full single-attempt packing coverage does not.
+
+This result does not invalidate residue-aware train-only backbones or prove
+that retrieval would fail. It supports a bounded, deterministic QC-rejection-
+sampling follow-up that advances through the deterministic backbone sampling
+stream, records every rejected packed attempt, uses fixed attempt/time limits,
+and accepts a conformer only when the unchanged strict geometry contract
+passes. It does not support accepting the clashing structure, relaxing the
+clash threshold, 373-query generation, or retrieval.
+
+### Do Not Repeat
+
+- Do not accept FASPR exit code 0 as sufficient when the packed geometry fails.
+- Do not relax the 0.75-angstrom nonlocal heavy-atom clash threshold.
+- Do not add unbounded retries or continue the formal panel without a separately
+  authorized, fixed rejection-sampling contract.
+- Do not describe two successful controls as fixed-512 readiness.

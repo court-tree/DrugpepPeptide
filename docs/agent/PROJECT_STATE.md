@@ -661,6 +661,71 @@ post-hoc runtime filtering is not auditable after source mappings are
 discarded. No five-sequence prototype is authorized or specified until that
 database and compatible local environment exist.
 
+## Train-Only Residue-Context Torsion Prototype
+
+The separately authorized local alternative completed its source audit before
+generation. It used only formal Phase-3 train-split evidence structures and
+excluded validation/test/fixed-512 PDBs and structure files, exact evaluation
+sequences, source 8-mers with at least 80% ungapped identity to any evaluation
+8-mer, and non-ordinary chemistry. No receptor coordinate, interface, contact,
+or bound pose is a generation input.
+
+The audit began with 19,707 train pairs, 5,020 train-unique peptide sequences,
+13,620 candidate train sources, and 7,297 candidate PDB IDs. It resolved every
+train evidence ID. The exclusive filters removed 2,863 sources for chemistry
+and 1,163 for the evaluation-window rule; split/fixed-512 PDB overlap and exact
+evaluation-sequence overlap were zero. The accepted prior source contains
+9,594 peptide sources, 5,050 PDB IDs, 6,097 structure files, and 3,461 unique
+peptide sequences.
+
+After filtering 397 non-trans observations, the joint residue-context prior
+contains 95,345 trans phi/psi/omega observations. Pro, Gly, and pre-Pro have
+6,360, 5,973, and 6,428 observations respectively, all above the required 500.
+Every observation retains PDB, chain, residue, source path, and source-file
+SHA256. The canonical prior manifest SHA256 is
+`E93B24E59D5C18D7CC4213BC82D38C789CB32A279A3078AED738477246E80F94`.
+Sampling is joint in phi/psi/omega and distinguishes Pro, Gly, residue-specific
+pre-Pro, and all other residue identities. The seed namespace contains only
+generator version, manifest SHA, peptide sequence, and conformer index.
+
+The new internal-coordinate implementation fixes the formal-v3 sign
+convention defect: sampled and coordinate-recomputed phi/psi/omega agree to
+less than `1.14e-13` degrees in the executed panel. It directly creates
+N/CA/C/O, is trans-only, and uses a new generator/hash namespace rather than
+claiming formal-v3 backbone reproduction.
+
+The strict single-attempt five-sequence FASPR panel is classified
+`FASPR_PACKING_FAIL`, not `TRAIN_ONLY_TORSION_FASPR_PASS`. The train-only
+residue-aware backbone and Pro contracts pass for the executed evidence:
+`SAVTTVVN` and `TLAPADGPTTDEVTLQV` both
+completed two independent 10/10 runs with identical atom-identity and
+coordinate-set hashes, ten distinct conformers, zero fixed-backbone movement,
+complete heavy atoms including O/OXT, no vocabulary unknowns, finite CPU EGNN
+forward, and less than 60 seconds per run. Both Pro residues in the 17-aa
+control passed amide-nitrogen planarity in all 20 checked conformers; maximum
+planarity residual was 1.327 degrees.
+
+The first run of `KVSKAAADLMAYCEAHAKE` stopped at conformer index 3 after FASPR
+exit code 0 because strict existing geometry QC detected a 0.325159-angstrom
+nonlocal heavy-atom clash. The fourth and fifth panel sequences were not run,
+and the failed sequence was not retried. This is neither a runtime timeout nor
+a dihedral-convention or Pro failure. It proves the current train-only prior
+plus unmodified FASPR route lacks full five-sequence packing coverage; it does
+not justify accepting the clashing structure. The result supports a separately
+authorized bounded, deterministic QC-rejection-sampling prototype: draw the
+next deterministic backbone attempt after a failed packed-geometry audit,
+record every rejected attempt, and retain the unchanged strict QC and hard
+attempt/time limits. It does not support relaxing clash QC, training,
+retrieval, or a 373-query generation. All six special-chemistry classes remain
+explicitly rejected.
+
+Evidence:
+
+- `E:\pep\phase3\runs\drugclip\v3_train_only_torsion_prior_prototype_v1\train_source_audit_summary.json`
+- `E:\pep\phase3\runs\drugclip\v3_train_only_torsion_prior_prototype_v1\torsion_prior_manifest.json`
+- `E:\pep\phase3\runs\drugclip\v3_train_only_torsion_prior_prototype_v1\train_only_torsion_panel_summary.json`
+- `E:\pep\phase3\runs\drugclip\v3_train_only_torsion_prior_prototype_v1\panel.log`
+
 ## Verified Historical Phase-3 Diagnosis
 
 The existing 4096/512 Pilot and early-step diagnostics used data version v2.
@@ -714,22 +779,19 @@ Evidence:
 
 Formal v3 fine-tuning, selected-model release, and fixed-512 input-domain
 ablation are complete. Full-heavy-random retrieval remains unauthorized and
-technically unready. Formal-v3 Pro backbones cannot be reused for a
-Pro-inclusive Phase-3 v2 representation. IDPConformerGenerator has now been
-identified as a plausible residue-aware backbone engine, but its official
-prepared torsion database lacks the source/exclusion provenance required to
-rule out fixed-512, Phase-3 evidence, and validation/test leakage. No compatible
-sanitized local database or runnable supported local environment currently
-exists.
+technically unready. The train-only local torsion source has sufficient
+Pro/Gly/pre-Pro coverage and removes the IDPConformerGenerator prepared-
+database provenance blocker for this prototype, but the complete
+backbone-to-FASPR path fails packing coverage on the third panel sequence.
 
 ## Single Next Action
 
-Under separate authorization, provide or acquire a pinned non-overlapping PDB
-coordinate corpus and compatible Python/DSSP environment, then build and audit
-the pre-sampling sanitized torsion database contract described above. Do not
-use the official prepared database, start the five-sequence prototype, modify
-the current v3 release, relax geometry QC, exclude Pro, rerun retrieval, or
-continue Phase-3 v1 training.
+Under separate authorization, add bounded deterministic QC rejection sampling
+around the unchanged train-only-backbone-to-FASPR route, with a fixed attempt
+cap, fixed hard timeout, complete rejection audit, and acceptance only after
+the existing geometry contract passes; then rerun the same five-sequence panel.
+Do not loosen clash QC, accept the 0.325159-angstrom clash, generate 373
+queries, run retrieval, or train.
 
 ## Workspace Safety
 
