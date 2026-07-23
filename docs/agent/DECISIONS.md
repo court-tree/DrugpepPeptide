@@ -382,3 +382,59 @@ Git.
   v3 Manifest/data-contract, or Phase-2 initialization checks.
 - Do not reinterpret the release label as universal or statistically certain
   Recall@10 superiority outside the fixed evaluation contract.
+
+## 2026-07-23: Full-Heavy Information, Not Backbone Randomization, Dominates The v1 Input-Domain Loss
+
+### Evidence
+
+The authorized read-only fixed-512 ablation compared true-bound all-heavy
+peptide atoms (A), the exact N/CA/C subset of the same bound residues (B),
+formal random conformer 0 (C0), and the arithmetic mean of conformer 0-9 score
+matrices (Cmean10). All variants reused one fixed plan, candidate bank, and
+known-positive policy for both the frozen Phase-2 baseline and selected
+Phase-3 epoch-0 checkpoint.
+
+The exact evidence join passed for 512/512 queries with 512 existing structure
+paths, zero sequence mismatches, zero missing structures, and zero A/B subset
+failures. Four extra incomplete residues across four pairs were audited and
+excluded only after the complete-residue sequence matched exactly; two
+residues across two pairs required lossless N/CA/C source-order normalization.
+The output contains 24,576 per-query ranks and 60 paired query-bootstrap
+comparisons, all using seed 20260723 and 10,000 resamples. Both checkpoint
+model-state hashes were unchanged before and after finite inference; the
+formal command exited 0 with PASS stdout and empty stderr.
+
+For both checkpoints, A to B caused large 3D-only Recall@10 losses
+(0.16016-0.19922 for Phase 2 and 0.16602-0.19336 for Phase 3 across the two
+directions) and smaller but still clear learned-fusion losses
+(0.05469-0.06641 for Phase 2 and 0.04102-0.07812 for Phase 3). B to C0
+Recall@10 differences were much smaller, generally 0.00586-0.01758. The
+backbone-only C0/Cmean10 learned-fusion metrics remained below the
+corresponding 1D-only metrics, while epoch 0 made only negligible changes to
+backbone-only 3D-only retrieval relative to Phase 2.
+
+### Decision
+
+- Treat removal of complete heavy-atom/side-chain information as the primary
+  observed Phase-3 v1 input-domain loss under the fixed-512 contract.
+- Do not assign the main v1 failure to randomizing the backbone: B to C0 is a
+  distinctly smaller effect than A to B.
+- Treat backbone-only C0/Cmean10 fusion as lacking reliable added value over
+  1D-only in the deployment input domain.
+- Epoch 0 does not materially repair the backbone-only 3D representation; its
+  small changes do not validate the representation.
+- Treat A only as a target-bound upper-bound diagnostic, never as deployable
+  screening performance.
+- The next step is a no-training feasibility audit for chemically complete,
+  candidate-independent random peptide conformers. This result does not show
+  that all-heavy random conformers are effective.
+
+### Do Not Repeat
+
+- Do not continue Phase-3 v1 training to solve an input-representation loss.
+- Do not report the A metrics as deployable or target-independent.
+- Do not claim that all-heavy random conformers have been generated or
+  evaluated; only true-bound all-heavy coordinates were tested.
+- Do not start fixed-512 all-heavy-random forward evaluation without a
+  successful chemistry/input-contract feasibility audit and separate user
+  authorization.

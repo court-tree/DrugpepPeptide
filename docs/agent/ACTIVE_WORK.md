@@ -1,6 +1,6 @@
 # PepCLIP Active Work Claims
 
-Last checked: 2026-07-22
+Last checked: 2026-07-23
 
 Add one row before changing files or launching a run. Remove it after the
 handoff is written. A scope must identify exact files or a dedicated output

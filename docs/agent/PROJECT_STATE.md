@@ -1,25 +1,21 @@
 # PepCLIP Current Project State
 
-Last verified: 2026-07-22
+Last verified: 2026-07-23
 
 ## Current Phase
 
 Phase-1 teacher data is frozen, Phase-2 model development is frozen, and the
 active path is `phase3.drugclip`. No training or evaluation process is
-currently running. Formal v3 random-conformer fine-tuning completed for five
-epochs from the frozen learned-concat initialization: all 19,707 training
-interface pairs were visited exactly once per epoch across 1,232 batches, for
-exactly 6,160 optimizer steps. The best validation checkpoint is the trained
-epoch-4 model, not the initialization model. Fixed single-conformer and
-ten-conformer full-candidate evaluation then completed against the same
-512-query bounded-acceptance plan. A single authorized model-selection
-recovery reproduced epoch 0 under the identical formal contract and found it
-to be the better-balanced fixed-contract candidate: it improves the main
-single-conformer head metrics in both directions and avoids epoch 4's p2r
-degradation, while retaining the formal training/evaluator contracts. That
-checkpoint is now formalized by a tracked machine-readable selected-model
-release contract and a read-only validator; no new training or evaluation was
-performed for the release step.
+currently running. Formal v3 random-conformer fine-tuning, fixed single- and
+ten-conformer evaluation, the epoch-0 balanced model selection, and its
+machine-readable release contract are complete. A subsequent authorized
+fixed-512 input-domain ablation completed as a read-only diagnostic against
+the unchanged Phase-2 and selected Phase-3 epoch-0 checkpoints. It isolates
+true-bound all-heavy peptide input, its exact N/CA/C subset, random conformer
+0, and arithmetic-mean scores across random conformers 0-9. The result shows
+that removal of full-heavy/side-chain information is the primary observed
+input-domain loss; randomizing the already-backbone-only input is a smaller
+effect. This does not establish that all-heavy random conformers work.
 
 ## Committed Implementation Baseline
 
@@ -232,6 +228,60 @@ recorded evaluation reports. Focused validator and training-state tests pass.
 The checkpoint and all run/evaluation artifacts remain ignored outputs and
 are not part of the tracked release contract.
 
+## Fixed-512 Input-Domain Ablation
+
+The read-only evaluator
+`phase3/drugclip/evaluate_input_domain_ablation.py` reused the exact fixed
+512-query plan, candidate banks, known-positive policy, v3 Manifest, Phase-2
+checkpoint, and selected Phase-3 epoch-0 checkpoint. The input variants were:
+
+- A: true-bound peptide all-heavy atoms.
+- B: the exact residue-matched N/CA/C subset of the same A structure.
+- C0: formal `random_conformer_v3` conformer 0.
+- Cmean10: arithmetic mean of score matrices for conformers 0-9.
+
+Input validation found 512/512 exact evidence matches, 512 existing structure
+paths, zero peptide-sequence mismatches, zero missing structures, and zero A/B
+subset failures. Four pairs contained one extra incomplete residue each; all
+four residues were excluded only after the complete-residue sequence exactly
+matched the expected peptide. The source distribution was BioLiP2 306,
+BioLiP2_nr_peptide 29, Propedia26 29, and Q-BioLiP_PIII 148; the four excluded
+residues were three BioLiP2 and one BioLiP2_nr_peptide. Two BioLiP2 pairs, one
+residue each, required lossless source N/CA/C atom-order normalization. No A
+input touched or exceeded the 192-atom cap.
+
+The evaluation produced 24,576 per-query rank rows: two checkpoints, three
+representations, four input variants, two directions, and 512 queries. All 60
+pre-registered comparisons used the same paired query-resampling matrix with
+seed 20260723 and 10,000 resamples. All scores were finite, every target was
+present under the exact known-positive policy, both model-state hashes were
+unchanged before versus after inference, the formal foreground command exited
+0, stdout recorded PASS, and stderr was empty. The evaluator contains no
+training, backward, optimizer, checkpoint write, or data/Manifest mutation
+path.
+
+The durable scientific interpretation is:
+
+- A to B causes a large 3D-only and learned-fusion decline, showing that the
+  removed full-heavy/side-chain input information is the primary observed
+  missing factor under this contract.
+- B to C0 is materially smaller. The Phase-3 v1 failure cannot primarily be
+  assigned to randomizing the backbone itself.
+- Backbone-only C0 and Cmean10 learned fusion remain below the corresponding
+  1D-only result, so the deployed-input 3D branch does not provide reliable
+  added value in this diagnostic.
+- Epoch 0 does not materially repair the backbone-only 3D-only
+  representation. Its small changes do not validate the backbone-only design.
+- A uses target-bound coordinates and is an upper-bound diagnostic, not
+  deployable screening performance.
+- The next scientific step is a feasibility audit for chemically complete,
+  candidate-independent random peptide conformers, not more Phase-3 v1
+  training.
+
+Evidence:
+
+- `E:\pep\phase3\runs\drugclip\v3_input_domain_ablation_fixed512_v1`
+
 ## Verified Historical Phase-3 Diagnosis
 
 The existing 4096/512 Pilot and early-step diagnostics used data version v2.
@@ -284,19 +334,21 @@ Evidence:
 ## Current Problem
 
 Formal v3 fine-tuning, epoch-4 evaluation, the one authorized epoch-0
-model-selection recovery, and the selected-model release contract are
-complete. Epoch 0 is the released balanced fixed-contract checkpoint: it
-improves conformer-0 head metrics in both directions and avoids the p2r
-degradation at epoch 4. Recall bootstrap intervals still cross zero, so this
-remains a bounded model-selection choice, not proof of universal superiority.
+model-selection recovery, the selected-model release contract, and the
+fixed-512 input-domain ablation are complete. Epoch 0 remains the released
+balanced fixed-contract checkpoint, but the ablation shows that the current
+backbone-only random peptide input removes the full-heavy/side-chain signal
+that drives most of the observed 3D retrieval difference. Neither the
+ablation nor the release proves that chemically complete random conformers
+will work.
 
 ## Single Next Action
 
-Use the selected-model release contract as the authoritative Phase-3 v1 model
-reference for any separately authorized downstream inference or embedding
-export work. Do not start another training run, epoch candidate, parameter
-search, window study, ablation, or evaluator branch without a separate
-explicit authorization and exact claim.
+Perform a separately claimed, no-training feasibility audit of whether
+chemically complete, candidate-independent peptide conformers can be generated
+locally from sequence/chemistry and consumed by the current 3D input contract.
+Do not run fixed-512 all-heavy-random retrieval until that audit succeeds and
+the user grants separate authorization. Do not continue Phase-3 v1 training.
 
 ## Workspace Safety
 
@@ -326,6 +378,10 @@ explicit authorization and exact claim.
   under the same formal run root. Their launcher logs were copied into the
   corresponding outputs before the temporary worktree and junction were
   removed.
+- The fixed-512 input-domain ablation output is retained at
+  `E:\pep\phase3\runs\drugclip\v3_input_domain_ablation_fixed512_v1`. It is
+  ignored result evidence and must not be staged with the evaluator sources or
+  Session Bridge.
 - Do not clean, revert, stage, commit, or infer file ownership from Git diff
   alone. Generated `runs/` artifacts are ignored and require direct evidence
   inspection.
