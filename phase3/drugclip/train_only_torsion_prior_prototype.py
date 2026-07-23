@@ -9,7 +9,7 @@ import random
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 import numpy as np
 
@@ -38,15 +38,22 @@ from phase3.drugclip.random_conformers import (
 from phase3.drugclip.structure_qc import AA1_TO_3
 
 
-GENERATOR_VERSION = "phase3-v2-train-only-residue-context-trans-v1"
+PRIOR_GENERATOR_VERSION = "phase3-v2-train-only-residue-context-trans-v1"
+GENERATOR_VERSION = "phase3-v2-train-only-residue-context-trans-rejection-v2"
 PRIOR_SCHEMA_VERSION = "phase3-v2-train-only-torsion-prior-v1"
 BACKBONE_SCHEMA_VERSION = "phase3-v2-train-only-backbone-v1"
 TRANS_MAX_DEVIATION_DEGREES = 30.0
 DIHEDRAL_TOLERANCE_DEGREES = 1e-7
 BACKBONE_CLASH_DISTANCE_ANGSTROM = 1.5
-MAX_BACKBONE_ATTEMPTS = 100
 EXPECTED_CONFORMERS = 10
-PANEL_SEQUENCE_TIMEOUT_SECONDS = 60
+MAX_SLOT_ATTEMPTS = 25
+PANEL_SEQUENCE_TIMEOUT_SECONDS = 300
+
+
+class ConformerCoverageError(RuntimeError):
+    def __init__(self, message: str, *, details: dict[str, Any]) -> None:
+        super().__init__(message)
+        self.details = details
 
 
 def read_jsonl(path: Path) -> Iterable[dict[str, Any]]:
@@ -138,7 +145,7 @@ def build_torsion_prior(
     _write_jsonl(prior_path, observations)
     manifest_core = {
         "schema_version": PRIOR_SCHEMA_VERSION,
-        "generator_version": GENERATOR_VERSION,
+        "generator_version": PRIOR_GENERATOR_VERSION,
         "sampling_unit": "one residue-context observation containing joint phi/psi/omega",
         "fragment_matching_used": False,
         "trans_only": True,
@@ -234,6 +241,7 @@ def conformer_seed(
     manifest_sha256: str,
     peptide_sequence: str,
     conformer_index: int,
+    attempt_index: int,
 ) -> int:
     material = "|".join(
         [
@@ -241,6 +249,7 @@ def conformer_seed(
             str(manifest_sha256).upper(),
             peptide_sequence.upper(),
             str(int(conformer_index)),
+            str(int(attempt_index)),
         ]
     )
     return int(hashlib.sha256(material.encode("ascii")).hexdigest()[:16], 16)
@@ -296,14 +305,17 @@ def _sample_torsions(
         omegas.append(float(selected["omega_degrees"]))
         provenance.append(
             {
-                field: selected[field]
-                for field in (
-                    "context_key",
-                    "pdb_id",
-                    "chain_id",
-                    "residue_id",
-                    "source_file_sha256",
-                )
+                "torsion_row_id": canonical_json_sha256(selected),
+                **{
+                    field: selected[field]
+                    for field in (
+                        "context_key",
+                        "pdb_id",
+                        "chain_id",
+                        "residue_id",
+                        "source_file_sha256",
+                    )
+                },
             }
         )
     return phis, psis, omegas, provenance
@@ -494,6 +506,7 @@ def backbone_coordinate_sha256(backbone: list[dict[str, Any]]) -> str:
 def generate_backbone(
     sequence: str,
     conformer_index: int,
+    attempt_index: int,
     groups: dict[str, list[dict[str, Any]]],
     manifest: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
@@ -501,53 +514,49 @@ def generate_backbone(
     if not sequence or any(letter not in AA1_TO_3 for letter in sequence):
         raise ValueError("sequence_not_standard_amino_acids")
     seed = conformer_seed(
-        str(manifest["manifest_canonical_sha256"]), sequence, conformer_index
+        str(manifest["manifest_canonical_sha256"]),
+        sequence,
+        conformer_index,
+        attempt_index,
     )
     rng = random.Random(seed)
     started = time.perf_counter()
-    for attempt in range(1, MAX_BACKBONE_ATTEMPTS + 1):
-        phis, psis, omegas, provenance = _sample_torsions(sequence, groups, rng)
-        backbone = _coordinates_from_torsions(sequence, phis, psis, omegas)
-        if not _backbone_clash_free(backbone):
-            continue
-        measured = measured_torsions(backbone, len(sequence))
-        audit = _dihedral_audit(
-            {"phi": phis, "psi": psis, "omega": omegas}, measured
-        )
-        ncaco, oxygen_audit = reconstruct_backbone_oxygen(sequence, backbone)
-        return backbone, {
-            "schema_version": BACKBONE_SCHEMA_VERSION,
-            "generator_version": GENERATOR_VERSION,
-            "torsion_prior_manifest_sha256": manifest[
-                "manifest_canonical_sha256"
-            ],
-            "peptide_sequence": sequence,
-            "conformer_index": int(conformer_index),
-            "seed": seed,
-            "attempt_index": attempt,
-            "sampled_torsions": {
-                "phi": phis,
-                "psi": psis,
-                "omega": omegas,
-            },
-            "sampled_observation_provenance": provenance,
-            "measured_torsions": measured,
-            "dihedral_convention_audit": audit,
-            "backbone_coordinate_sha256": backbone_coordinate_sha256(backbone),
-            "backbone_ncaco_coordinate_sha256": backbone_coordinate_sha256(ncaco),
-            "oxygen_reconstruction_audit": oxygen_audit,
-            "backbone_generation_seconds": time.perf_counter() - started,
-            "dependency_contract": {
-                "target_bound_inputs_used": False,
-                "receptor_inputs_used": False,
-                "interface_or_contact_inputs_used": False,
-                "complete_fragment_matching_used": False,
-            },
-        }
-    raise RuntimeError(
-        f"backbone_generation_attempts_exhausted:{sequence}:{conformer_index}:"
-        f"{MAX_BACKBONE_ATTEMPTS}"
+    phis, psis, omegas, provenance = _sample_torsions(sequence, groups, rng)
+    backbone = _coordinates_from_torsions(sequence, phis, psis, omegas)
+    measured = measured_torsions(backbone, len(sequence))
+    audit = _dihedral_audit(
+        {"phi": phis, "psi": psis, "omega": omegas}, measured
     )
+    ncaco, oxygen_audit = reconstruct_backbone_oxygen(sequence, backbone)
+    return backbone, {
+        "schema_version": BACKBONE_SCHEMA_VERSION,
+        "generator_version": GENERATOR_VERSION,
+        "torsion_prior_manifest_sha256": manifest[
+            "manifest_canonical_sha256"
+        ],
+        "peptide_sequence": sequence,
+        "conformer_index": int(conformer_index),
+        "seed": seed,
+        "attempt_index": int(attempt_index),
+        "sampled_torsions": {
+            "phi": phis,
+            "psi": psis,
+            "omega": omegas,
+        },
+        "sampled_observation_provenance": provenance,
+        "measured_torsions": measured,
+        "dihedral_convention_audit": audit,
+        "backbone_coordinate_sha256": backbone_coordinate_sha256(backbone),
+        "backbone_ncaco_coordinate_sha256": backbone_coordinate_sha256(ncaco),
+        "oxygen_reconstruction_audit": oxygen_audit,
+        "backbone_generation_seconds": time.perf_counter() - started,
+        "dependency_contract": {
+            "target_bound_inputs_used": False,
+            "receptor_inputs_used": False,
+            "interface_or_contact_inputs_used": False,
+            "complete_fragment_matching_used": False,
+        },
+    }
 
 
 def generate_train_only_faspr_conformers(
@@ -559,6 +568,7 @@ def generate_train_only_faspr_conformers(
     faspr_executable: Path,
     faspr_commit_sha: str,
     faspr_binary_sha256: str,
+    attempt_qc: Callable[[dict[str, Any]], dict[str, Any]],
     chemistry_class: str = CHEMISTRY_CLASS,
     num_conformers: int = EXPECTED_CONFORMERS,
 ) -> dict[str, Any]:
@@ -589,33 +599,175 @@ def generate_train_only_faspr_conformers(
     output_dir = Path(work_dir).resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
     conformers = []
+    attempt_audit = []
+    packed_backbone_hashes: set[str] = set()
     started = time.perf_counter()
     for conformer_index in range(EXPECTED_CONFORMERS):
-        backbone, backbone_audit = generate_backbone(
-            normalized,
-            conformer_index,
-            torsion_prior_groups,
-            torsion_prior_manifest,
-        )
-        packed = _pack_one(
-            normalized,
-            base,
-            identities,
-            backbone,
-            conformer_index,
-            output_dir,
-            executable,
-        )
-        conformers.append(
-            {
-                **packed,
-                "train_only_backbone_audit": backbone_audit,
-                "total_conformer_seconds": (
-                    backbone_audit["backbone_generation_seconds"]
-                    + packed["faspr"]["elapsed_seconds"]
+        accepted = None
+        for attempt_index in range(MAX_SLOT_ATTEMPTS):
+            if time.perf_counter() - started > PANEL_SEQUENCE_TIMEOUT_SECONDS:
+                raise TimeoutError(
+                    f"sequence_generation_exceeded_"
+                    f"{PANEL_SEQUENCE_TIMEOUT_SECONDS}s:{normalized}:"
+                    f"{conformer_index}:{attempt_index}"
+                )
+            attempt_started = time.perf_counter()
+            attempt_dir = (
+                output_dir
+                / f"slot_{conformer_index:02d}"
+                / f"attempt_{attempt_index:02d}"
+            )
+            attempt_dir.mkdir(parents=True, exist_ok=True)
+            seed = conformer_seed(
+                str(torsion_prior_manifest["manifest_canonical_sha256"]),
+                normalized,
+                conformer_index,
+                attempt_index,
+            )
+            backbone_audit: dict[str, Any] | None = None
+            backbone_hash: str | None = None
+            faspr_output_hash: str | None = None
+            qc_result: dict[str, Any] = {"status": "NOT_RUN"}
+            rejection_reason: str | None = None
+            try:
+                backbone, backbone_audit = generate_backbone(
+                    normalized,
+                    conformer_index,
+                    attempt_index,
+                    torsion_prior_groups,
+                    torsion_prior_manifest,
+                )
+                if int(backbone_audit["seed"]) != seed:
+                    raise ValueError("attempt_seed_contract_mismatch")
+                backbone_hash = str(
+                    backbone_audit["backbone_coordinate_sha256"]
+                )
+                if backbone_hash in packed_backbone_hashes:
+                    raise ValueError("duplicate_backbone_not_repacked")
+                packed_backbone_hashes.add(backbone_hash)
+                packed = _pack_one(
+                    normalized,
+                    base,
+                    identities,
+                    backbone,
+                    conformer_index,
+                    attempt_dir,
+                    executable,
+                )
+                faspr_output_path = (
+                    attempt_dir
+                    / f"conformer_{conformer_index:02d}.faspr.pdb"
+                )
+                if faspr_output_path.is_file():
+                    faspr_output_hash = file_sha256(faspr_output_path)
+                qc_payload = {
+                    "schema_version": (
+                        "phase3-v2-train-only-torsion-faspr-attempt-v2"
+                    ),
+                    "generator_id": GENERATOR_VERSION,
+                    "peptide_sequence": normalized,
+                    "chemistry": chemistry,
+                    "atom_count": len(identities),
+                    "atom_identity": identities,
+                    "atom_identity_sha256": atom_identity_sha256(identities),
+                    "conformer_count": 1,
+                    "conformers": [
+                        {
+                            **packed,
+                            "logical_conformer_index": conformer_index,
+                            "conformer_index": 0,
+                            "attempt_index": attempt_index,
+                            "train_only_backbone_audit": backbone_audit,
+                        }
+                    ],
+                    "total_generation_seconds": (
+                        time.perf_counter() - attempt_started
+                    ),
+                    "dependency_contract": {
+                        "target_bound_inputs_used": False,
+                        "receptor_inputs_used": False,
+                        "interface_or_contact_inputs_used": False,
+                    },
+                }
+                qc_result = attempt_qc(qc_payload)
+                if qc_result.get("status") != "PASS":
+                    raise ValueError("attempt_qc_did_not_return_pass")
+                accepted = {
+                    **packed,
+                    "conformer_index": conformer_index,
+                    "attempt_index": attempt_index,
+                    "seed": seed,
+                    "faspr_output_sha256": faspr_output_hash,
+                    "attempt_qc": qc_result,
+                    "train_only_backbone_audit": backbone_audit,
+                    "total_conformer_seconds": (
+                        time.perf_counter() - attempt_started
+                    ),
+                }
+            except Exception as error:
+                faspr_output_path = (
+                    attempt_dir
+                    / f"conformer_{conformer_index:02d}.faspr.pdb"
+                )
+                if faspr_output_hash is None and faspr_output_path.is_file():
+                    faspr_output_hash = file_sha256(faspr_output_path)
+                rejection_reason = f"{type(error).__name__}:{error}"
+                qc_result = {
+                    "status": "REJECT",
+                    "exception_type": type(error).__name__,
+                    "exception_text": str(error),
+                }
+            audit_row = {
+                "sequence": normalized,
+                "logical_conformer_index": conformer_index,
+                "attempt_index": attempt_index,
+                "seed": seed,
+                "sampled_torsion_row_ids": (
+                    [
+                        row["torsion_row_id"]
+                        for row in backbone_audit[
+                            "sampled_observation_provenance"
+                        ]
+                    ]
+                    if backbone_audit
+                    else []
                 ),
+                "sampled_torsion_rows": (
+                    backbone_audit["sampled_observation_provenance"]
+                    if backbone_audit
+                    else []
+                ),
+                "backbone_sha256": backbone_hash,
+                "faspr_output_sha256": faspr_output_hash,
+                "qc_result": qc_result,
+                "accepted": accepted is not None,
+                "rejection_reason": rejection_reason,
+                "elapsed_seconds": time.perf_counter() - attempt_started,
             }
-        )
+            attempt_audit.append(audit_row)
+            if time.perf_counter() - started > PANEL_SEQUENCE_TIMEOUT_SECONDS:
+                raise TimeoutError(
+                    f"sequence_generation_exceeded_"
+                    f"{PANEL_SEQUENCE_TIMEOUT_SECONDS}s:{normalized}:"
+                    f"{conformer_index}:{attempt_index}"
+                )
+            if accepted is not None:
+                conformers.append(accepted)
+                break
+        if accepted is None:
+            raise ConformerCoverageError(
+                f"logical_conformer_slot_exhausted:{normalized}:"
+                f"{conformer_index}:{MAX_SLOT_ATTEMPTS}",
+                details={
+                    "sequence": normalized,
+                    "logical_conformer_index": conformer_index,
+                    "maximum_attempts": MAX_SLOT_ATTEMPTS,
+                    "attempt_audit": [
+                        row for row in attempt_audit
+                        if row["logical_conformer_index"] == conformer_index
+                    ],
+                },
+            )
     elapsed = time.perf_counter() - started
     if elapsed > PANEL_SEQUENCE_TIMEOUT_SECONDS:
         raise TimeoutError(
@@ -625,8 +777,28 @@ def generate_train_only_faspr_conformers(
     hashes = [row["coordinate_sha256"] for row in conformers]
     if len(set(hashes)) != EXPECTED_CONFORMERS:
         raise ValueError("train_only_conformer_coordinates_not_unique")
+    rejected_rows = [row for row in attempt_audit if not row["accepted"]]
+    rejection_semantic_rows = [
+        {
+            key: row[key]
+            for key in (
+                "sequence",
+                "logical_conformer_index",
+                "attempt_index",
+                "seed",
+                "sampled_torsion_row_ids",
+                "backbone_sha256",
+                "faspr_output_sha256",
+                "rejection_reason",
+            )
+        }
+        for row in rejected_rows
+    ]
+    rejection_reason_counts = Counter(
+        str(row["rejection_reason"]) for row in rejected_rows
+    )
     return {
-        "schema_version": "phase3-v2-train-only-torsion-faspr-panel-v1",
+        "schema_version": "phase3-v2-train-only-torsion-faspr-panel-v2",
         "generator_id": GENERATOR_VERSION,
         "generator_version": {
             "backbone": GENERATOR_VERSION,
@@ -640,6 +812,14 @@ def generate_train_only_faspr_conformers(
                 FASPR_CONFORMER_TIMEOUT_SECONDS
             ),
             "sequence_timeout_seconds": PANEL_SEQUENCE_TIMEOUT_SECONDS,
+            "maximum_attempts_per_logical_conformer": MAX_SLOT_ATTEMPTS,
+            "attempt_seed_material": [
+                "generator_version",
+                "torsion_prior_manifest_sha256",
+                "peptide_sequence",
+                "conformer_index",
+                "attempt_index",
+            ],
         },
         "peptide_sequence": normalized,
         "chemistry": chemistry,
@@ -651,6 +831,19 @@ def generate_train_only_faspr_conformers(
             _canonical_coordinate_set_sha256(conformers)
         ),
         "conformers": conformers,
+        "accepted_attempt_indices": [
+            int(row["attempt_index"]) for row in conformers
+        ],
+        "attempt_audit": attempt_audit,
+        "total_attempt_count": len(attempt_audit),
+        "rejection_count": len(rejected_rows),
+        "rejection_reason_counts": dict(sorted(rejection_reason_counts.items())),
+        "maximum_attempt_index": max(
+            int(row["attempt_index"]) for row in attempt_audit
+        ),
+        "rejection_log_semantic_sha256": canonical_json_sha256(
+            rejection_semantic_rows
+        ),
         "total_generation_seconds": elapsed,
         "dependency_contract": {
             "allowed_inputs": [
@@ -658,6 +851,7 @@ def generate_train_only_faspr_conformers(
                 "ordinary_linear_standard_chemistry",
                 "train_only_torsion_prior_manifest",
                 "conformer_index",
+                "attempt_index",
                 "faspr_version_and_binary",
             ],
             "target_bound_inputs_used": False,

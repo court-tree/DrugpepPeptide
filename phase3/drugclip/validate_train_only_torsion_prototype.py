@@ -26,9 +26,12 @@ from phase3.drugclip.full_atom_conformer_prototype import (
 )
 from phase3.drugclip.structure_qc import AA1_TO_3, resolve_coordinate_paths
 from phase3.drugclip.train_only_torsion_prior_prototype import (
+    ConformerCoverageError,
     EXPECTED_CONFORMERS,
     GENERATOR_VERSION,
+    MAX_SLOT_ATTEMPTS,
     PANEL_SEQUENCE_TIMEOUT_SECONDS,
+    conformer_seed,
     generate_train_only_faspr_conformers,
     load_torsion_prior,
 )
@@ -665,10 +668,15 @@ def _proline_planarity_audit(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def validate_panel_payload(payload: dict[str, Any]) -> dict[str, Any]:
+def validate_panel_payload(
+    payload: dict[str, Any],
+    *,
+    expected_conformers: int = EXPECTED_CONFORMERS,
+    enforce_sequence_timeout: bool = True,
+) -> dict[str, Any]:
     if payload["generator_id"] != GENERATOR_VERSION:
         raise ValueError("train_only_generator_version_mismatch")
-    if payload["conformer_count"] != EXPECTED_CONFORMERS:
+    if payload["conformer_count"] != expected_conformers:
         raise ValueError("train_only_conformer_count_mismatch")
     if payload["atom_count"] > PHASE2_MAX_PEPTIDE_ATOMS:
         raise ValueError(
@@ -716,6 +724,11 @@ def validate_panel_payload(payload: dict[str, Any]) -> dict[str, Any]:
         )
         if int(conformer["faspr"]["exit_code"]) != 0:
             raise ValueError("train_only_faspr_nonzero_exit")
+        if (
+            "attempt_qc" in conformer
+            and conformer["attempt_qc"].get("status") != "PASS"
+        ):
+            raise ValueError("train_only_accepted_attempt_qc_not_pass")
         if conformer["geometry_audit"]["status"] != "PASS":
             raise ValueError("train_only_geometry_not_pass")
         if conformer["oxygen_reconstruction_audit"]["status"] != "PASS":
@@ -754,16 +767,68 @@ def validate_panel_payload(payload: dict[str, Any]) -> dict[str, Any]:
             for axis in ("x", "y", "z")
         ):
             raise ValueError("train_only_nonfinite_coordinate")
-    if len(set(coordinate_hashes)) != EXPECTED_CONFORMERS:
+    if len(set(coordinate_hashes)) != expected_conformers:
         raise ValueError("train_only_conformers_not_distinct")
     if maximum_backbone_deviation != 0.0:
         raise ValueError("train_only_backbone_not_exactly_fixed")
-    if payload["total_generation_seconds"] > PANEL_SEQUENCE_TIMEOUT_SECONDS:
+    if expected_conformers == EXPECTED_CONFORMERS:
+        audits = payload.get("attempt_audit", [])
+        if len(audits) != int(payload.get("total_attempt_count", -1)):
+            raise ValueError("attempt_audit_count_mismatch")
+        rejected = [row for row in audits if not row["accepted"]]
+        if len(rejected) != int(payload.get("rejection_count", -1)):
+            raise ValueError("attempt_rejection_count_mismatch")
+        accepted_indices = [
+            int(row["attempt_index"]) for row in payload["conformers"]
+        ]
+        if accepted_indices != payload.get("accepted_attempt_indices"):
+            raise ValueError("accepted_attempt_indices_mismatch")
+        if max(accepted_indices, default=-1) >= MAX_SLOT_ATTEMPTS:
+            raise ValueError("accepted_attempt_index_out_of_bounds")
+        faspr_backbones = [
+            row["backbone_sha256"]
+            for row in audits
+            if row["faspr_output_sha256"] is not None
+        ]
+        if len(faspr_backbones) != len(set(faspr_backbones)):
+            raise ValueError("same_backbone_was_repacked")
+        for logical_index in range(EXPECTED_CONFORMERS):
+            rows = [
+                row for row in audits
+                if int(row["logical_conformer_index"]) == logical_index
+            ]
+            expected_attempts = list(range(accepted_indices[logical_index] + 1))
+            if [int(row["attempt_index"]) for row in rows] != expected_attempts:
+                raise ValueError(
+                    f"logical_slot_attempt_sequence_invalid:{logical_index}"
+                )
+            if sum(bool(row["accepted"]) for row in rows) != 1:
+                raise ValueError(
+                    f"logical_slot_acceptance_count_invalid:{logical_index}"
+                )
+            for row in rows:
+                expected_seed = conformer_seed(
+                    payload["generator_version"][
+                        "torsion_prior_manifest_sha256"
+                    ],
+                    payload["peptide_sequence"],
+                    logical_index,
+                    int(row["attempt_index"]),
+                )
+                if int(row["seed"]) != expected_seed:
+                    raise ValueError(
+                        f"attempt_seed_mismatch:{logical_index}:"
+                        f"{row['attempt_index']}"
+                    )
+    if (
+        enforce_sequence_timeout
+        and payload["total_generation_seconds"] > PANEL_SEQUENCE_TIMEOUT_SECONDS
+    ):
         raise TimeoutError("train_only_sequence_performance_limit_exceeded")
     planarity = _proline_planarity_audit(payload)
     return {
         "status": "PASS",
-        "conformer_count": EXPECTED_CONFORMERS,
+        "conformer_count": expected_conformers,
         "atom_count": payload["atom_count"],
         "unique_coordinate_hashes": len(set(coordinate_hashes)),
         "maximum_backbone_deviation_angstrom": maximum_backbone_deviation,
@@ -772,8 +837,52 @@ def validate_panel_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "total_generation_seconds": payload["total_generation_seconds"],
         "pepclip_tensorization_unknown_count": 0,
         "proline_planarity_audit": planarity,
+        "accepted_attempt_indices": payload.get("accepted_attempt_indices"),
+        "total_attempt_count": payload.get("total_attempt_count"),
+        "rejection_count": payload.get("rejection_count"),
+        "rejection_reason_counts": payload.get("rejection_reason_counts"),
+        "maximum_attempt_index": payload.get("maximum_attempt_index"),
+        "rejection_log_semantic_sha256": payload.get(
+            "rejection_log_semantic_sha256"
+        ),
         "target_bound_inputs_used": False,
     }
+
+
+def validate_attempt_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    structural = validate_panel_payload(
+        payload,
+        expected_conformers=1,
+        enforce_sequence_timeout=False,
+    )
+    egnn = cpu_egnn_forward_all(payload)
+    if egnn["status"] != "PASS" or not egnn["embedding_finite"]:
+        raise ValueError("attempt_egnn_cpu_forward_not_finite")
+    return {
+        "status": "PASS",
+        "structural_qc": structural,
+        "cpu_egnn_forward": egnn,
+    }
+
+
+def deterministic_rejection_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
+    return [
+        {
+            key: row[key]
+            for key in (
+                "sequence",
+                "logical_conformer_index",
+                "attempt_index",
+                "seed",
+                "sampled_torsion_row_ids",
+                "backbone_sha256",
+                "faspr_output_sha256",
+                "rejection_reason",
+            )
+        }
+        for row in payload["attempt_audit"]
+        if not row["accepted"]
+    ]
 
 
 def _special_chemistry_rejections() -> list[dict[str, Any]]:
@@ -804,6 +913,8 @@ def _classification_for_error(error: BaseException) -> str:
     text = f"{type(error).__name__}:{error}".lower()
     if isinstance(error, TimeoutError):
         return "PERFORMANCE_BLOCKED"
+    if isinstance(error, ConformerCoverageError):
+        return "CONFORMER_COVERAGE_BLOCKED"
     if "dihedral" in text:
         return "DIHEDRAL_CONVENTION_FAIL"
     if "proline" in text:
@@ -826,7 +937,7 @@ def run_panel(args: argparse.Namespace) -> dict[str, Any]:
     tool = verify_faspr_tool(Path(args.faspr_root))
     faspr_executable = Path(tool["binary_path"])
     panel_rows = []
-    final_classification = "TRAIN_ONLY_TORSION_FASPR_PASS"
+    final_classification = "DETERMINISTIC_REJECTION_SAMPLING_PASS"
     for panel_entry in FIXED_PANEL:
         sequence = panel_entry["peptide_sequence"]
         runs = []
@@ -842,11 +953,23 @@ def run_panel(args: argparse.Namespace) -> dict[str, Any]:
                     faspr_executable=faspr_executable,
                     faspr_commit_sha=tool["commit_sha"],
                     faspr_binary_sha256=tool["binary_sha256"],
+                    attempt_qc=validate_attempt_payload,
                 )
                 validation = validate_panel_payload(payload)
                 egnn = cpu_egnn_forward_all(payload)
                 run_path = output_dir / f"{sequence}.run_{run_index}.json"
+                attempt_path = (
+                    output_dir / f"{sequence}.run_{run_index}.attempts.jsonl"
+                )
+                rejection_path = (
+                    output_dir / f"{sequence}.run_{run_index}.rejections.jsonl"
+                )
                 write_json(run_path, payload)
+                write_jsonl(attempt_path, payload["attempt_audit"])
+                write_jsonl(
+                    rejection_path,
+                    deterministic_rejection_rows(payload),
+                )
                 runs.append(
                     {
                         "run_index": run_index,
@@ -856,6 +979,17 @@ def run_panel(args: argparse.Namespace) -> dict[str, Any]:
                         "coordinate_set_sha256": payload[
                             "canonical_coordinate_set_sha256"
                         ],
+                        "accepted_attempt_indices": payload[
+                            "accepted_attempt_indices"
+                        ],
+                        "rejection_log_semantic_sha256": payload[
+                            "rejection_log_semantic_sha256"
+                        ],
+                        "deterministic_rejection_log_path": str(rejection_path),
+                        "deterministic_rejection_log_file_sha256": file_sha256(
+                            rejection_path
+                        ),
+                        "attempt_audit_path": str(attempt_path),
                         "validation": validation,
                         "cpu_egnn_forward": egnn,
                     }
@@ -865,6 +999,12 @@ def run_panel(args: argparse.Namespace) -> dict[str, Any]:
                 == runs[1]["atom_identity_sha256"]
                 and runs[0]["coordinate_set_sha256"]
                 == runs[1]["coordinate_set_sha256"]
+                and runs[0]["accepted_attempt_indices"]
+                == runs[1]["accepted_attempt_indices"]
+                and runs[0]["rejection_log_semantic_sha256"]
+                == runs[1]["rejection_log_semantic_sha256"]
+                and runs[0]["deterministic_rejection_log_file_sha256"]
+                == runs[1]["deterministic_rejection_log_file_sha256"]
             )
             if not deterministic:
                 raise ValueError(f"determinism_hash_mismatch:{sequence}")
@@ -893,10 +1033,11 @@ def run_panel(args: argparse.Namespace) -> dict[str, Any]:
             break
     special = _special_chemistry_rejections()
     summary = {
-        "schema_version": "phase3-v2-train-only-torsion-panel-summary-v1",
+        "schema_version": "phase3-v2-train-only-torsion-panel-summary-v2",
         "status": (
             "PASS"
-            if final_classification == "TRAIN_ONLY_TORSION_FASPR_PASS"
+            if final_classification
+            == "DETERMINISTIC_REJECTION_SAMPLING_PASS"
             else "FAIL"
         ),
         "classification": final_classification,
@@ -911,6 +1052,21 @@ def run_panel(args: argparse.Namespace) -> dict[str, Any]:
                 generate_train_only_faspr_conformers
             ).parameters
         ),
+        "rejection_log_determinism_contract": {
+            "complete_attempt_audit_includes_elapsed_seconds": True,
+            "deterministic_rejection_log_excludes_elapsed_seconds": True,
+            "deterministic_fields": [
+                "sequence",
+                "logical_conformer_index",
+                "attempt_index",
+                "seed",
+                "sampled_torsion_row_ids",
+                "backbone_sha256",
+                "faspr_output_sha256",
+                "rejection_reason",
+            ],
+            "double_run_file_sha256_must_match": True,
+        },
         "target_bound_inputs_used": False,
         "training_or_gpu_retrieval_run": False,
     }
@@ -918,9 +1074,74 @@ def run_panel(args: argparse.Namespace) -> dict[str, Any]:
     return summary
 
 
+def materialize_deterministic_rejection_logs(output_dir: Path) -> dict[str, Any]:
+    output_dir = Path(output_dir).resolve()
+    summary_path = output_dir / "train_only_torsion_panel_summary.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    for panel_row in summary["panel"]:
+        for run in panel_row["runs"]:
+            payload = json.loads(
+                Path(run["payload_path"]).read_text(encoding="utf-8")
+            )
+            rejection_path = (
+                output_dir
+                / f"{panel_row['peptide_sequence']}.run_"
+                f"{run['run_index']}.rejections.jsonl"
+            )
+            rows = deterministic_rejection_rows(payload)
+            if canonical_json_sha256(rows) != payload[
+                "rejection_log_semantic_sha256"
+            ]:
+                raise ValueError(
+                    f"stored_rejection_log_sha_mismatch:"
+                    f"{panel_row['peptide_sequence']}:{run['run_index']}"
+                )
+            write_jsonl(rejection_path, rows)
+            run["deterministic_rejection_log_path"] = str(rejection_path)
+            run["deterministic_rejection_log_file_sha256"] = file_sha256(
+                rejection_path
+            )
+        if len(panel_row["runs"]) == 2 and (
+            panel_row["runs"][0][
+                "deterministic_rejection_log_file_sha256"
+            ]
+            != panel_row["runs"][1][
+                "deterministic_rejection_log_file_sha256"
+            ]
+        ):
+            raise ValueError(
+                f"materialized_rejection_logs_not_deterministic:"
+                f"{panel_row['peptide_sequence']}"
+            )
+    summary["schema_version"] = (
+        "phase3-v2-train-only-torsion-panel-summary-v2"
+    )
+    summary["rejection_log_determinism_contract"] = {
+        "complete_attempt_audit_includes_elapsed_seconds": True,
+        "deterministic_rejection_log_excludes_elapsed_seconds": True,
+        "deterministic_fields": [
+            "sequence",
+            "logical_conformer_index",
+            "attempt_index",
+            "seed",
+            "sampled_torsion_row_ids",
+            "backbone_sha256",
+            "faspr_output_sha256",
+            "rejection_reason",
+        ],
+        "double_run_file_sha256_must_match": True,
+    }
+    write_json(summary_path, summary)
+    return summary
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-panel", action="store_true")
+    parser.add_argument(
+        "--materialize-deterministic-rejection-logs",
+        action="store_true",
+    )
     parser.add_argument("--dataset-root")
     parser.add_argument("--candidate-evidence-jsonl")
     parser.add_argument("--expanded-evidence-jsonl")
@@ -938,6 +1159,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
+    if args.materialize_deterministic_rejection_logs:
+        summary = materialize_deterministic_rejection_logs(
+            Path(args.output_dir)
+        )
+        print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
+        return 0
     if args.run_panel:
         required = ("prior_jsonl", "prior_manifest", "faspr_root")
         missing = [name for name in required if not getattr(args, name)]
