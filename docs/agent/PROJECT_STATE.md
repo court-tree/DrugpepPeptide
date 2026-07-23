@@ -459,6 +459,68 @@ Evidence:
 - `E:\pep\phase3\runs\drugclip\v2_constrained_sidechain_completion_panel_v2\runs.json`
 - `E:\pep\phase3\runs\drugclip\v2_constrained_sidechain_completion_panel_v2\summary.json`
 
+## FASPR Fixed-Backbone Side-Chain Packing Prototype
+
+The authorized official-source FASPR prototype is classified
+`PACKING_COVERAGE_FAIL`, not `FASPR_FIXED_BACKBONE_PASS`. It did not train,
+run GPU retrieval, generate a full dataset, publish a data version, or use an
+online FASPR service.
+
+FASPR was cloned only from
+`https://github.com/tommyhuangthu/FASPR.git` at commit
+`0d55732fd6307f373018c6bddd842291c355c5f7` into the external directory
+`C:\Users\admin\.codex\tools\FASPR`. Its `LICENSE` is MIT. Existing Ubuntu
+WSL g++ 13.3.0 compiled the source with the README command
+`g++ -O3 --fast-math -o FASPR src/*.cpp`; no package was installed. The
+external ELF binary SHA256 is
+`EC5A10ACBDB97E377B0A6263CC4D94192A0E3F5D8189D8726C889C1BA935EFA3`.
+The binary and `dun2010bbdep.bin` are in the same external tool directory.
+Two official 1mol example runs were byte-identical, exited successfully, and
+had empty stderr.
+
+The panel orchestrator reproduced all 50/50 formal-v3 N/CA/C backbone hashes
+before starting workers. Each backbone O was reconstructed deterministically
+from local random-backbone geometry with a 1.231-angstrom C-O bond; the
+C-terminal OXT was completed by a documented trigonal terminal contract.
+FASPR received only N/CA/C/O peptide PDB records. Canonical output restored the
+full-precision formal N/CA/C values after the unavoidable three-decimal PDB
+round trip and required their coordinate hash to remain exact.
+
+`SAVTTVVN` completed two independent 10/10 runs. Both runs had identical
+atom-identity and coordinate-set hashes, ten distinct conformers, maximum
+N/CA/C displacement 0.0 angstrom, FASPR exit code 0 for every conformer, and
+complete-heavy, O/OXT, geometry, chirality, clash, vocabulary, and finite CPU
+EGNN-forward PASS. Individual FASPR calls were below 0.54 seconds in the first
+decision-bearing run.
+
+The first length-17 control `TLAPADGPTTDEVTLQV` failed on formal conformer 0
+despite FASPR exit code 0 and a reported 0.005-second packing computation.
+The packed Pro8 ring placed the previous Gly C-Pro N-Pro CD angle at about
+46.05 degrees; Pro4 showed the same incompatibility at about 57.75 degrees.
+Both violate the pre-registered minimum 60-degree heavy-atom angle contract.
+FASPR therefore removes the previous global-ETKDG long-peptide speed blocker
+for the attempted length-17 control, but exposes a proline fixed-backbone
+packing geometry failure instead. This is not an O/OXT reconstruction,
+atom-cap, determinism, or model-input result.
+The three remaining length-19-to-20 sequences were not run because the panel
+stopped at the first failure. There were no timeouts or leftover FASPR
+processes.
+
+All six non-ordinary chemistry classes were rejected before generation.
+Workers received no receptor, interface, contact, evidence, or bound
+coordinates. The result shows that unmodified FASPR packing is not yet a
+general fixed-512 generator for the formal random backbones; it does not
+evaluate a proline-aware repair or another rotamer packer. Current evidence
+cannot distinguish whether the formal-v3 random Pro backbone itself is
+chemically incompatible with ring closure or whether this is a limitation of
+FASPR on an extreme but potentially valid random backbone.
+
+Evidence:
+
+- `E:\pep\phase3\runs\drugclip\v2_faspr_fixed_backbone_panel_v1\faspr_tool_contract.json`
+- `E:\pep\phase3\runs\drugclip\v2_faspr_fixed_backbone_panel_v1\runs.json`
+- `E:\pep\phase3\runs\drugclip\v2_faspr_fixed_backbone_panel_v1\summary.json`
+
 ## Verified Historical Phase-3 Diagnosis
 
 The existing 4096/512 Pilot and early-step diagnostics used data version v2.
@@ -521,17 +583,20 @@ that local RDKit can construct compatible topology. The constrained prototype
 also proves exact fixed-backbone completion for one short control, but the
 current whole-molecule constrained ETKDG route times out before the first
 accepted conformer for every length-17-to-20 panel sequence. Robust
-ten-conformer generation remains unproved, so full-heavy-random retrieval is
-not authorized or technically ready.
+ten-conformer generation remains unproved. The subsequent FASPR route removes
+the observed length-17 speed blocker but violates the geometry contract for
+proline ring packing on that formal backbone. The evidence does not yet
+distinguish a formal-v3 Pro-backbone feasibility problem from a FASPR packing
+limitation. Therefore full-heavy-random retrieval remains unauthorized and
+technically unready.
 
 ## Single Next Action
 
-The sole next implementation action is a separately authorized five-sequence
-FASPR fixed-backbone prototype using the same formal-v3 backbone and chemistry
-boundaries. Do not increase the current whole-molecule constrained ETKDG
-prototype's 300-second timeout, 10-attempt bound, or 500-iteration MMFF limit,
-and do not run fixed-512 all-heavy-random retrieval or continue Phase-3 v1
-training without separate authorization.
+Perform a separately authorized read-only Pro-backbone compatibility audit
+that distinguishes formal-v3 backbone geometry feasibility from FASPR's
+packing limitations. Do not modify the generator or packer, relax the
+60-degree geometry bound, rerun the stopped panel, run retrieval, or continue
+Phase-3 v1 training as part of that audit.
 
 ## Workspace Safety
 

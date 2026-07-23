@@ -593,3 +593,50 @@ fixed-backbone prototype on the same five-sequence panel.
   readiness.
 - Do not use panel-v1's newly generated backbone split as formal-v3 evidence.
 - Do not run fixed-512 all-heavy-random retrieval from this prototype.
+
+## 2026-07-23: Unmodified FASPR Fails Proline Geometry On A Formal Random Backbone
+
+### Evidence
+
+Official FASPR commit
+`0d55732fd6307f373018c6bddd842291c355c5f7` was compiled outside the
+repository under its MIT License with the existing WSL g++ 13.3.0 toolchain.
+The binary and Dunbrack library were colocated, and the official example was
+byte-deterministic across two successful runs.
+
+The prototype reproduced 50/50 formal-v3 backbone hashes and reconstructed
+backbone O deterministically from local N/CA/C geometry. `SAVTTVVN` completed
+two hash-identical 10/10 runs with exact N/CA/C preservation, complete
+standard heavy atoms and OXT, valid geometry/chirality/clash checks, and
+finite CPU EGNN forward.
+
+For `TLAPADGPTTDEVTLQV` formal conformer 0, FASPR exited 0 rapidly but packed
+Pro8 with a previous Gly C-Pro N-Pro CD angle of about 46.05 degrees. Pro4 had
+the same incompatibility at about 57.75 degrees. Both are below the fixed
+60-degree geometry bound. The panel stopped immediately; the remaining three
+longer sequences were not attempted. There were no timeouts or leftover
+processes.
+
+### Decision
+
+Classify the exact unmodified-FASPR route as `PACKING_COVERAGE_FAIL`, not
+`FASPR_FIXED_BACKBONE_PASS`. FASPR eliminates the earlier global-ETKDG
+long-peptide speed problem for the attempted length-17 control, but it does
+not provide chemically valid Pro ring closure on that formal random backbone.
+Current evidence cannot distinguish an infeasible formal-v3 Pro backbone from
+a FASPR limitation on an extreme but chemically feasible random backbone.
+This failure does not implicate backbone O/OXT reconstruction, atom capacity,
+PepCLIP model input, or target-bound leakage.
+
+Do not authorize 373-query generation, GPU retrieval, training, or a new data
+release, and do not relax QC to admit the failed geometry. The sole next
+action is a read-only Pro-backbone compatibility audit; it must not modify
+N/CA/C, the generator, the packer, or the geometry gate.
+
+### Do Not Repeat
+
+- Do not accept FASPR exit code 0 as sufficient when canonical geometry fails.
+- Do not relax the minimum heavy-atom angle to admit the Pro ring failures.
+- Do not rerun the stopped five-sequence panel or test the remaining sequences
+  without a new authorization.
+- Do not copy bound proline coordinates or alter a backbone by receptor.
