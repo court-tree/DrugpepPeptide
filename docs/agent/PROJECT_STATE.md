@@ -521,6 +521,62 @@ Evidence:
 - `E:\pep\phase3\runs\drugclip\v2_faspr_fixed_backbone_panel_v1\runs.json`
 - `E:\pep\phase3\runs\drugclip\v2_faspr_fixed_backbone_panel_v1\summary.json`
 
+## Formal-v3 Proline Backbone Compatibility Audit
+
+The authorized read-only audit classifies the tested formal backbone as
+`FORMAL_V3_PROLINE_BACKBONE_INCOMPATIBLE`, resolving the ambiguity left by
+the FASPR prototype. It did not modify the generator or packer, rerun the
+stopped formal panel, train, run retrieval, or publish data.
+
+`random_conformer_v3` reuses the generic internal-coordinate sampler.
+Proline changes only the sampled phi term to `N(-65, 10)`; its psi remains
+the current generic Ramachandran basin. Glycine changes only basin-switch
+weights, not the basin means, standard deviations, or fixed backbone
+geometry. There is no pre-Pro branch. Every peptide bond uses
+`180 + N(0, 3)` degrees, so the contract is trans-like and has no cis-Pro
+mode. The internal-coordinate placement maps the sampled Pro phi to the
+opposite-signed standard coordinate dihedral.
+
+All ten formal `TLAPADGPTTDEVTLQV` backbones were audited at Pro4 and Pro8.
+The 20 sampled Pro phi values were negative, while all 20 standard
+`Cprev-N-CA-C` coordinate dihedrals were positive. Bond lengths and the fixed
+`Cprev-N-CA` and `N-CA-C` angles remained at their ideal generator values.
+A fixed-backbone ring-only placement can preserve standard L-Pro ring bonds
+and CA chirality, but it is not chemically sufficient because it permits a
+pyramidal peptide amide N. After requiring the three angles about the Pro
+peptide N to sum to within 10 degrees of 360, zero of 20 sites admitted any
+of 200 independently generated, converged standard L-Pro templates. The best
+site residuals were 20.18-37.03 degrees; all 200 standard controls were below
+10 degrees.
+
+The existing FASPR conformer-0 output preserved N/CA/C at PDB precision and
+the residue-index/atom-name map was intact. Pro4 and Pro8 nevertheless had
+illegal `Cprev-N-CD` angles of about 57.75 and 46.05 degrees. Reconstructed O
+cannot change that angle because O is not one of its three defining atoms.
+An independent candidate-only `AAPA` control exited FASPR with code 0 and
+passed bond, angle, chirality, and clash QC, ruling out a universal inability
+of the local FASPR binary to construct Pro.
+
+Within the conservative 373-query ordinary-linear-standard subset, 168
+queries and 118 unique sequences contain Pro; excluding all Pro would remove
+45.04% of that subset. They contain 314 query-weighted Pro residues (218
+across unique sequences), and 66 queries/49 unique sequences contain multiple
+Pro residues. This is impact accounting only and is not authorization to
+exclude Pro.
+
+For Pro-inclusive Phase-3 v2 coverage, formal-v3 Pro backbone hashes cannot
+be reused. A successor generator must be residue-aware, with Pro-specific
+phi/psi, Gly-specific phi/psi, pre-Pro context, trans peptide bonds in its
+first version, complete N/CA/C/O generation before packing, and a new
+generator version and hash contract. Geometry QC must not be relaxed.
+
+Evidence:
+
+- `E:\pep\phase3\runs\drugclip\v3_proline_backbone_compatibility_audit_v1\summary.json`
+- `E:\pep\phase3\runs\drugclip\v3_proline_backbone_compatibility_audit_v1\tlap_proline_numeric_audit.jsonl`
+- `E:\pep\phase3\runs\drugclip\v3_proline_backbone_compatibility_audit_v1\ring_template_contract.json`
+- `E:\pep\phase3\runs\drugclip\v3_proline_backbone_compatibility_audit_v1\safe373_proline_coverage.json`
+
 ## Verified Historical Phase-3 Diagnosis
 
 The existing 4096/512 Pilot and early-step diagnostics used data version v2.
@@ -585,18 +641,21 @@ current whole-molecule constrained ETKDG route times out before the first
 accepted conformer for every length-17-to-20 panel sequence. Robust
 ten-conformer generation remains unproved. The subsequent FASPR route removes
 the observed length-17 speed blocker but violates the geometry contract for
-proline ring packing on that formal backbone. The evidence does not yet
-distinguish a formal-v3 Pro-backbone feasibility problem from a FASPR packing
-limitation. Therefore full-heavy-random retrieval remains unauthorized and
-technically unready.
+proline ring packing on that formal backbone. The read-only compatibility
+audit now shows that all 20 Pro sites across the ten formal length-17
+backbones are incompatible with the standard planar L-Pro closure contract.
+Therefore full-heavy-random retrieval remains unauthorized and technically
+unready, and formal-v3 Pro backbone hashes cannot be reused for a Pro-inclusive
+Phase-3 v2 representation.
 
 ## Single Next Action
 
-Perform a separately authorized read-only Pro-backbone compatibility audit
-that distinguishes formal-v3 backbone geometry feasibility from FASPR's
-packing limitations. Do not modify the generator or packer, relax the
-60-degree geometry bound, rerun the stopped panel, run retrieval, or continue
-Phase-3 v1 training as part of that audit.
+Design, under separate authorization, a residue-aware backbone-generator
+contract with Pro-specific phi/psi, Gly-specific phi/psi, pre-Pro context,
+trans-only peptide bonds in its first version, complete N/CA/C/O output before
+packing, and a new version/hash namespace. Do not modify the current v3
+release, relax geometry QC, exclude Pro, rerun retrieval, or continue Phase-3
+v1 training.
 
 ## Workspace Safety
 

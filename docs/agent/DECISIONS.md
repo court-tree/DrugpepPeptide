@@ -640,3 +640,59 @@ N/CA/C, the generator, the packer, or the geometry gate.
 - Do not rerun the stopped five-sequence panel or test the remaining sequences
   without a new authorization.
 - Do not copy bound proline coordinates or alter a backbone by receptor.
+
+## 2026-07-23: Formal-v3 Proline Backbones Fail The Planar Ring-Closure Contract
+
+### Evidence
+
+The read-only audit examined Pro4 and Pro8 in all ten formal
+`TLAPADGPTTDEVTLQV` backbones without modifying N/CA/C or rerunning the
+stopped FASPR panel. The sampler gives Pro only a special sampled phi
+`N(-65, 10)`; psi remains generic, Gly only changes basin-switch weights,
+pre-Pro has no special branch, and all peptide bonds are trans-like
+`180 + N(0, 3)`. Under the internal-coordinate placement convention, all 20
+negative sampled Pro phi values become positive standard coordinate
+`Cprev-N-CA-C` dihedrals.
+
+A candidate-only feasibility solver transferred 200 independently generated,
+MMFF94s-converged standard L-Pro rings onto each fixed `Cprev/N/CA/C` site.
+Ring-only bonds and CA chirality can be preserved, but this permits an
+unphysical pyramidal peptide amide N. With the complete contract requiring
+the three angles around Pro N to sum to within 10 degrees of 360, zero of 20
+formal sites was feasible. The best residuals were 20.18-37.03 degrees,
+whereas all 200 standard controls were below 10 degrees.
+
+The existing FASPR conformer-0 output preserved N/CA/C at PDB precision and
+had correct residue/atom mapping but produced illegal `Cprev-N-CD` angles at
+both Pro sites. O reconstruction cannot alter that angle. A normal
+candidate-only `AAPA` control passed the same FASPR and geometry path, so the
+failure is not a universal inability of FASPR to construct Pro.
+
+The ordinary-linear-standard 373-query subset contains 168 Pro-bearing
+queries and 118 Pro-bearing unique sequences. Excluding them would remove
+45.04% of the safe subset and is not an acceptable permanent remedy.
+
+### Decision
+
+Classify the audited backbone as
+`FORMAL_V3_PROLINE_BACKBONE_INCOMPATIBLE`. This resolves the prior
+`PACKING_COVERAGE_FAIL` ambiguity for the tested formal-v3 Pro backbone;
+there may still be other FASPR limitations, but they are not needed to
+explain this failure.
+
+For Pro-inclusive Phase-3 v2 coverage, do not reuse formal-v3 Pro backbone
+hashes. A future generator must be residue-aware, with Pro-specific phi/psi,
+Gly-specific phi/psi, pre-Pro context, trans peptide bonds in its first
+version, complete N/CA/C/O before side-chain packing, and a new generator
+version and hash contract. This is a design conclusion only, not
+authorization to implement, train, retrieve, or publish data.
+
+### Do Not Repeat
+
+- Do not treat ring-bond closure without peptide-amide N planarity as a
+  chemically valid Pro feasibility proof.
+- Do not relax the heavy-atom angle or amide-planarity QC to admit the formal
+  backbone.
+- Do not permanently exclude the 168 Pro-bearing safe queries.
+- Do not claim that a future Pro-aware generator reproduces formal-v3 Pro
+  backbone hashes.
