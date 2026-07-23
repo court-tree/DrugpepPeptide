@@ -816,3 +816,61 @@ clash threshold, 373-query generation, or retrieval.
 - Do not add unbounded retries or continue the formal panel without a separately
   authorized, fixed rejection-sampling contract.
 - Do not describe two successful controls as fixed-512 readiness.
+
+## 2026-07-23: Bounded Deterministic QC Rejection Sampling Passes Five Peptides
+
+### Evidence
+
+The torsion prior and manifest remain unchanged. The rejection-sampling
+generator uses a new version namespace and hashes generator version, prior
+manifest SHA, sequence, logical conformer index, and attempt index. Attempt
+indices begin at zero and stop at 24. One attempt samples one complete
+backbone; a distinct backbone is run through FASPR at most once and can occupy
+its logical slot only after all unchanged strict QC and a finite single-
+conformer CPU EGNN forward pass.
+
+All five fixed sequences completed two independent 10/10 runs. Per sequence,
+the accepted attempt-index vector, atom-identity hash, coordinate-set hash,
+and deterministic rejection-log file SHA256 are identical between runs. Each
+complete panel pass used 59 attempts for 50 accepted conformers and rejected
+9 attempts; the maximum accepted attempt index was 3. Every rejection was a
+nonlocal heavy-atom clash between 0.289988 and 0.666087 angstrom. No rejected
+structure was accepted and the 0.75-angstrom threshold was unchanged. Those
+chemical/geometry clashes were the only actual rejection-sampling signals in
+the executed panel. Schema, vocabulary, atom-cap, and CPU-EGNN checks caused
+zero retries, and receptor, contact, retrieval score, and model-performance
+signals were absent.
+
+All accepted conformers passed sampled/measured phi/psi/omega agreement,
+finite coordinates, full-heavy identity and ordering, bond/angle/chirality,
+Pro ring and amide-nitrogen planarity, FASPR exit, no-UNK, 192-atom cap,
+distinctness, fixed-backbone, and CPU EGNN checks. The largest one-run peptide
+time was 16.081 seconds against the 300-second limit. No target-bound input,
+training, or GPU retrieval was used.
+
+### Decision
+
+Classify the five-sequence prototype as
+`DETERMINISTIC_REJECTION_SAMPLING_PASS`. The bounded attempt contract resolves
+the strict single-attempt packing-coverage failure on this panel without
+changing the torsion prior, rerunning FASPR on a failed backbone, or relaxing
+QC.
+
+This result establishes only five-sequence engineering and chemical
+feasibility. It does not establish coverage for the 265 unique sequences in
+the 373-query safe subset, fixed-512 readiness, retrieval improvement, or a
+releasable data version. The sole next action is a separately authorized
+CPU-only safe-candidate coverage audit without retrieval scoring.
+
+### Do Not Repeat
+
+- Do not replace the 25-attempt bound with unbounded retrying.
+- Do not omit rejected attempts or elapsed time from the complete attempt
+  audit; use the separate elapsed-free deterministic rejection log for
+  double-run byte comparison.
+- Do not rerun deterministic FASPR on an already failed identical backbone.
+- Do not weaken clash, geometry, chirality, Pro, vocabulary, atom-cap, or EGNN
+  acceptance checks.
+- Do not proceed to GPU retrieval, training, or release publication based only
+  on this five-sequence PASS; first audit CPU-only coverage over all 265 safe
+  unique sequences.

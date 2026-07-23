@@ -661,7 +661,7 @@ post-hoc runtime filtering is not auditable after source mappings are
 discarded. No five-sequence prototype is authorized or specified until that
 database and compatible local environment exist.
 
-## Train-Only Residue-Context Torsion Prototype
+## Train-Only Torsion And Deterministic QC Rejection-Sampling Prototype
 
 The separately authorized local alternative completed its source audit before
 generation. It used only formal Phase-3 train-split evidence structures and
@@ -685,8 +685,8 @@ Every observation retains PDB, chain, residue, source path, and source-file
 SHA256. The canonical prior manifest SHA256 is
 `E93B24E59D5C18D7CC4213BC82D38C789CB32A279A3078AED738477246E80F94`.
 Sampling is joint in phi/psi/omega and distinguishes Pro, Gly, residue-specific
-pre-Pro, and all other residue identities. The seed namespace contains only
-generator version, manifest SHA, peptide sequence, and conformer index.
+pre-Pro, and all other residue identities. The torsion prior and its manifest
+remain byte-for-byte unchanged.
 
 The new internal-coordinate implementation fixes the formal-v3 sign
 convention defect: sampled and coordinate-recomputed phi/psi/omega agree to
@@ -694,37 +694,54 @@ less than `1.14e-13` degrees in the executed panel. It directly creates
 N/CA/C/O, is trans-only, and uses a new generator/hash namespace rather than
 claiming formal-v3 backbone reproduction.
 
-The strict single-attempt five-sequence FASPR panel is classified
-`FASPR_PACKING_FAIL`, not `TRAIN_ONLY_TORSION_FASPR_PASS`. The train-only
-residue-aware backbone and Pro contracts pass for the executed evidence:
-`SAVTTVVN` and `TLAPADGPTTDEVTLQV` both
-completed two independent 10/10 runs with identical atom-identity and
-coordinate-set hashes, ten distinct conformers, zero fixed-backbone movement,
-complete heavy atoms including O/OXT, no vocabulary unknowns, finite CPU EGNN
-forward, and less than 60 seconds per run. Both Pro residues in the 17-aa
-control passed amide-nitrogen planarity in all 20 checked conformers; maximum
-planarity residual was 1.327 degrees.
+The authorized extension is classified
+`DETERMINISTIC_REJECTION_SAMPLING_PASS`. It uses logical conformer slots 0-9
+and attempt indices 0-24. Each attempt seed hashes the new generator version,
+unchanged prior-manifest SHA, peptide sequence, logical conformer index, and
+attempt index. One seed produces exactly one complete backbone sample. Each
+distinct backbone is sent to deterministic FASPR at most once; a failed packed
+geometry advances to the next attempt rather than rerunning FASPR on the same
+backbone. A slot is occupied only after the unchanged geometry, chirality,
+Pro-planarity, atom identity/vocabulary/cap, finite-coordinate, and single-
+conformer CPU-EGNN checks all pass.
 
-The first run of `KVSKAAADLMAYCEAHAKE` stopped at conformer index 3 after FASPR
-exit code 0 because strict existing geometry QC detected a 0.325159-angstrom
-nonlocal heavy-atom clash. The fourth and fifth panel sequences were not run,
-and the failed sequence was not retried. This is neither a runtime timeout nor
-a dihedral-convention or Pro failure. It proves the current train-only prior
-plus unmodified FASPR route lacks full five-sequence packing coverage; it does
-not justify accepting the clashing structure. The result supports a separately
-authorized bounded, deterministic QC-rejection-sampling prototype: draw the
-next deterministic backbone attempt after a failed packed-geometry audit,
-record every rejected attempt, and retain the unchanged strict QC and hard
-attempt/time limits. It does not support relaxing clash QC, training,
-retrieval, or a 373-query generation. All six special-chemistry classes remain
-explicitly rejected.
+All five fixed panel sequences completed two independent 10/10 runs. The two
+runs for every sequence have identical accepted-attempt vectors,
+atom-identity hashes, coordinate-set hashes, and byte-identical deterministic
+rejection logs. The complete per-attempt logs separately retain elapsed time.
+Across each one of the two panel passes there were 59 attempts, 50 accepts,
+and 9 strict-QC rejections; the maximum accepted attempt index was 3. All 18
+double-run rejections were nonlocal heavy-atom clashes from 0.289988 to
+0.666087 angstrom and remained rejected under the unchanged 0.75-angstrom
+threshold. The previous 0.325159-angstrom clash remains invalid under the same
+contract. Thus rejection sampling in this executed panel was driven only by
+candidate-independent chemical/geometry QC; atom-schema, vocabulary, cap, and
+CPU-EGNN compatibility checks all passed and caused zero retries. No receptor,
+contact, retrieval score, or model-performance signal selected an attempt.
+
+The maximum one-run peptide time was 16.081 seconds including first-use tool
+startup, far below 300 seconds. Accepted atom counts were 55, 121, 141, 168,
+and 175, below the 192 cap. Maximum sampled-versus-measured torsion error was
+`1.71e-13` degrees. The Pro control passed all Pro ring/bond/chirality and
+amide-nitrogen planarity checks with a maximum planarity residual of 1.279
+degrees. Every accepted conformer had FASPR exit code 0, finite full-heavy
+coordinates, zero fixed-backbone movement, no vocabulary unknown, ten unique
+coordinates per peptide, and finite per-attempt and ten-conformer CPU EGNN
+forward. All six special-chemistry classes remain explicitly rejected, no
+target-bound input was used, and no process remained.
+
+This five-sequence PASS proves the bounded deterministic rejection-sampling
+prototype contract, not fixed-512 readiness or retrieval benefit. It does not
+prove coverage for all 265 unique sequences in the 373-query safe subset. It
+does not authorize GPU retrieval, training, a new data release, or any
+relaxation of clash or geometry QC.
 
 Evidence:
 
 - `E:\pep\phase3\runs\drugclip\v3_train_only_torsion_prior_prototype_v1\train_source_audit_summary.json`
 - `E:\pep\phase3\runs\drugclip\v3_train_only_torsion_prior_prototype_v1\torsion_prior_manifest.json`
-- `E:\pep\phase3\runs\drugclip\v3_train_only_torsion_prior_prototype_v1\train_only_torsion_panel_summary.json`
-- `E:\pep\phase3\runs\drugclip\v3_train_only_torsion_prior_prototype_v1\panel.log`
+- `E:\pep\phase3\runs\drugclip\v3_train_only_torsion_rejection_sampling_prototype_v1\train_only_torsion_panel_summary.json`
+- `E:\pep\phase3\runs\drugclip\v3_train_only_torsion_rejection_sampling_prototype_v1\panel.log`
 
 ## Verified Historical Phase-3 Diagnosis
 
@@ -781,17 +798,19 @@ Formal v3 fine-tuning, selected-model release, and fixed-512 input-domain
 ablation are complete. Full-heavy-random retrieval remains unauthorized and
 technically unready. The train-only local torsion source has sufficient
 Pro/Gly/pre-Pro coverage and removes the IDPConformerGenerator prepared-
-database provenance blocker for this prototype, but the complete
-backbone-to-FASPR path fails packing coverage on the third panel sequence.
+database provenance blocker for this prototype. Bounded deterministic QC
+rejection sampling now passes the five-sequence full-heavy/FASPR/CPU-EGNN
+panel, but has not been audited across the 265 unique safe sequences / 373
+safe queries and has not been evaluated for retrieval.
 
 ## Single Next Action
 
-Under separate authorization, add bounded deterministic QC rejection sampling
-around the unchanged train-only-backbone-to-FASPR route, with a fixed attempt
-cap, fixed hard timeout, complete rejection audit, and acceptance only after
-the existing geometry contract passes; then rerun the same five-sequence panel.
-Do not loosen clash QC, accept the 0.325159-angstrom clash, generate 373
-queries, run retrieval, or train.
+Run, only under separate authorization, a CPU-only coverage audit over the 265
+unique ordinary-linear-standard safe candidates. It must preserve the same
+prior, 25-attempt cap, 300-second per-peptide limit, deterministic logs, and
+unchanged strict chemical/geometry QC, and it must not compute retrieval
+scores. Do not run GPU retrieval, train, publish a data release, loosen clash
+QC, or accept the 0.325159-angstrom clash.
 
 ## Workspace Safety
 
