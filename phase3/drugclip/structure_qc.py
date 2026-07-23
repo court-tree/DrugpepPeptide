@@ -80,6 +80,117 @@ def _read_chain(path: Path, chain_id: str | None) -> list[ParsedResidue]:
     return [row for row in residues if not chain_id or row.chain_id == chain_id]
 
 
+def resolve_coordinate_paths(
+    row: dict[str, Any], qbiolip_root: Path, biolip_root: Path
+) -> tuple[Path, Path, bool]:
+    """Resolve the exact receptor/peptide coordinate files used by QC."""
+
+    separate = str(row.get("source_database") or "") == "Q-BioLiP_PIII"
+    receptor_field = "receptor_structure_file" if separate else "complex_structure_file"
+    peptide_field = "peptide_structure_file" if separate else "complex_structure_file"
+    return (
+        _existing_path(row, qbiolip_root, biolip_root, receptor_field),
+        _existing_path(row, qbiolip_root, biolip_root, peptide_field),
+        separate,
+    )
+
+
+def extract_bound_peptide_atoms(
+    row: dict[str, Any], qbiolip_root: Path, biolip_root: Path
+) -> dict[str, Any]:
+    """Extract the QC-consistent true-bound peptide heavy atoms.
+
+    The function is intentionally diagnostic-only.  It uses the same parser,
+    chain choice, amino-acid filtering, altloc rule, and hydrogen filtering as
+    :func:`coordinate_qc`; it never generates or optimizes coordinates.
+    """
+
+    receptor_path, peptide_path, separate = resolve_coordinate_paths(
+        row, qbiolip_root, biolip_root
+    )
+    if not receptor_path.is_file() or not peptide_path.is_file():
+        raise ValueError("missing_coordinate_file")
+    peptide_chain = None if separate else str(row.get("peptide_chain_id") or "")
+    residues = _read_chain(peptide_path, peptide_chain)
+    if not residues:
+        raise ValueError("missing_peptide_chain")
+    complete = [
+        residue
+        for residue in residues
+        if BACKBONE_NAMES <= {str(atom["atom_name"]) for atom in residue.atoms}
+    ]
+    incomplete = [residue for residue in residues if residue not in complete]
+    observed = "".join(AA3_TO_1[item.residue_name] for item in complete)
+    expected = str(row["peptide_sequence"]).upper()
+    if observed != expected:
+        raise ValueError(f"peptide_coordinate_sequence_mismatch:{observed}")
+    excluded_incomplete_residues = []
+    for residue in incomplete:
+        present = [str(atom["atom_name"]) for atom in residue.atoms]
+        present_set = set(present)
+        excluded_incomplete_residues.append(
+            {
+                "chain_id": residue.chain_id,
+                "residue_id": residue.residue_id,
+                "residue_name": residue.residue_name,
+                "present_atom_names": present,
+                "missing_backbone_atom_names": [
+                    name for name in ("N", "CA", "C") if name not in present_set
+                ],
+            }
+        )
+    all_heavy = [dict(atom) for residue in complete for atom in residue.atoms]
+    backbone = []
+    reordered_backbone_residues = []
+    canonical_names = ("N", "CA", "C")
+    for residue in complete:
+        backbone_by_name = {
+            str(atom["atom_name"]): atom
+            for atom in residue.atoms
+            if str(atom["atom_name"]) in BACKBONE_NAMES
+        }
+        source_order = [
+            str(atom["atom_name"])
+            for atom in residue.atoms
+            if str(atom["atom_name"]) in BACKBONE_NAMES
+        ]
+        missing = [name for name in canonical_names if name not in backbone_by_name]
+        if missing:
+            raise ValueError(
+                f"peptide_incomplete_backbone_residue:{residue.chain_id}:{residue.residue_id}:"
+                f"missing={','.join(missing)}"
+            )
+        if source_order != list(canonical_names):
+            reordered_backbone_residues.append(
+                {
+                    "chain_id": residue.chain_id,
+                    "residue_id": residue.residue_id,
+                    "residue_name": residue.residue_name,
+                    "source_filtered_order": source_order,
+                    "canonical_order": list(canonical_names),
+                }
+            )
+        backbone.extend(dict(backbone_by_name[name]) for name in canonical_names)
+    expected_names = [name for _ in expected for name in ("N", "CA", "C")]
+    if [str(atom["atom_name"]) for atom in backbone] != expected_names:
+        raise ValueError("bound_backbone_not_exact_n_ca_c_triplets")
+    return {
+        "receptor_structure_path": str(receptor_path.resolve()),
+        "peptide_structure_path": str(peptide_path.resolve()),
+        "structure_type": "qbiolip_separate_pdb" if separate else peptide_path.suffixes[-2:][0].lstrip(".") if peptide_path.name.endswith(".cif.gz") else peptide_path.suffix.lstrip("."),
+        "peptide_chain": peptide_chain,
+        "expected_sequence": expected,
+        "observed_sequence": observed,
+        "excluded_incomplete_residue_count": len(excluded_incomplete_residues),
+        "excluded_incomplete_residues": excluded_incomplete_residues,
+        "source_backbone_order_canonical": not reordered_backbone_residues,
+        "reordered_backbone_residue_count": len(reordered_backbone_residues),
+        "reordered_backbone_residues": reordered_backbone_residues,
+        "all_heavy_atoms": all_heavy,
+        "backbone_ncac_atoms": backbone,
+    }
+
+
 def has_complete_backbone(residue: ParsedResidue) -> bool:
     """Return whether a receptor residue supplies the model's N/CA/C backbone."""
 
@@ -94,11 +205,9 @@ def coordinate_qc(
     contact_cutoff: float = 6.0,
     min_interface_residues: int = 2,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    separate = str(row.get("source_database") or "") == "Q-BioLiP_PIII"
-    receptor_field = "receptor_structure_file" if separate else "complex_structure_file"
-    peptide_field = "peptide_structure_file" if separate else "complex_structure_file"
-    receptor_path = _existing_path(row, qbiolip_root, biolip_root, receptor_field)
-    peptide_path = _existing_path(row, qbiolip_root, biolip_root, peptide_field)
+    receptor_path, peptide_path, separate = resolve_coordinate_paths(
+        row, qbiolip_root, biolip_root
+    )
     if not receptor_path.is_file() or not peptide_path.is_file():
         raise ValueError("missing_coordinate_file")
 
