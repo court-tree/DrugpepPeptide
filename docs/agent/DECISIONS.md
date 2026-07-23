@@ -696,3 +696,75 @@ authorization to implement, train, retrieve, or publish data.
 - Do not permanently exclude the 168 Pro-bearing safe queries.
 - Do not claim that a future Pro-aware generator reproduces formal-v3 Pro
   backbone hashes.
+
+## 2026-07-23: IDPConformerGenerator Requires A Sanitized Torsion Database
+
+### Evidence
+
+Official IDPConformerGenerator tag `v0.8.2` resolves to commit
+`e25a7d683b278532a3288f156edd8fba5f3a286c`. Its authoritative Apache-2.0
+`LICENSE` SHA256 is
+`3DDF9BE5C28FE27DAD143A5DC76EEA25222AD1DD68934A047064E56ED2FA40C5`.
+The source was inspected outside the PepCLIP repository without installing it,
+downloading its prepared database, or generating conformers.
+
+The builder samples contiguous empirical omega/phi/psi records for exact
+sequence fragments of length 1-5 and shortens unavailable fragments to a
+single residue. Exact residue matching distinguishes Pro and Gly; a dedicated
+fragment-followed-by-Pro lookup supplies pre-Pro context. This is a materially
+better scientific contract than formal-v3's generic Gaussian backbone
+sampler. The source can emit N/CA/C/O plus terminal carboxyl coordinates with
+residue-specific fixed geometry and a deterministic NumPy seed. MCSCE,
+TensorFlow, Int2Cart, CUDA, and GPU are not needed for the proposed
+backbone-only-output plus external-FASPR route.
+
+The official database schema retains a filename-derived PDB/chain/segment key,
+sequence, residue IDs, DSSP, and phi/psi/omega, but not experimental method,
+resolution, source path/hash, or project exclusion manifest. Database
+alignment creates a transient source-slice map that `build` discards before
+sampling. The official prepared PISCES database therefore cannot prove removal
+of PepCLIP evaluation or validation/test structures and sequences.
+
+The local no-install environment is also not ready to build a replacement:
+Windows Python 3.13.5 lacks the build extension dependencies, compiler, and
+DSSP; WSL Python 3.12.3 is outside the maintained `<3.12` environment and lacks
+the Python dependencies; installed DSSP 4.2.2 is outside IDPConfGen's supported
+DSSP 2/3 database-build range. The local 8,657 targeted structures are
+Phase-3 evidence that must be excluded, while the general PDB snapshot contains
+sequence indexes rather than a non-overlapping coordinate corpus.
+
+### Decision
+
+Classify the current route as `TORSION_DATABASE_PROVENANCE_BLOCKED`, not
+`FEASIBLE_WITH_SANITIZED_DATABASE`. The generator design is plausible and the
+PepCLIP full-heavy model/192-atom contract is compatible with the 373-query
+safe subset, but neither the official prepared database nor the current local
+stack can support an evaluation-safe prototype.
+
+Any future database must exclude, before alignment and sampling:
+
+- every fixed-512 evidence PDB ID;
+- every Phase-3 biological-evidence PDB ID;
+- all Phase-2/Phase-3 validation and test source structures;
+- exact evaluation peptide sequences; and
+- source windows with at least 80% ungapped identity over at least 8 residues
+  to an evaluation peptide.
+
+The manifest must bind source snapshot identity, per-file SHA256, PDB ID,
+chain, residue range, sequence, method/resolution, every exclusion-list hash
+and reason, generator commit, compatible DSSP version, build commands, seed
+namespace, trans-only segment rule, and output JSON hashes. Use no residue
+tolerance, perform exclusions before `aligndb`, and treat a requested
+`--nconfs 10` as incomplete until exactly ten audited files exist. The same
+sequence/conformer-index seed must be independent of receptor and evidence
+identity.
+
+### Do Not Repeat
+
+- Do not use the official prepared torsion database for fixed-512 evaluation.
+- Do not equate absence of receptor input with absence of torsion-fragment
+  leakage.
+- Do not attempt post-hoc PDB exclusion after `build` has discarded the
+  source-slice map.
+- Do not install dependencies, download a source corpus/database, or start the
+  five-sequence prototype without separate authorization.

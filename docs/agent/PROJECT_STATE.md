@@ -577,6 +577,90 @@ Evidence:
 - `E:\pep\phase3\runs\drugclip\v3_proline_backbone_compatibility_audit_v1\ring_template_contract.json`
 - `E:\pep\phase3\runs\drugclip\v3_proline_backbone_compatibility_audit_v1\safe373_proline_coverage.json`
 
+## IDPConformerGenerator Read-Only Feasibility Audit
+
+The official IDPConformerGenerator source was inspected read-only at commit
+`e25a7d683b278532a3288f156edd8fba5f3a286c`, the dereferenced target of tag
+`v0.8.2`. The clone is outside this repository at
+`C:\Users\admin\.codex\tools\IDPConformerGenerator_audit`; no installation,
+prepared database download, or conformer generation was run. The authoritative
+repository `LICENSE` is Apache-2.0 with SHA256
+`3DDF9BE5C28FE27DAD143A5DC76EEA25222AD1DD68934A047064E56ED2FA40C5`.
+The stale `setup.py` license classifier says GPLv3+, so downstream packaging
+must bind the copied Apache-2.0 license and commit rather than trust that
+classifier.
+
+The backbone algorithm is residue-aware in a useful but database-dependent
+sense. It searches exact sequence fragments of length 1-5 with default relative
+weights 1/1/3/3/2, samples contiguous empirical omega/phi/psi triples, and
+falls back by shortening an unavailable fragment down to one residue. Pro and
+Gly therefore use residue-matched records. A separate `_P` lookup requires the
+sampled fragment to be followed by Pro, providing pre-Pro context. Omega is
+sampled from the database with no built-in trans-only filter; a first-version
+trans-only contract would have to reject or split source segments containing a
+cis-like bond before database alignment. `--random-seed` seeds NumPy, while
+worker seeds are derived as base seed plus worker index. `--nconfs 10` requests
+ten outputs but does not make ten accepted conformers an atomic guarantee, so
+a future wrapper must use one core, validate the output count, and bind each
+conformer to a stable sequence/index seed namespace.
+
+The generator can build N/CA/C/O and terminal carboxyl coordinates and write
+standard PDB atom, residue, element, chain, and residue-number fields.
+Residue-specific fixed bond lengths and angles are available without Int2Cart.
+The first Phase-3 route can therefore use backbone-only output plus the already
+compiled external FASPR binary; MCSCE, TensorFlow, Int2Cart, CUDA, and GPU are
+not scientifically required. IDPConfGen's own FASPR integration instead uses a
+compiled `idpcpp` extension and bundled `dun2010bbdep.bin`. The documented
+wrong-stereochemistry bug affected `ldrs` coordinate alignment before v0.7.17
+and was fixed in v0.7.17; the audited version is v0.8.2.
+
+The decisive blocker is torsion-database provenance. `sscalc` records a
+filename-derived PDB/chain/segment key plus `dssp`, `fasta`, and `resids`;
+`torsions` adds phi/psi/omega. It does not record experimental method,
+resolution, original source path, source hash, or an exclusion manifest.
+`aligndb` temporarily creates a source-key-to-array-slice map, but `build`
+discards that map before fragment sampling, so a generated fragment is not
+traceable to a PDB/chain at runtime. The official prepared database is described
+only as a 27,425-chain PISCES snapshot. The source repository contains no
+manifest proving removal of fixed-512 evidence structures, all Phase-3
+biological evidence, Phase-2/Phase-3 validation or test structures, exact
+evaluation peptides, or highly similar peptide-length fragments. It is
+therefore forbidden for PepCLIP evaluation.
+
+The current local environment cannot yet build a replacement database under
+the authorized no-install/no-download boundary. Windows has Python 3.13.5 but
+no `pybind11`, `tox`, `idpconfgen`, compiler, or DSSP. WSL2 Ubuntu has Python
+3.12.3 and g++ 13.3.0, but none of the required Python packages; the maintained
+environment contract is Python >=3.8,<3.12. WSL has DSSP 4.2.2, whereas the
+project explicitly supports only DSSP 2 or 3 for database construction. The
+8,657 local targeted mmCIF files are Phase-3 evidence and belong on the
+exclusion list; the local PDB snapshot has sequence indexes but no coordinate
+corpus. No manifest-qualified, non-overlapping local PDB corpus was found.
+Consequently a sanitized database would require a separately authorized,
+pinned offline coordinate corpus and a compatible Python/DSSP environment (or
+new downloads/installations).
+
+PepCLIP compatibility is not the blocker. The current tensor path consumes
+coordinates, element, atom name, and residue name; the safe 373-query
+ordinary-linear-standard subset has 52-175 theoretical heavy atoms, below the
+192-atom cap. A future prototype must filter IDPConfGen output to N/CA/C/O,
+run external FASPR, add/validate OXT, restore canonical atom order, reject all
+existing special-chemistry classes, and rerun geometry/chirality/clash,
+vocabulary, atom-cap, and CPU-EGNN checks.
+
+The sole audit classification is `TORSION_DATABASE_PROVENANCE_BLOCKED`.
+IDPConformerGenerator is a plausible residue-aware candidate-only backbone
+engine, but it is not currently an evaluation-safe generator. The minimum
+unblock is a pre-sampling sanitized database whose manifest pins every source
+PDB/chain and SHA256, method/resolution metadata, the generator and DSSP
+versions, all project PDB/sequence exclusion sets and their hashes, an
+ungapped peptide-length similarity exclusion rule (at least 80% identity over
+at least 8 residues), trans-only segment filtering, deterministic build
+commands, and final JSON hashes. The exclusion must happen before `aligndb`;
+post-hoc runtime filtering is not auditable after source mappings are
+discarded. No five-sequence prototype is authorized or specified until that
+database and compatible local environment exist.
+
 ## Verified Historical Phase-3 Diagnosis
 
 The existing 4096/512 Pilot and early-step diagnostics used data version v2.
@@ -628,34 +712,24 @@ Evidence:
 
 ## Current Problem
 
-Formal v3 fine-tuning, epoch-4 evaluation, the one authorized epoch-0
-model-selection recovery, the selected-model release contract, and the
-fixed-512 input-domain ablation are complete. Epoch 0 remains the released
-balanced fixed-contract checkpoint, but the ablation shows that the current
-backbone-only random peptide input removes the full-heavy/side-chain signal
-that drives most of the observed 3D retrieval difference. The feasibility
-audit confirms that the current model can encode standard full-heavy atoms and
-that local RDKit can construct compatible topology. The constrained prototype
-also proves exact fixed-backbone completion for one short control, but the
-current whole-molecule constrained ETKDG route times out before the first
-accepted conformer for every length-17-to-20 panel sequence. Robust
-ten-conformer generation remains unproved. The subsequent FASPR route removes
-the observed length-17 speed blocker but violates the geometry contract for
-proline ring packing on that formal backbone. The read-only compatibility
-audit now shows that all 20 Pro sites across the ten formal length-17
-backbones are incompatible with the standard planar L-Pro closure contract.
-Therefore full-heavy-random retrieval remains unauthorized and technically
-unready, and formal-v3 Pro backbone hashes cannot be reused for a Pro-inclusive
-Phase-3 v2 representation.
+Formal v3 fine-tuning, selected-model release, and fixed-512 input-domain
+ablation are complete. Full-heavy-random retrieval remains unauthorized and
+technically unready. Formal-v3 Pro backbones cannot be reused for a
+Pro-inclusive Phase-3 v2 representation. IDPConformerGenerator has now been
+identified as a plausible residue-aware backbone engine, but its official
+prepared torsion database lacks the source/exclusion provenance required to
+rule out fixed-512, Phase-3 evidence, and validation/test leakage. No compatible
+sanitized local database or runnable supported local environment currently
+exists.
 
 ## Single Next Action
 
-Design, under separate authorization, a residue-aware backbone-generator
-contract with Pro-specific phi/psi, Gly-specific phi/psi, pre-Pro context,
-trans-only peptide bonds in its first version, complete N/CA/C/O output before
-packing, and a new version/hash namespace. Do not modify the current v3
-release, relax geometry QC, exclude Pro, rerun retrieval, or continue Phase-3
-v1 training.
+Under separate authorization, provide or acquire a pinned non-overlapping PDB
+coordinate corpus and compatible Python/DSSP environment, then build and audit
+the pre-sampling sanitized torsion database contract described above. Do not
+use the official prepared database, start the five-sequence prototype, modify
+the current v3 release, relax geometry QC, exclude Pro, rerun retrieval, or
+continue Phase-3 v1 training.
 
 ## Workspace Safety
 
