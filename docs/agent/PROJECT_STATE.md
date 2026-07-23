@@ -337,6 +337,72 @@ network, but it has no explicit protein rotamer library and still needs a
 separately authorized prototype to establish coverage and performance. No
 prototype, data, training, or retrieval output was created by this audit.
 
+## Full-Heavy Prototype Fixed-512 Chemistry And Length Panel
+
+The subsequently authorized independent prototype is classified
+`PERFORMANCE_BLOCKED`, not `FEASIBLE_WITH_EXISTING_LOCAL_STACK`. It did not
+train, run GPU retrieval, publish a data version, overwrite
+`random_conformer_v3`, or use target-bound coordinates for conformer
+generation.
+
+The read-only chemistry audit reproduced the exact 512-query plan and evidence
+join, then inspected original residue names, adjacent peptide-bond geometry,
+mmCIF/PDB connection records, S-S geometry, head-to-tail closure, and
+peptide-receptor covalent geometry. Query classifications were 382
+ordinary-linear-standard, 50 receptor-covalent, 45 modified/non-standard, 16
+chemistry-insufficient, 13 known-disulfide, 5 unresolved multiple-Cys, and 1
+cyclic/crosslinked. Because a sequence is eligible only when every fixed-plan
+occurrence is ordinary, the conservative safe subset contains 373 queries and
+265 unique sequences; 139/512 queries (27.1484%) are excluded. Safe-query
+targets remain present in the unchanged 370-peptide/512-receptor candidate
+banks.
+
+The safe subset spans length 8-20 and theoretical heavy-atom counts 52-175.
+No fixed-512 sequence reaches the 192-atom boundary, and the prototype never
+truncates atoms. The known 197-heavy-atom sequence in the larger 6,979-sequence
+set remains a future full-release atom-cap risk and was not generated here.
+
+A deterministic nine-sequence panel covered the shortest, median, p75, p90,
+p95, longest, maximum-heavy, closest-below-192, single-Cys, and three
+composition-distinct length-13 criteria. With 25 fixed ETKDG attempts per
+conformer, MMFF94s capped at 1,000 iterations, seed 20260723, and a 900-second
+per-worker hard timeout:
+
+- Six sequences of length 8-17 and 55-121 heavy atoms completed two independent
+  10/10 runs. Atom-identity and canonical coordinate-set hashes matched
+  exactly; every accepted conformer had MMFF status 0 and passed geometry,
+  coordinate chirality, clash, and current EGNN CPU-forward checks.
+- The length-19, 141-heavy-atom single-Cys sequence completed run 1 with 10/10
+  in 525.06 seconds, but its identical run 2 exceeded 900 seconds. The process
+  was killed and left no descendant or evaluator process.
+- The p95 length-19/168-heavy and longest/max-heavy length-20/175-heavy
+  sequences accepted 0 conformers. For conformer 0, all 25 fixed attempts
+  embedded successfully but returned MMFF status 1 after 1,000 iterations.
+  Structured evidence replays recorded all seeds, embedding/MMFF durations,
+  rejection reasons, and zero accepted conformers.
+
+The earlier 500-iteration prototype-v1 panel is retained as failed evidence.
+One pre-registered diagnostic showed that 1,000 iterations can rescue a
+length-13 case, so prototype-v2 used that single revised bound; no further
+iteration, attempt, timeout, or parameter search was performed. Special
+chemistry examples from every observed exclusion class were rejected before
+generation. Structure coordinates were used only for eligibility
+classification, never as generator input.
+
+The permanent boundary is that ordinary linear short-peptide smoke succeeds,
+while global ETKDGv3 followed by whole-molecule MMFF94s is blocked by
+long-peptide convergence and runtime. This blocks the current generator
+strategy, not the complete-heavy-atom representation itself, and it does not
+authorize training or GPU retrieval. The sole next implementation action is a
+separately authorized minimal prototype that starts from a fixed,
+candidate-independent random peptide backbone and performs chemically local
+side-chain completion without global whole-peptide ETKDG/MMFF optimization.
+
+Evidence:
+
+- `E:\pep\phase3\runs\drugclip\v2_full_atom_prototype_fixed512_audit_v1`
+- `E:\pep\phase3\runs\drugclip\v2_full_atom_prototype_fixed512_audit_v2`
+
 ## Verified Historical Phase-3 Diagnosis
 
 The existing 4096/512 Pilot and early-step diagnostics used data version v2.

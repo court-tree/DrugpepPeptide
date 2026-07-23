@@ -491,3 +491,54 @@ records, including unresolved multiple-Cys cases.
   otherwise chemistry-ambiguous peptides as ordinary linear peptides.
 - Do not infer that generic RDKit topology success proves reliable fixed-512
   ten-conformer generation or retrieval improvement.
+
+## 2026-07-23: The Existing RDKit Full-Heavy Route Is Performance-Blocked
+
+### Evidence
+
+An exact fixed-512 chemistry audit combined the formal plan/evidence join with
+original structure residue names, connection records, and covalent geometry.
+Only 373/512 queries representing 265 unique sequences are conservatively
+ordinary-linear-standard across every occurrence. The remaining 139 queries
+include receptor-covalent, modified/non-standard, chemistry-insufficient,
+known-disulfide, unresolved multiple-Cys, and cyclic/crosslinked chemistry.
+
+A nine-sequence safe-subset panel exercised length 8-20 and 55-175 heavy atoms.
+Six sequences completed two independent, hash-identical 10/10 runs with
+converged MMFF94s, valid geometry/chirality/clash checks, and finite EGNN CPU
+forward. One length-19 sequence completed run 1 but exceeded the preset
+900-second boundary on run 2. The p95 and longest/maximum-heavy sequences
+accepted no conformer because all 25 attempts for conformer 0 returned MMFF
+status 1 at the fixed 1,000-iteration limit. No fixed-512 row reaches 192
+atoms, no truncation occurred, and no process remained after timeout.
+
+### Decision
+
+Classify the current local RDKit ETKDGv3/MMFF94s route as
+`PERFORMANCE_BLOCKED`. Model input and fixed-512 atom capacity are not the
+blocking contracts, but the required longest/maximum-heavy coverage,
+double-run completion, and per-worker timeout contract are not satisfied.
+This result supersedes the short-sequence `PROTOTYPE_SMOKE_PASS` boundary but
+does not invalidate the complete-heavy-atom route or show that another
+generator or dependency would fail. Ordinary linear short-peptide smoke did
+succeed.
+
+Do not authorize fixed-512 all-heavy-random GPU retrieval, a formal new data
+release, or more Phase-3 v1 training from this prototype. A future route needs
+a separately reviewed generator/dependency and must retain the conservative
+structure-derived chemistry eligibility contract. The single next
+implementation action is a minimal prototype that fixes a
+candidate-independent random peptide backbone and performs chemically local
+side-chain completion, avoiding global whole-molecule ETKDG/MMFF optimization.
+
+### Do Not Repeat
+
+- Do not call the current local stack fixed-512-ready based on the six
+  successful shorter panel sequences.
+- Do not extend MMFF iterations, attempts, or worker timeouts until the current
+  performance/coverage failure is reviewed.
+- Do not silently admit any of the 139 excluded queries or treat standard
+  one-letter sequence text as sufficient chemistry evidence.
+- Do not truncate a full-heavy peptide at 192 atoms; the larger 6,979-sequence
+  release still contains a known 197-heavy-atom future-contract risk.
+- Do not claim retrieval improvement; no GPU retrieval or training was run.
