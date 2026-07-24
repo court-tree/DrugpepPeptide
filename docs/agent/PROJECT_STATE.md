@@ -1103,6 +1103,68 @@ Evidence:
   preserved and must remain unknown; do not guess or reconstruct them from the
   model config.
 
+## Phase-3 v2 Bounded Full-Heavy Cache Materializer Smoke
+
+The new bounded-cache tooling implements an independent per-sequence,
+atomically written cache under schema
+`phase3-v2-bounded-full-heavy-cache-contract-v1`. Resume never trusts
+`progress.json`: it reopens every completed sequence file, verifies its file
+and payload hashes, plan/prior/tool/generator/QC bindings, and full structural
+and CPU-EGNN contract, then generates only missing sequences. Descriptor,
+prior, FASPR binary/library, generator, topology, attempt, timeout, clash, or
+atom-cap drift rejects resume. Stale temporary files, damaged completed files,
+and extra sequence files stop execution. A 25-attempt slot exhaustion writes
+immutable failure evidence, blocks resume, preserves completed sequences, and
+never creates a final manifest.
+
+The only authorized smoke used the frozen descriptor file SHA256
+`1894F635E352D127AC79DF226E4F50A7451B8E47C43D6388239A23752721957D`
+and canonical SHA256
+`2F8FF55185DE5E87861687CA564EC4851E186C16C4C8158B9C1168D8E32D8DE0`.
+Its mechanical five-sequence panel was:
+
+- shortest: `AGGAAAAA` (39 heavy atoms);
+- maximum heavy-atom count: `KKKWNWFDITNWLWYIRKK` (191);
+- Pro-containing: `VSKMRMATPLLMQA` (107);
+- Gly-containing: `FDDILGEFES` (83);
+- minimum deterministic smoke key: `SLLMWITQS` (75).
+
+The run intentionally stopped after two completed sequence files, recorded
+their SHA256 values and timestamps, then resumed. Both files remained
+byte-identical and were not rewritten; resume validated those two and
+generated only the remaining three. The final read-only validation passed
+5/5 sequences and 50/50 conformers with complete canonical topology,
+torsion/fixed-backbone, FASPR, geometry, chirality, Pro, clash, no-UNK,
+strict `<192` atom-cap, distinct-coordinate, finite-coordinate, and CPU-EGNN
+contracts. It used 56 attempts with six unchanged nonlocal-clash rejections.
+Generation took 11.018 seconds summed across sequences; read-only validation
+took 2.424 seconds in the measured invocation.
+
+The durable classification is `CACHE_MATERIALIZER_SMOKE_PASS`. The smoke
+manifest explicitly records `formal_cache=false`, `sequence_count=5`, and
+`not_valid_for_training=true`; no `cache_manifest.json`, adaptation manifest,
+optimizer, backward, training, GPU retrieval, or formal 2,085-sequence run
+exists. An initial wrapper-only diagnostic failure is retained in
+`failures/`: the wrapper incorrectly interpreted the established formatted
+coordinate SHA as canonical-JSON SHA. No sequence file had been committed.
+The implementation was corrected to reuse the established twelve-decimal
+coordinate hash before the successful interrupted/resumed smoke; this was not
+a FASPR, QC, or conformer-generation failure.
+
+Smoke-scale planning estimates approximately 76.6 minutes for formal
+generation plus 16.9 minutes for read-only validation, before operational
+margin. The five sequence payloads occupy 2,641,335 bytes; linear scaling is
+about 1.10 GB for 2,085 sequence files. Preserved work/audit files suggest
+roughly another 0.3 GB, so a practical initial reservation is at least
+1.5-2.0 GB. These are estimates, not authorization or a formal runtime proof.
+
+Evidence:
+
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_smoke_v1\cache_contract.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_smoke_v1\progress.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_smoke_v1\smoke_manifest.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_smoke_v1\sequences`
+
 ## Current Problem
 
 Formal v3 fine-tuning, selected-model release, fixed-512 input-domain ablation,
@@ -1171,12 +1233,13 @@ Evidence:
 
 ## Single Next Action
 
-Review the frozen explicit descriptor and distribution audit before separately
-authorizing generation of its dedicated 2,085-sequence bounded train/valid
-cache. Do not reuse safe265/safe373 evaluation caches, change selected IDs,
-silently replace failed samples, fabricate special chemistry, create a final
-adaptation manifest before a cache exists, start training, or publish a data
-release without separate authorization.
+Review the bounded-cache materializer, read-only validator, fixture tests, and
+five-sequence interrupted/resumed smoke. Only separate authorization may start
+the exact 2,085-sequence / 20,850-conformer formal cache. Do not reuse
+safe265/safe373 evaluation caches, change selected IDs, silently replace
+failed samples, fabricate special chemistry, create a final adaptation
+manifest before a complete validated cache exists, start training, or publish
+a data release.
 
 ## Workspace Safety
 

@@ -1291,3 +1291,43 @@ before optimizer construction.
 - Do not reuse a safe265/safe373 evaluation cache for train/valid adaptation.
 - Do not create a final adaptation manifest, train, or run GPU retrieval until
   the dedicated bounded cache is separately authorized, built, and validated.
+
+## 2026-07-24: Require Resumable Per-Sequence Full-Heavy Cache Materialization
+
+### Decision
+
+Accept the bounded full-heavy cache implementation at
+`CACHE_MATERIALIZER_SMOKE_PASS`, not as a formal cache. The materialization
+unit is one sequence file named by full sequence SHA256. Each file is written
+through a same-directory temporary file plus flush/fsync and atomic rename,
+and binds the frozen plan, prior, FASPR binary/library, generator, canonical
+topology, QC, attempt, clash, timeout, and atom-cap contracts.
+
+Resume must derive truth from revalidated sequence files, never from
+`progress.json`. Contract drift, a damaged completed file, an extra file, or a
+stale temporary file stops the run. A logical slot that exhausts 25 attempts
+writes failure evidence and permanently blocks automatic resume under that
+cache root. A formal `cache_manifest.json` may exist only after exact
+2,085/2,085 sequence and 20,850/20,850 conformer validation; smoke runs use a
+separate manifest that is explicitly invalid for training.
+
+The five-sequence smoke passed complete generation and read-only validation
+after a deliberate two-sequence interruption. The two completed files were
+not regenerated or rewritten on resume. All 50 conformers passed the frozen
+chemistry/QC/CPU-EGNN contracts. This establishes implementation and resume
+feasibility only; it does not establish full-plan generation coverage,
+runtime, retrieval benefit, or adaptation success.
+
+### Do Not Repeat
+
+- Do not treat the five-sequence smoke or its `smoke_manifest.json` as a
+  bounded training cache.
+- Do not use safe265/safe373 cache files to fill missing bounded-plan
+  sequences.
+- Do not trust progress counts without reopening and validating every
+  completed sequence file.
+- Do not delete or overwrite a damaged file, stale temporary file, or
+  exhausted-slot failure to continue automatically.
+- Do not create the final adaptation manifest, train, or run retrieval until
+  the formal 2,085-sequence cache is separately authorized and fully
+  validated.
