@@ -874,3 +874,112 @@ CPU-only safe-candidate coverage audit without retrieval scoring.
 - Do not proceed to GPU retrieval, training, or release publication based only
   on this five-sequence PASS; first audit CPU-only coverage over all 265 safe
   unique sequences.
+
+## 2026-07-23: Historical Safe265 Run Stops On Heavy-Bond Geometry
+
+### Evidence
+
+The fixed-512 chemistry authority contains 370 unique peptide candidates. Its
+sequence-level precedence contract yields 265 `ordinary_linear_standard`
+sequences and 105 explicit exclusions: 15 `chemistry_insufficient`, 1
+`cyclic_or_crosslinked`, 9 `known_disulfide`, 38
+`modified_or_nonstandard`, 4 `multiple_cys_unknown`, and 38
+`receptor_covalent`. All 373 safe-query target peptides are contained in the
+safe265 set. The original 370-peptide candidate bank is not fully generatable
+under this contract.
+
+The authorized CPU-only build used the unchanged prior manifest
+`E93B24E59D5C18D7CC4213BC82D38C789CB32A279A3078AED738477246E80F94`,
+prior JSONL
+`BB86912B86388CB757467D610A3EA706BE03D69A98561FA362E95B71A5F7B57B`,
+FASPR tool hashes, 25-attempt slot cap, 300-second sequence cap, and strict
+0.75-angstrom clash and geometry contracts. `AAAPAGAAAA` and `AAASLYEKKAA`
+completed 10/10. For `AERKRILPTWML` logical slot 0, all 25 independent
+backbones reached deterministic FASPR output but failed packed-geometry QC
+with `illegal_heavy_bond_length_range`; the maximum reported heavy-bond
+length was 3.028067-3.125133 angstrom. The build stopped immediately with a
+`ConformerCoverageError`, accepted none of those 25 attempts, and did not run
+the independent deterministic verification.
+
+### Historical Decision, Later Withdrawn
+
+The run correctly stopped under its then-current implemented contract and was
+initially classified `SAFE265_GENERATION_COVERAGE_FAIL`. The incomplete output
+remains failure evidence only: 2/265 sequences have complete first-pass cache
+files, no final cache manifest exists, and 2650/2650 deterministic coverage is
+unproved. The later canonical-topology diagnosis below withdraws the coverage
+classification because the apparent 25-attempt exhaustion was caused by an
+ILE topology/QC mapping defect.
+
+The 373/373 target-membership check does not make the 265-candidate retrieval
+bank comparable to the original 370-candidate bank. If a future route
+eventually supplies safe265 conformers, receptor-to-peptide baselines must be
+recomputed on exactly 265 peptide candidates. Peptide-to-receptor may retain
+the original 512-receptor bank, but its baselines and query subset must still
+be recomputed under the exact safe-query evaluation contract.
+
+### Do Not Repeat
+
+- Do not reuse or overwrite this historical output, raise the
+  25-attempt/300-second limits, or relax bond, clash, chirality, Pro,
+  vocabulary, atom-cap, or EGNN QC.
+- Do not treat the two completed sequence caches as safe265 coverage or a data
+  release.
+- Do not run deterministic verification, GPU retrieval, or training from the
+  incomplete output.
+- Before any generator change, identify the exact offending bond and separate
+  FASPR output behavior from atom mapping/topology and geometry-QC construction
+  in a separately authorized read-only diagnosis.
+
+## 2026-07-24: Standard ILE Topology Defect Invalidates Slot Exhaustion
+
+### Evidence
+
+All 25 saved FASPR outputs for `AERKRILPTWML` slot 0 were diagnosed without
+running FASPR or sampling a backbone. In every file, the old maximum
+3.028067-3.125133-angstrom “bond” is ILE6 `CG2-CD1`. RDKit 2025.03 assigns
+standard PDB atom names but connects ILE CD1 to CG2. FASPR source implements
+standard ILE topology and its coordinates place `CG1-CD1` at
+1.515531-1.516706 angstrom. On attempt 00 the old RDKit graph also changes
+the standard-coordinate ILE CB chirality result from expected S to observed
+R, so the defect affects bond, angle, graph-distance clash, and chirality QC.
+
+An explicit standard-PDB heavy-atom graph now covers all 20 amino acids,
+inter-residue `C-N`, and terminal `C-OXT`. RDKit atom names match the standard
+templates for all 20 residues. Nineteen RDKit bond graphs also match; ILE alone
+has missing canonical `CG1-CD1` and extra noncanonical `CG2-CD1`. FASPR names
+match the canonical templates. Geometry uses the explicit graph, and
+chirality independently checks every non-Gly L-CA, ILE CB, and THR CB while
+retaining separate Pro ring and amide-planarity QC.
+
+Replaying the 25 saved PDBs through the repaired path yields 24 PASS and one
+true rejection. Attempt 13 retains a 0.629184-angstrom nonlocal clash between
+residue 1 CB and residue 9 OG1 under the unchanged 0.75-angstrom threshold.
+Passing structures have maximum correct covalent bond length 1.808035
+angstrom, minimum nonlocal distance 0.750387 angstrom, valid ILE/THR
+chirality, Pro-planarity residual at most 0.859 degrees, no unknown input
+tokens, and finite CPU EGNN output.
+
+### Decision
+
+Withdraw `SAFE265_GENERATION_COVERAGE_FAIL`. The durable current
+classification is
+`QC_TOPOLOGY_MAPPING_FAIL / SAFE265_COVERAGE_INCONCLUSIVE`. The original run
+correctly stopped under its implemented QC and remains historical evidence,
+but at least one saved attempt passes—indeed 24 do—so logical slot 0 was not
+chemically exhausted.
+
+The repair does not establish safe265 coverage. A complete run from the
+beginning into a new output directory and its independent 2650/2650
+deterministic replay require separate authorization before retrieval.
+
+### Do Not Repeat
+
+- Do not swap final standard ILE `CG1/CG2` labels to accommodate RDKit.
+- Do not use an unchecked `MolFromSequence` graph as the final standard-PDB
+  geometry or chirality truth.
+- Do not accept attempt 13 or weaken the 0.75-angstrom clash threshold.
+- Do not overwrite the original failure scene or describe the 24 saved slot
+  passes as 265-sequence coverage.
+- Do not run safe265 generation, retrieval, training, or release publication
+  without separate authorization.

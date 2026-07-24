@@ -736,12 +736,83 @@ prove coverage for all 265 unique sequences in the 373-query safe subset. It
 does not authorize GPU retrieval, training, a new data release, or any
 relaxation of clash or geometry QC.
 
+The subsequent authorized safe-candidate CPU coverage run originally stopped
+with `SAFE265_GENERATION_COVERAGE_FAIL` under the then-current QC
+implementation. Before generation, the fixed-512 chemistry audit was
+re-derived as 370 unique peptide candidates: 265
+`ordinary_linear_standard` sequences and 105 explicit exclusions
+(`chemistry_insufficient` 15, `cyclic_or_crosslinked` 1,
+`known_disulfide` 9, `modified_or_nonstandard` 38,
+`multiple_cys_unknown` 4, and `receptor_covalent` 38). All 373 safe-query
+targets are present in the safe265 sequence set. This establishes the input
+boundary only; it does not give all 370 candidates full-atom coordinates.
+
+Generation stopped at the first exhausted logical slot, as required. The first
+two sequences in canonical order, `AAAPAGAAAA` and `AAASLYEKKAA`, completed
+10/10 and were atomically cached. The next sequence, `AERKRILPTWML`, obtained
+zero acceptable structures for logical conformer slot 0 across the fixed 25
+attempts. Every attempt reached FASPR output and was rejected by unchanged
+geometry QC as `illegal_heavy_bond_length_range`; the reported maximum heavy
+bond length ranged from 3.028067 to 3.125133 angstrom. No attempt was accepted,
+the attempt limit and QC were not changed, no whole-audit retry or independent
+second pass was run, and no evaluator/training process remained.
+
+The output directory is an intentionally incomplete prototype failure scene,
+not a cache release. It contains the canonical candidate and explicit-rejection
+records, two completed sequence caches, all attempted FASPR work files, and
+`build_failure.json` plus a `generation_progress.json` whose status is `FAIL`.
+It has no final cache manifest and no validation report. Generation seeds and
+the generator API remain limited to generator version, prior-manifest SHA,
+peptide sequence, conformer index, and attempt index; query, receptor,
+evidence, contact, and bound coordinates are absent.
+
+A separately authorized diagnosis retained that original failure scene and
+did not invoke FASPR or sample a new backbone. It established that all 25
+reported 3.028067-3.125133-angstrom “bonds” were ILE6 `CG2-CD1`. RDKit
+2025.03 gives `MolFromSequence` the standard ILE atom names but connects CD1
+to CG2. FASPR source and all saved coordinates follow standard PDB ILE
+topology: CB connects CG1 and CG2, and CG1 connects CD1; saved `CG1-CD1`
+distances are 1.515531-1.516706 angstrom. The same erroneous RDKit graph also
+made the legacy coordinate chirality path label standard FASPR ILE6 CB as R
+instead of its RDKit-expected S.
+
+The repaired QC uses explicit standard-PDB heavy-atom templates for all 20
+standard amino acids, explicit inter-residue `C-N` peptide bonds, and an
+explicit terminal `C-OXT` bond. Bond lengths, bond angles, and graph-distance
+greater-than-two clash exclusions use only this canonical graph. Chirality is
+checked independently for every non-Gly L-CA plus ILE CB and THR CB; the
+existing Pro ring and peptide-amide-nitrogen planarity check remains separate.
+The 20-residue comparison found matching RDKit and canonical graphs for 19
+residues and only the ILE `CG1/CD1` versus `CG2/CD1` mismatch; FASPR atom names
+match the canonical standard names for all 20.
+
+Read-only replay of the 25 saved FASPR PDBs passed 24 and retained one true
+rejection: attempt 13 has a 0.629184-angstrom nonlocal clash between residue 1
+CB and residue 9 OG1, below the unchanged 0.75-angstrom limit. The largest
+correct covalent bond among passing replays is 1.808035 angstrom; the closest
+nonlocal distance among passing replays is 0.750387 angstrom. All replayed
+passing conformers have valid L-CA, ILE/THR CB chirality, Pro planarity
+(maximum residual 0.859 degrees), no vocabulary unknowns, and finite batched
+CPU EGNN output. Therefore slot 0 had 24 acceptable saved attempts and was not
+actually exhausted.
+
+Withdraw `SAFE265_GENERATION_COVERAGE_FAIL` as the scientific coverage
+classification. The current classification is
+`QC_TOPOLOGY_MAPPING_FAIL / SAFE265_COVERAGE_INCONCLUSIVE`. The original run
+still stopped correctly under its implemented contract and remains retained
+as historical diagnostic evidence. No safe265 generation rerun, retrieval,
+training, data release, prior change, FASPR change, or threshold relaxation
+was performed.
+
 Evidence:
 
 - `E:\pep\phase3\runs\drugclip\v3_train_only_torsion_prior_prototype_v1\train_source_audit_summary.json`
 - `E:\pep\phase3\runs\drugclip\v3_train_only_torsion_prior_prototype_v1\torsion_prior_manifest.json`
 - `E:\pep\phase3\runs\drugclip\v3_train_only_torsion_rejection_sampling_prototype_v1\train_only_torsion_panel_summary.json`
 - `E:\pep\phase3\runs\drugclip\v3_train_only_torsion_rejection_sampling_prototype_v1\panel.log`
+- `E:\pep\phase3\runs\drugclip\v3_safe265_full_atom_conformer_coverage_prototype_v1\build_failure.json`
+- `E:\pep\phase3\runs\drugclip\v3_safe265_full_atom_conformer_coverage_prototype_v1\generation_progress.json`
+- `E:\pep\phase3\runs\drugclip\v3_safe265_full_atom_topology_qc_replay_v1\topology_qc_replay_report.json`
 
 ## Verified Historical Phase-3 Diagnosis
 
@@ -796,21 +867,21 @@ Evidence:
 
 Formal v3 fine-tuning, selected-model release, and fixed-512 input-domain
 ablation are complete. Full-heavy-random retrieval remains unauthorized and
-technically unready. The train-only local torsion source has sufficient
-Pro/Gly/pre-Pro coverage and removes the IDPConformerGenerator prepared-
-database provenance blocker for this prototype. Bounded deterministic QC
-rejection sampling now passes the five-sequence full-heavy/FASPR/CPU-EGNN
-panel, but has not been audited across the 265 unique safe sequences / 373
-safe queries and has not been evaluated for retrieval.
+technically unready. Bounded deterministic QC rejection sampling passes the
+five-sequence panel. The first safe265 run stopped after a false ILE topology
+failure; repaired-QC replay proves 24/25 saved slot-0 attempts pass, but the
+original run did not continue beyond 2/265 completed sequence caches and did
+not perform deterministic 2650/2650 verification. Safe265 coverage therefore
+remains inconclusive and the incomplete cache is not usable for retrieval.
 
 ## Single Next Action
 
-Run, only under separate authorization, a CPU-only coverage audit over the 265
-unique ordinary-linear-standard safe candidates. It must preserve the same
-prior, 25-attempt cap, 300-second per-peptide limit, deterministic logs, and
-unchanged strict chemical/geometry QC, and it must not compute retrieval
-scores. Do not run GPU retrieval, train, publish a data release, loosen clash
-QC, or accept the 0.325159-angstrom clash.
+Review the canonical-topology repair and saved-output replay. Only under
+separate authorization may safe265 coverage be run from the beginning into a
+new output directory with the unchanged prior, FASPR tool, 25-attempt and
+300-second limits, and unchanged numerical QC thresholds. Do not reuse or
+overwrite the historical failure directory, run retrieval or training, or
+publish a data release before a complete deterministic 2650/2650 PASS.
 
 ## Workspace Safety
 
