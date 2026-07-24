@@ -983,3 +983,62 @@ deterministic replay require separate authorization before retrieval.
   passes as 265-sequence coverage.
 - Do not run safe265 generation, retrieval, training, or release publication
   without separate authorization.
+
+## 2026-07-24: Canonical-Topology Safe265 CPU Coverage Passes
+
+### Evidence
+
+The authorized rerun started from canonical-topology HEAD `3867f38d9` and used
+a new v2 prototype directory. The historical v1 failure directory was not
+overwritten or reused; its `build_failure.json` remains at SHA256
+`E2F82024919B33E2330058F55CFA4CD43E4937857454EEEDF1F21DBA563EC6BD`.
+The torsion prior, FASPR tool, 25-attempt slot limit, 300-second sequence limit,
+0.75-angstrom nonlocal-clash threshold, and all other acceptance contracts were
+unchanged. Geometry, graph distance, and chirality now use the validated
+standard-PDB 20-residue topology.
+
+The first pass generated all 265 safe unique sequences at 10/10, for 2,650
+accepted conformers from 2,933 attempts. All 283 rejected attempts remained
+rejected: 270 for nonlocal heavy-atom clashes and 13 for Pro amide-nitrogen
+planarity. No slot used an attempt index greater than 4, no slot exhausted, and
+the slowest sequence took 3.976 seconds. Every accepted conformer passed
+torsion reproduction, FASPR exit, complete/canonical atom identity, bond,
+angle, L-CA/ILE-CB/THR-CB chirality, Pro, clash, finite-coordinate, no-UNK,
+fixed-backbone, strict atom-count, distinctness, and CPU-EGNN checks. The
+maximum atom count is 175 and the minimum accepted nonlocal distance is
+0.758091 angstrom.
+
+An independent second pass regenerated all 265 sequences in disposable
+directories and matched 2,650/2,650 accepted conformers. Accepted attempt
+indices, rejection sequences, atom-identity, backbone, coordinate, FASPR,
+per-sequence aggregate, and global deterministic hashes all match. Both passes
+produce semantic manifest SHA256
+`E213B177A98E484BAC9F3516B899EB0FF167B6A7A28A97FF0998F48C1B1C84F8`;
+the slowest regeneration plus full validation took 89.037 seconds.
+
+### Decision
+
+Classify the CPU prototype as `SAFE265_FULL_ATOM_CACHE_PASS`. This proves
+bounded, deterministic, candidate-independent full-heavy conformer coverage
+for the 265 `ordinary_linear_standard` candidates and all 373 safe-query
+targets under the existing local stack. It does not prove coverage for the
+full 370-candidate bank, because 105 special-chemistry candidates remain
+explicitly rejected without generated coordinates. It is not a formal data
+release, training result, or evidence that full-heavy conformers improve
+retrieval.
+
+Any future receptor-to-peptide evaluation must replace the 370-peptide bank
+with the exact safe265 bank and recompute all baselines. Peptide-to-receptor may
+retain the 512-receptor bank but must recompute every baseline on the exact
+373-query safe subset. Neither future metric may be directly compared with the
+old 512-query / 370-peptide-bank result.
+
+### Do Not Repeat
+
+- Do not reuse the partial v1 cache or overwrite its failure evidence.
+- Do not generate approximate coordinates for the 105 excluded special-
+  chemistry candidates.
+- Do not relax the 25-attempt, 300-second, 0.75-angstrom clash, geometry,
+  chirality, Pro, vocabulary, atom-cap, or CPU-EGNN acceptance contracts.
+- Do not run retrieval, train, or publish a data version without separate
+  authorization and the required candidate-bank-specific baseline design.

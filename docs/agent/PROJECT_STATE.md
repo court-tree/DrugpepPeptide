@@ -797,12 +797,54 @@ CPU EGNN output. Therefore slot 0 had 24 acceptable saved attempts and was not
 actually exhausted.
 
 Withdraw `SAFE265_GENERATION_COVERAGE_FAIL` as the scientific coverage
-classification. The current classification is
-`QC_TOPOLOGY_MAPPING_FAIL / SAFE265_COVERAGE_INCONCLUSIVE`. The original run
-still stopped correctly under its implemented contract and remains retained
-as historical diagnostic evidence. No safe265 generation rerun, retrieval,
-training, data release, prior change, FASPR change, or threshold relaxation
-was performed.
+classification. The original run still stopped correctly under its
+implemented contract and remains retained as historical diagnostic evidence.
+At the end of the topology-only diagnosis the interim classification was
+`QC_TOPOLOGY_MAPPING_FAIL / SAFE265_COVERAGE_INCONCLUSIVE`.
+
+A subsequently authorized build then started from HEAD `3867f38d9`, used the
+repaired canonical topology, and wrote only to the new
+`v3_safe265_full_atom_conformer_coverage_prototype_v2` directory. The
+historical v1 failure file remains byte-identical with SHA256
+`E2F82024919B33E2330058F55CFA4CD43E4937857454EEEDF1F21DBA563EC6BD`;
+neither its two caches nor any saved v1 attempt was reused.
+
+The v2 first pass generated 10/10 accepted conformers for all 265 safe unique
+sequences: 2,650 conformers from 2,933 total attempts, with 283 strict-QC
+rejections. The largest attempt index used was 4; no slot exhausted the
+25-attempt limit. Rejections comprise 270 nonlocal clashes below the unchanged
+0.75-angstrom threshold and 13 Pro amide-planarity failures. The maximum
+per-sequence generation time was 3.976 seconds and the generation wall time
+was 408.800 seconds, both within the fixed 300-second per-sequence contract.
+
+Every accepted conformer passed the standard-PDB 20-residue topology contract,
+sampled/measured torsion agreement, FASPR exit 0, complete atom identity,
+canonical ordering, bond/angle/chirality, Pro, nonlocal-clash, vocabulary,
+atom-cap, fixed-backbone, finite-coordinate, and CPU-EGNN checks. All 2,650
+backbone deviations are zero, the maximum atom count is 175, the minimum
+accepted nonlocal distance is 0.758091 angstrom, and each sequence has ten
+distinct coordinate hashes. Generation uses no query, receptor, evidence,
+contact, or bound-pose input.
+
+The independent second pass regenerated all 265 sequences in temporary
+directories and retained no second coordinate cache. It matched all 2,650
+accepted attempt indices, rejection sequences, atom identities, backbone
+hashes, coordinate hashes, FASPR hashes, per-sequence aggregate hashes, and
+the global deterministic semantic manifest SHA256
+`E213B177A98E484BAC9F3516B899EB0FF167B6A7A28A97FF0998F48C1B1C84F8`.
+The slowest full regeneration plus validation was 89.037 seconds, below 300
+seconds. The durable classification is therefore
+`SAFE265_FULL_ATOM_CACHE_PASS`.
+
+This is a CPU prototype cache and coverage proof, not a formal data release or
+retrieval result. It covers 265/370 peptide candidates; the remaining 105
+special-chemistry candidates retain their explicit rejection classifications
+and have no fabricated coordinates. All 373/373 safe-query targets occur in
+the safe265 set. Any future receptor-to-peptide evaluation must use a new
+265-peptide bank and recompute every baseline. Peptide-to-receptor may retain
+the 512-receptor bank, but must recompute baselines on the exact 373-query safe
+contract. Neither result is directly comparable with the old 512-query /
+370-peptide-bank metrics.
 
 Evidence:
 
@@ -813,6 +855,9 @@ Evidence:
 - `E:\pep\phase3\runs\drugclip\v3_safe265_full_atom_conformer_coverage_prototype_v1\build_failure.json`
 - `E:\pep\phase3\runs\drugclip\v3_safe265_full_atom_conformer_coverage_prototype_v1\generation_progress.json`
 - `E:\pep\phase3\runs\drugclip\v3_safe265_full_atom_topology_qc_replay_v1\topology_qc_replay_report.json`
+- `E:\pep\phase3\runs\drugclip\v3_safe265_full_atom_conformer_coverage_prototype_v2\cache_manifest.json`
+- `E:\pep\phase3\runs\drugclip\v3_safe265_full_atom_conformer_coverage_prototype_v2\deterministic_generation_manifest.json`
+- `E:\pep\phase3\runs\drugclip\v3_safe265_full_atom_conformer_coverage_prototype_v2\validation_report.json`
 
 ## Verified Historical Phase-3 Diagnosis
 
@@ -867,21 +912,23 @@ Evidence:
 
 Formal v3 fine-tuning, selected-model release, and fixed-512 input-domain
 ablation are complete. Full-heavy-random retrieval remains unauthorized and
-technically unready. Bounded deterministic QC rejection sampling passes the
-five-sequence panel. The first safe265 run stopped after a false ILE topology
-failure; repaired-QC replay proves 24/25 saved slot-0 attempts pass, but the
-original run did not continue beyond 2/265 completed sequence caches and did
-not perform deterministic 2650/2650 verification. Safe265 coverage therefore
-remains inconclusive and the incomplete cache is not usable for retrieval.
+has not been run. The canonical-topology safe265 CPU prototype has now passed
+complete first-pass generation and independent deterministic verification for
+265/265 safe sequences and 2,650/2,650 conformers. The v1 failure scene remains
+historical and unusable; only the separate v2 prototype has complete evidence.
+This PASS does not cover the 105 special-chemistry candidates, publish a new
+data version, or establish retrieval benefit.
 
 ## Single Next Action
 
-Review the canonical-topology repair and saved-output replay. Only under
-separate authorization may safe265 coverage be run from the beginning into a
-new output directory with the unchanged prior, FASPR tool, 25-attempt and
-300-second limits, and unchanged numerical QC thresholds. Do not reuse or
-overwrite the historical failure directory, run retrieval or training, or
-publish a data release before a complete deterministic 2650/2650 PASS.
+Review the complete v2 safe265 cache and deterministic validation evidence.
+Only under separate authorization may an evaluator be designed or run. Such an
+evaluation must recompute receptor-to-peptide baselines on exactly the new
+265-peptide bank and peptide-to-receptor baselines on the exact 373-query safe
+subset with the 512-receptor bank. Do not compare those future metrics directly
+with old 512-query / 370-peptide-bank results, fabricate the 105 excluded
+candidate conformers, train, or publish a data release without separate
+authorization.
 
 ## Workspace Safety
 
