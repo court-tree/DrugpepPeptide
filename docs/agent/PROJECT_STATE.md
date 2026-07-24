@@ -1,6 +1,6 @@
 # PepCLIP Current Project State
 
-Last verified: 2026-07-23
+Last verified: 2026-07-24
 
 ## Current Phase
 
@@ -859,6 +859,53 @@ Evidence:
 - `E:\pep\phase3\runs\drugclip\v3_safe265_full_atom_conformer_coverage_prototype_v2\deterministic_generation_manifest.json`
 - `E:\pep\phase3\runs\drugclip\v3_safe265_full_atom_conformer_coverage_prototype_v2\validation_report.json`
 
+## Safe373 Frozen-Model Full-Atom Retrieval Evaluator Preflight
+
+The independent read-only evaluator
+`phase3/drugclip/evaluate_safe_full_atom_retrieval.py` is implemented without
+changing the prior fixed-512 input-domain evaluator. It derives a safe373 plan
+by filtering the original fixed-512 plan while preserving query-relative
+order. The plan contains 373 queries, a lexicographically ordered 265-peptide
+r2p bank, and the original lexicographically ordered 512-receptor p2r bank.
+Its canonical SHA256 is
+`A32FF671CFEA0D1B858C8EFC58AD0E30D6F3170C670089238127B637FCC64310`;
+it binds the original plan file/canonical hashes, chemistry-audit hash, query
+IDs, both candidate-bank orders, and the bank-intersected known-positive
+policy.
+
+The CPU contract preflight is
+`SAFE373_FULL_ATOM_RETRIEVAL_PREFLIGHT_PASS`. It read all 265 sequence caches
+and 2,650 full-heavy conformers, verified the required cache, deterministic,
+and validation manifest hashes, and found zero vocabulary unknowns. A/B were
+constructed by running the unchanged exact-evidence selection over all 512
+queries first and only then filtering safe IDs. Thus safe373 has 373/373 exact
+evidence matches, zero sequence mismatches, zero target missing, and zero A/B
+subset failures without changing the original candidate-representative or
+bound-structure selection logic. A remains a target-bound, non-deployable
+diagnostic upper bound.
+
+Both allowed frozen models were loaded on CPU. Phase-2 checkpoint SHA256 is
+`9FB16C48BA715C6273341609D60725AE796AD4A78771744E19ECF2C13D38AE20`;
+selected Phase-3 epoch-0 SHA256 is
+`5D2D326B634B38A4412950B08093F2152C974403A344AD8A7B2A59EAF8F33599`.
+All model state was finite and each model's state hash was identical before
+and after a two-query forward smoke. D0 produced the required 2x2 score
+matrix, and Dmean10 exactly matched the arithmetic mean of ten independently
+scored 2x2 matrices; coordinates were not averaged.
+
+The evaluator emits 1D-only, 3D-only, and learned-fusion metrics for A, B, C0,
+Cmean10, D0, and Dmean10 as applicable; per-query target scores/ranks,
+known-positive exclusions, target-missing audit, rank dispersion/worst rank,
+and the preregistered paired comparisons with 10,000-query bootstraps. No
+training, backward, optimizer, formal GPU evaluation, checkpoint mutation, or
+retrieval result was produced in this work unit.
+
+Evidence:
+
+- `E:\pep\phase3\runs\drugclip\v3_safe373_full_atom_retrieval_preflight_v1\safe373_evaluation_plan.json`
+- `E:\pep\phase3\runs\drugclip\v3_safe373_full_atom_retrieval_preflight_v1\input_variant_audit.jsonl`
+- `E:\pep\phase3\runs\drugclip\v3_safe373_full_atom_retrieval_preflight_v1\preflight_report.json`
+
 ## Verified Historical Phase-3 Diagnosis
 
 The existing 4096/512 Pilot and early-step diagnostics used data version v2.
@@ -911,24 +958,25 @@ Evidence:
 ## Current Problem
 
 Formal v3 fine-tuning, selected-model release, and fixed-512 input-domain
-ablation are complete. Full-heavy-random retrieval remains unauthorized and
-has not been run. The canonical-topology safe265 CPU prototype has now passed
+ablation are complete. The canonical-topology safe265 CPU prototype has passed
 complete first-pass generation and independent deterministic verification for
 265/265 safe sequences and 2,650/2,650 conformers. The v1 failure scene remains
 historical and unusable; only the separate v2 prototype has complete evidence.
 This PASS does not cover the 105 special-chemistry candidates, publish a new
-data version, or establish retrieval benefit.
+data version, or establish retrieval benefit. The safe373 frozen-model
+evaluator and CPU contract preflight now pass, but formal GPU retrieval remains
+unauthorized and has not been run.
 
 ## Single Next Action
 
-Review the complete v2 safe265 cache and deterministic validation evidence.
-Only under separate authorization may an evaluator be designed or run. Such an
-evaluation must recompute receptor-to-peptide baselines on exactly the new
-265-peptide bank and peptide-to-receptor baselines on the exact 373-query safe
-subset with the 512-receptor bank. Do not compare those future metrics directly
-with old 512-query / 370-peptide-bank results, fabricate the 105 excluded
-candidate conformers, train, or publish a data release without separate
-authorization.
+Review the safe373 evaluator source and CPU preflight. Only under separate
+authorization may its formal GPU mode run into a new output directory. The
+evaluation must retain the exact safe373 plan, 265-peptide r2p bank,
+512-receptor p2r bank, 10,000 paired bootstrap, frozen Phase-2 and selected
+Phase-3 epoch-0 checkpoints, and score-matrix averaging for Cmean10/Dmean10.
+Do not compare future metrics directly with old 512-query / 370-peptide-bank
+results, fabricate the 105 excluded candidate conformers, train, or publish a
+data release.
 
 ## Workspace Safety
 

@@ -1042,3 +1042,55 @@ old 512-query / 370-peptide-bank result.
   chirality, Pro, vocabulary, atom-cap, or CPU-EGNN acceptance contracts.
 - Do not run retrieval, train, or publish a data version without separate
   authorization and the required candidate-bank-specific baseline design.
+
+## 2026-07-24: Safe373 Full-Atom Retrieval Contract Passes CPU Preflight
+
+### Evidence
+
+The new evaluator preserves the original fixed-512 query order and filters it
+to the 373 chemistry-safe queries. The direction-specific candidate banks are
+265 safe peptide sequences for receptor-to-peptide and all 512 original
+receptor interfaces for peptide-to-receptor. The plan binds both ordered ID
+lists, original fixed-plan file/canonical hashes, chemistry-audit hash, and the
+policy that retains the target and excludes only other declared positives
+present in the relevant new bank. Plan canonical SHA256 is
+`A32FF671CFEA0D1B858C8EFC58AD0E30D6F3170C670089238127B637FCC64310`.
+
+The preflight verified the three authorized safe265 manifest identities, read
+265/265 caches and 2,650/2,650 conformers, and found no model-vocabulary
+unknowns. It ran the original fixed-512 exact-evidence A/B construction before
+filtering safe query IDs, preserving structure and representative selection.
+Safe373 therefore has 373/373 exact evidence, zero sequence mismatches, zero
+missing targets, and zero A/B subset failures. A remains target-bound and
+non-deployable.
+
+Both frozen checkpoint files matched their registered SHA256 values and had
+finite model states. Their model-state hashes were unchanged across CPU
+forward smoke tests. For both models, D0 had the expected score-matrix shape
+and Dmean10 exactly equaled the arithmetic mean of ten score matrices, never
+an average of coordinates. No formal GPU retrieval, training, backward,
+optimizer, or checkpoint mutation occurred.
+
+### Decision
+
+Classify the implementation gate as
+`SAFE373_FULL_ATOM_RETRIEVAL_PREFLIGHT_PASS`. This authorizes no result claim:
+random-full-heavy superiority, learned-fusion benefit, conformer averaging
+benefit, distance to bound-heavy A, and Phase-2 versus Phase-3 epoch-0
+suitability remain unanswered until a separately authorized formal GPU run.
+
+The formal evaluator must report 1D-only, 3D-only, and learned-fusion metrics,
+direction-specific target scores/ranks and known-positive exclusions, and the
+preregistered D/C/A/model comparisons using a fixed 10,000-resample paired
+bootstrap on exactly the same 373 queries.
+
+### Do Not Repeat
+
+- Do not reuse old 512-query bootstrap intervals or 370-peptide baselines.
+- Do not reduce the p2r receptor bank when filtering queries.
+- Do not average conformer coordinates; Cmean10 and Dmean10 are arithmetic
+  means of ten score matrices.
+- Do not select a favorable bound pose after filtering; construct A/B under
+  the unchanged full fixed-512 evidence join and then filter.
+- Do not run formal GPU retrieval, train, or publish results without separate
+  authorization.
