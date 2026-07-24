@@ -500,6 +500,7 @@ def _pack_one(
         geometry = _geometry_audit(
             _molecule_with_coordinates(base, coordinates),
             coordinates,
+            identities,
         )
     except Exception as error:
         raise PackingCoverageError(

@@ -17,6 +17,9 @@ from typing import Any
 
 from rdkit import Chem, rdBase
 from rdkit.Chem import AllChem
+from phase3.drugclip.standard_residue_topology import (
+    canonical_geometry_audit,
+)
 
 
 SCHEMA_VERSION = "pepclip-full-heavy-conformer-prototype-v1"
@@ -200,95 +203,20 @@ def atom_identity_sha256(identities: list[dict[str, Any]]) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest().upper()
 
 
-def _geometry_audit(molecule: Chem.Mol, coordinates: list[list[float]]) -> dict[str, Any]:
-    heavy_atom_count = len(coordinates)
-    if any(not math.isfinite(value) for xyz in coordinates for value in xyz):
-        raise ConformerGenerationError("nonfinite_coordinates")
-
-    def distance(first: int, second: int) -> float:
-        return math.dist(coordinates[first], coordinates[second])
-
-    bond_lengths = [
-        distance(bond.GetBeginAtomIdx(), bond.GetEndAtomIdx())
-        for bond in molecule.GetBonds()
-        if bond.GetBeginAtomIdx() < heavy_atom_count and bond.GetEndAtomIdx() < heavy_atom_count
+def _geometry_audit(
+    molecule: Chem.Mol,
+    coordinates: list[list[float]],
+    identities: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Validate standard-PDB coordinates against the canonical peptide graph."""
+    canonical_identities = identities or [
+        _atom_identity(molecule.GetAtomWithIdx(index))
+        for index in range(len(coordinates))
     ]
-    if not bond_lengths or min(bond_lengths) < 0.90 or max(bond_lengths) > 2.10:
-        raise ConformerGenerationError(
-            f"illegal_heavy_bond_length_range:{min(bond_lengths):.6f}:{max(bond_lengths):.6f}"
-        )
-
-    angles: list[float] = []
-    for center in range(heavy_atom_count):
-        neighbors = sorted(
-            neighbor.GetIdx()
-            for neighbor in molecule.GetAtomWithIdx(center).GetNeighbors()
-            if neighbor.GetIdx() < heavy_atom_count
-        )
-        for left_index, left in enumerate(neighbors):
-            for right in neighbors[left_index + 1:]:
-                a = [coordinates[left][axis] - coordinates[center][axis] for axis in range(3)]
-                b = [coordinates[right][axis] - coordinates[center][axis] for axis in range(3)]
-                denominator = math.sqrt(sum(value * value for value in a)) * math.sqrt(
-                    sum(value * value for value in b)
-                )
-                cosine = max(-1.0, min(1.0, sum(x * y for x, y in zip(a, b)) / denominator))
-                angles.append(math.degrees(math.acos(cosine)))
-    if not angles or min(angles) < 60.0 or max(angles) > 180.0:
-        raise ConformerGenerationError(
-            f"illegal_heavy_bond_angle_range:{min(angles):.6f}:{max(angles):.6f}"
-        )
-
-    minimum_nonlocal_distance = math.inf
-    for first in range(heavy_atom_count):
-        distances = Chem.GetDistanceMatrix(molecule)[first]
-        for second in range(first + 1, heavy_atom_count):
-            if distances[second] <= 2:
-                continue
-            minimum_nonlocal_distance = min(minimum_nonlocal_distance, distance(first, second))
-    if minimum_nonlocal_distance < 0.75:
-        raise ConformerGenerationError(
-            f"nonlocal_heavy_atom_clash:{minimum_nonlocal_distance:.6f}"
-        )
-
-    expected_chiral_centers = Chem.FindMolChiralCenters(
-        molecule,
-        includeUnassigned=True,
-        useLegacyImplementation=False,
-    )
-    if any(label == "?" for _, label in expected_chiral_centers):
-        raise ConformerGenerationError(f"unassigned_chirality:{expected_chiral_centers}")
-    coordinate_molecule = Chem.Mol(molecule)
-    for atom in coordinate_molecule.GetAtoms():
-        atom.SetChiralTag(Chem.ChiralType.CHI_UNSPECIFIED)
-    Chem.AssignAtomChiralTagsFromStructure(
-        coordinate_molecule,
-        confId=0,
-        replaceExistingTags=True,
-    )
-    Chem.AssignStereochemistry(coordinate_molecule, cleanIt=True, force=True)
-    coordinate_chiral_centers = Chem.FindMolChiralCenters(
-        coordinate_molecule,
-        includeUnassigned=True,
-        useLegacyImplementation=False,
-    )
-    if coordinate_chiral_centers != expected_chiral_centers:
-        raise ConformerGenerationError(
-            "coordinate_chirality_mismatch:"
-            f"expected={expected_chiral_centers}:observed={coordinate_chiral_centers}"
-        )
-    return {
-        "status": "PASS",
-        "minimum_heavy_bond_length_angstrom": min(bond_lengths),
-        "maximum_heavy_bond_length_angstrom": max(bond_lengths),
-        "minimum_heavy_bond_angle_degrees": min(angles),
-        "maximum_heavy_bond_angle_degrees": max(angles),
-        "minimum_nonlocal_heavy_atom_distance_angstrom": (
-            None if math.isinf(minimum_nonlocal_distance) else minimum_nonlocal_distance
-        ),
-        "assigned_chiral_center_count": len(expected_chiral_centers),
-        "coordinate_chirality_match": True,
-    }
+    try:
+        return canonical_geometry_audit(canonical_identities, coordinates)
+    except ValueError as error:
+        raise ConformerGenerationError(str(error)) from error
 
 
 def _generate_one(
