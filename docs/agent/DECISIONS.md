@@ -1094,3 +1094,200 @@ bootstrap on exactly the same 373 queries.
   the unchanged full fixed-512 evidence join and then filter.
 - Do not run formal GPU retrieval, train, or publish results without separate
   authorization.
+
+## 2026-07-24: Safe373 Frozen Full-Heavy Input Restores 3D Signal
+
+### Evidence
+
+The one authorized formal GPU run used the preregistered safe373 plan
+`A32FF671CFEA0D1B858C8EFC58AD0E30D6F3170C670089238127B637FCC64310`,
+the 265-peptide r2p bank, and the 512-receptor p2r bank. It completed with exit
+code 0, 373/373 exact A/B evidence and sequence coverage, zero target missing,
+265/265 safe full-heavy caches, 2,650/2,650 conformers, 19,396 per-query ranks,
+and 40 complete 10,000-resample paired-bootstrap groups. The two frozen
+checkpoint state hashes were unchanged.
+
+For both frozen models and both directions, 3D-only D0 and Dmean10 materially
+outperform their NCAC counterparts in Recall@10, MRR, and mean rank, with the
+primary paired intervals excluding zero. Learned-fusion Dmean10 also improves
+over Cmean10 in Recall@10 and MRR in both directions, but p2r mean rank worsens.
+Learned-fusion Dmean10 does not reliably outperform 1D-only across the metric
+set: all four Recall@10 intervals cross zero. Dmean10 has no general advantage
+over D0. Phase-3 epoch 0 has isolated small gains over Phase 2 but no consistent
+full-heavy advantage. Bound-heavy A remains a target-bound, non-deployable
+upper bound and retains a mean-rank advantage.
+
+### Decision
+
+Candidate-independent full-heavy random conformers restore useful frozen 3D
+signal and remove the main NCAC representation deficit. The current frozen
+learned fusion nevertheless has not demonstrated stable added value over
+1D-only, and conformer score averaging has not demonstrated a general benefit.
+These results justify considering a separately authorized bounded Phase-3 v2
+adaptation experiment, but do not predict its success or authorize training.
+
+The safe373 results are contract-specific. They must not be compared directly
+with the old 512-query / 370-peptide-bank metrics, and they do not cover the
+105 excluded special-chemistry peptide candidates.
+
+### Do Not Repeat
+
+- Do not describe bound-heavy A as deployable performance.
+- Do not claim Dmean10 is generally better than D0 or that frozen full-heavy
+  fusion is generally better than 1D-only.
+- Do not select Phase-3 epoch 0 as the universally better full-heavy model.
+- Do not start bounded fine-tuning, full-bank generation, or a data release
+  without separate authorization and an explicit contract.
+
+## 2026-07-24: Bound V2 Adaptation To Peptide 3D And Peptide Fusion
+
+### Decision
+
+The Phase-3 v2 bounded full-heavy adaptation contract initializes only from
+the registered Phase-2 learned-concat checkpoint. Selected Phase-3 v1 epoch 0
+remains an evaluation comparator and is not an allowed v2 initialization.
+
+The exact trainable scope is the peptide 3D encoder's final EGNN block,
+`final_norm`, and `project`, plus peptide fusion. Receptor 1D, receptor 3D,
+receptor fusion, peptide 1D, and temperature remain frozen. Optimizer
+construction must match that exact named-parameter set; checkpoints bind both
+its canonical name hash and the full-heavy data contract and reject mismatched
+resume attempts.
+
+Training inputs must come from a separately versioned bounded cache for the
+exact formal-train/formal-valid interface-pair plans. It may contain only
+`ordinary_linear_standard` peptides generated with the registered train-only
+torsion prior, FASPR, canonical topology QC, and deterministic bounded
+rejection sampling. The safe373 evaluation cache is not a training cache.
+Generation may depend on sequence and registered generator/prior seeds only,
+never receptor, contact, interface, evidence, or bound coordinates.
+
+### Do Not Repeat
+
+- Do not initialize v2 adaptation from the Phase-3 epoch-0 checkpoint.
+- Do not add receptor-side parameters, peptide 1D, temperature, a new head, or
+  a new loss to the optimizer.
+- Do not substitute safe265/safe373 evaluation cache paths for a new bounded
+  train/valid cache and manifest.
+- Do not run training or formal GPU retrieval until the exact local ESM asset,
+  real-model preflight, bounded cache, and separate authorization all exist.
+
+## 2026-07-24: Reject The Current Sorted Bounded Prefix As A Full-Heavy Plan
+
+### Decision
+
+The restored local `esm2_t6_8M_UR50D` asset is accepted for strict-offline
+Phase-2 initialization preflight at Hugging Face revision
+`c731040fcd8d73dceaa04b0a8e6329b345b0f5df`. The registered checkpoint loads
+with 352 state tensors and 28,575,002 finite elements, remains unchanged, and
+reproduces the bounded freeze contract's 26 trainable tensors, 2,843,265
+parameters, and canonical parameter-name SHA.
+
+The current runner's literal sorted 4,096-train / 512-valid prefix is not an
+eligible bounded full-heavy plan. Exact-evidence chemistry audit classifies
+1,110/4,608 pairs as non-ordinary, and one planned sequence has 197
+theoretical heavy atoms against the strict `<192` contract. This is
+`PLAN_CONTRACT_FAIL`; no cache was generated. The formal split remains
+leakage-safe for these prefixes, and all planned sequences have train-only
+torsion-prior context coverage, but neither fact overrides chemistry or atom
+cap failures.
+
+The minimum correction is a new explicit preregistered plan that applies the
+frozen chemistry and atom-cap eligibility rules inside each formal split
+before selecting exact bounded counts. It is not permissible to silently skip
+or replace entries while continuing to call the result the current sorted
+prefix.
+
+### Do Not Repeat
+
+- Do not generate a full-heavy cache for the current hard-coded 4,096/512
+  prefix.
+- Do not treat ESM restoration or real-model preflight PASS as plan PASS.
+- Do not relax chemistry classification, atom cap, or other QC to retain the
+  current prefix.
+- Do not start training or GPU retrieval without a separately reviewed plan,
+  cache contract, and authorization.
+
+## 2026-07-24: Full Formal-Split Core Linear Coverage Is Sufficient
+
+### Decision
+
+The complete formal split has now been audited at conservative sequence level:
+all structure instances for a sequence must be
+`ordinary_linear_standard`, every train-only torsion context must exist, and
+the theoretical standard heavy-atom count must be strictly below 192. This
+leaves 13,831/19,707 train pairs and 1,711/2,463 valid pairs, or
+15,542/22,170 combined pairs (70.1037%). The corresponding train/valid counts
+are 3,337/663 unique sequences and 5,988/826 biological relations. This is
+`CORE_LINEAR_SUBSET_SUFFICIENT` for a future bounded 4,096/512 plan, but no
+such plan was selected or registered in this audit.
+
+One otherwise ordinary sequence, `WASLWNWFDITNWLWYIRKK`, has 197 theoretical
+heavy atoms. It remains excluded; the current evidence does not justify a
+formal atom-cap change. Known-disulfide and cyclic/crosslinked classes add
+only 421 pairs under a theoretical future chemistry-aware generator, raising
+the upper-bound coverage to 72.0027%. The 355 chemistry-insufficient or
+multiple-Cys-unknown pairs (1.6013%) cannot be recovered from single-letter
+sequence alone.
+
+The 3,075 receptor-covalent pairs are outside the current non-covalent
+retrieval contract: all 2,070 audited covalent structure instances have an
+explicit connection record and/or covalent-distance evidence. Modified,
+nonstandard, disulfide, cyclic, crosslinked, and unresolved multiple-Cys
+peptides require explicit residue identities, bonded topology, terminal state,
+crosslink/disulfide partners, and appropriate chemistry parameters; they must
+not be guessed from canonical sequence.
+
+### Do Not Repeat
+
+- Do not treat the 70.1037% core-linear coverage as a generated cache or a
+  training result.
+- Do not create a 4,096/512 plan or manifest from this audit without separate
+  review and authorization.
+- Do not truncate the 197-atom peptide or infer special chemistry from
+  single-letter sequence.
+
+## 2026-07-24: Freeze The Explicit Bounded Full-Heavy Plan
+
+### Decision
+
+The Phase-3 v2 bounded plan is frozen under schema
+`phase3-v2-bounded-full-heavy-plan-v1`. Selection is not the old sorted
+prefix: eligible pairs are ordered by
+`SHA256(schema + NUL + split + NUL + interface_pair_id)`, with
+`interface_pair_id` as the tie breaker, then truncated to exactly 4,096 train
+and 512 valid pairs. Rebuilding the descriptor twice from identical frozen
+inputs is byte-identical.
+
+The descriptor file SHA256 is
+`1894F635E352D127AC79DF226E4F50A7451B8E47C43D6388239A23752721957D`;
+its canonical SHA256 is
+`2F8FF55185DE5E87861687CA564EC4851E186C16C4C8158B9C1168D8E32D8DE0`.
+It contains 1,748 train and 337 valid unique sequences, with zero train/valid
+or train/safe373 pair, sequence, and biological-relation overlap. The valid
+plan intentionally reports, but does not reject, overlap with safe373: 92
+query pairs, 150 peptide sequences, and 150 biological relations.
+
+This is a plan descriptor only. It binds the frozen eligibility registry,
+full-split audit, formal split sources, safe373 plan, selection algorithm,
+ordered IDs, sequence/atom-count records, and future requirement for 2,085
+unique sequences / 20,850 conformers. Generation and cache status are
+`NOT_BUILT`. It is not a cache manifest and not a trainable adaptation
+manifest.
+
+The runner no longer derives a full-heavy plan from the old lexicographic
+prefix. It consumes exact descriptor IDs without reordering, filtering,
+replacement, or fill-in. Training requires three separately validated
+artifacts: the plan descriptor, a materialized bounded cache manifest, and a
+final adaptation manifest binding both SHA values plus the Phase-2 checkpoint
+and unchanged freeze contract. Descriptor-only invocation fails explicitly
+before optimizer construction.
+
+### Do Not Repeat
+
+- Do not regenerate or hand-adjust selected IDs in response to later runtime
+  behavior.
+- Do not present the descriptor as evidence that conformers or a cache exist.
+- Do not reuse a safe265/safe373 evaluation cache for train/valid adaptation.
+- Do not create a final adaptation manifest, train, or run GPU retrieval until
+  the dedicated bounded cache is separately authorized, built, and validated.

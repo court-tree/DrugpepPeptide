@@ -906,6 +906,154 @@ Evidence:
 - `E:\pep\phase3\runs\drugclip\v3_safe373_full_atom_retrieval_preflight_v1\input_variant_audit.jsonl`
 - `E:\pep\phase3\runs\drugclip\v3_safe373_full_atom_retrieval_preflight_v1\preflight_report.json`
 
+## Formal Safe373 Frozen-Model Full-Atom Retrieval
+
+The single authorized frozen-model GPU evaluation completed at detached HEAD
+`02e160449c1ec1c2324c01deef4d8f6748ca329b` with exit code 0. It used plan
+SHA256 `A32FF671CFEA0D1B858C8EFC58AD0E30D6F3170C670089238127B637FCC64310`,
+373 queries, the 265-peptide r2p bank, and the 512-receptor p2r bank. The
+safe265 cache supplied 265/265 sequences and 2,650/2,650 conformers. Exact
+A/B evidence and sequence coverage were 373/373, target missing was zero,
+and no A input was truncated. The output contains 19,396 per-query rank rows
+and all 40 preregistered paired-bootstrap groups at seed 20260724 and 10,000
+resamples. All metrics are finite. Both checkpoint files and their in-memory
+model-state hashes were unchanged before and after evaluation.
+
+Full-heavy input restores substantial frozen 3D-only retrieval signal relative
+to backbone-only input. For Dmean10 minus Cmean10, Recall@10 improvements were
+0.13405 r2p and 0.14209 p2r for the Phase-2 model, and 0.13137 r2p and
+0.14477 p2r for Phase-3 epoch 0; every 95% paired interval excludes zero.
+MRR and mean rank support the same 3D-only conclusion in both directions.
+D0 minus C0 gives the same qualitative result, so the finding is not dependent
+on ten-conformer averaging.
+
+Learned fusion also improves from Cmean10 to Dmean10 in both directions and
+both frozen models for Recall@10 and MRR, with all corresponding 95% intervals
+excluding zero. However, p2r mean rank worsens by 11.43 for Phase 2 and 12.51
+for Phase-3 epoch 0, while r2p mean-rank intervals cross zero. Relative to
+1D-only, learned-fusion Dmean10 changes Recall@10 by only 0.00536/0.00804
+(r2p/p2r) for Phase 2 and 0.01072/0.00268 for Phase-3 epoch 0; all four
+Recall@10 intervals cross zero. MRR improves significantly in Phase-2 p2r and
+both Phase-3 directions, but the full metric set does not establish a stable
+overall learned-fusion advantage over 1D-only.
+
+Ten-conformer Dmean10 does not show a general paired advantage over D0:
+Recall@10 and mean-rank intervals cross zero for both models, representations,
+and directions; only Phase-3 3D-only p2r MRR excludes zero. Bound-heavy A
+remains a target-bound, non-deployable diagnostic upper bound. Dmean10
+learned fusion retains worse mean rank than A in both directions and both
+models; Recall@10 gaps are mixed in significance but range from 0.01341 to
+0.03485 in magnitude.
+
+Phase-3 epoch 0 is not generally superior to the Phase-2 baseline on
+full-heavy random input. Their Dmean10 Recall@10 differences are at most
+0.00536 in magnitude and all paired intervals cross zero. Phase-3 has a small
+significant p2r 3D-only MRR gain and a small significant r2p learned-fusion
+mean-rank gain, but the remaining primary comparisons are mixed or
+indistinguishable.
+
+This result provides a scientific basis to consider a separately authorized,
+strictly bounded Phase-3 v2 adaptation experiment: candidate-independent
+full-heavy input has restored useful frozen 3D signal, while the existing
+learned fusion does not reliably exceed 1D-only. It is not evidence that
+fine-tuning will succeed, does not authorize training, and is not directly
+comparable with the old 512-query / 370-peptide-bank evaluation.
+
+Evidence:
+
+- `E:\pep\phase3\runs\drugclip\v3_safe373_full_atom_retrieval_v1\retrieval_metrics.json`
+- `E:\pep\phase3\runs\drugclip\v3_safe373_full_atom_retrieval_v1\bootstrap_confidence_intervals.json`
+- `E:\pep\phase3\runs\drugclip\v3_safe373_full_atom_retrieval_v1\per_query_ranks.jsonl`
+- `E:\pep\phase3\runs\drugclip\v3_safe373_full_atom_retrieval_v1\checkpoint_audit.json`
+- `E:\pep\phase3\runs\drugclip\v3_safe373_full_atom_retrieval_v1\stdout_stderr.log`
+
+## Phase-3 v2 Bounded Full-Heavy Adaptation Contract
+
+The existing Phase-3 runner now has an opt-in
+`--full-heavy-adaptation-manifest` path. It does not alter the model
+architecture, temperature, bidirectional known-positive loss, batching, or
+masking. The mode freezes receptor 1D, receptor 3D, receptor fusion, and
+peptide 1D; it trains only the peptide EGNN final block, peptide
+`final_norm`, peptide `project`, and peptide fusion. Against the registered
+Phase-2 checkpoint state this is 26 parameter tensors and 2,843,265 scalar
+parameters: 2,448,001 peptide-3D and 395,264 peptide-fusion parameters. The
+canonical trainable-name SHA256 is
+`ACC0E5C1AC2FC5EA2C27DC559795B55BD5FCD1D351821529F72B4D9AC6414774`.
+
+The manifest validator requires the Phase-2 learned-concat initialization SHA
+`9FB16C48BA715C6273341609D60725AE796AD4A78771744E19ECF2C13D38AE20`;
+Phase-3 epoch 0 is not accepted as initialization. It binds exact bounded
+train/valid interface-pair lists and hashes, limits them to at most 4,096/512,
+requires disjoint formal split IDs, and validates that every required unique
+peptide has exactly ten full-heavy conformers. Cache validation requires
+`ordinary_linear_standard`, canonical standard-PDB atom identity/order,
+complete standard-residue topology, finite coordinates, no vocabulary UNK,
+strict atom count below 192, distinct conformers, accepted FASPR/QC/CPU-EGNN
+records, and the unchanged 25-attempt and 0.75-angstrom contracts. Generation
+seed inputs are restricted to generator/prior identity, sequence, conformer
+index, and attempt index; receptor, contact, interface, evidence, and bound
+coordinates are forbidden. The safe373 evaluation cache is explicitly
+invalid as training input.
+
+Checkpoint save/resume now embeds and compares both the full-heavy data
+contract and the exact freeze contract. A synthetic CPU optimizer-step audit
+changed only allowed peptide-3D/peptide-fusion parameters; receptor 1D,
+receptor 3D, receptor fusion, and peptide 1D weights and recomputed embeddings
+were bitwise unchanged. A deliberately changed receptor-fusion parameter was
+correctly rejected. Focused contract tests pass 9/9, existing training-state
+and bounded-runner tests pass 6/6, Phase-3 tests pass 187/187, `py_compile`,
+runner `--help`, and `git diff --check` pass. No formal cache, optimizer
+trajectory, training run, GPU retrieval, or parameter search was executed.
+
+During final environment checking, the prior detached-worktree cleanup was
+found to have followed Windows junctions and emptied the Phase-2 learned-concat
+run directory and `E:\pep\models`. The complete Phase-2 run directory was
+restored from an existing local nested copy; every restored file matches its
+source SHA and `checkpoint_best.pt` again has the registered SHA above.
+The exact `E:\pep\models\esm2_t6_8M_UR50D` asset was subsequently restored
+from a trusted server copy. Its Hugging Face metadata binds revision
+`c731040fcd8d73dceaa04b0a8e6329b345b0f5df`, and a strict-offline real-model
+load now passes: 352 state tensors, 28,575,002 elements, all finite, unchanged
+state hash, and the expected 26-tensor / 2,843,265-parameter trainable set with
+name SHA
+`ACC0E5C1AC2FC5EA2C27DC559795B55BD5FCD1D351821529F72B4D9AC6414774`.
+No optimizer, backward, or training path was executed.
+
+## Phase-3 v2 Real Bounded-Plan Preflight
+
+The read-only audit at
+`E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_plan_preflight_v1`
+loaded the actual formal-v3 runner Dataset contract and reproduced 19,707
+train and 2,463 valid interface pairs. The current runner selections are
+exactly `sorted(train_base.interface_pair_ids)[:4096]` and
+`sorted(valid_base.interface_pair_ids)[:512]`, yielding 2,101 train and 370
+valid unique peptide sequences, with no train/valid interface-pair,
+biological-relation, or peptide-sequence overlap. Ordered pair-list SHA256
+values are
+`1802DB4F1148101E209AF9ED1DA3E1E7573B359A5BDC4FC899326262768A890B`
+for train and
+`6BF3206C391BEB590D2C9ED033D947E489CFBBEC5219D33B0F0383AA7D466BE4`
+for valid.
+
+The exact-evidence chemistry classifier rejects 1,110 of the 4,608 prefix
+pairs, so the durable classification is `PLAN_CONTRACT_FAIL`. Train contains
+3,125 ordinary and 971 non-ordinary pairs; valid contains the expected 373
+ordinary safe queries and 139 non-ordinary pairs. Across both prefixes the
+non-ordinary counts are 489 modified/non-standard, 441 receptor-covalent, 92
+known-disulfide, 55 chemistry-insufficient, 19 cyclic/crosslinked, and 14
+multiple-Cys-unknown pairs. All 2,471 union sequences have train-only
+torsion-prior context coverage, but the maximum theoretical heavy-atom count
+is 197; `WASLWNWFDITNWLWYIRKK` also violates the strict `<192` atom-cap
+contract. A future separately authorized cache would require 21,010 train and
+3,700 valid conformers, or 24,710 across the disjoint sequence union.
+
+The train prefix has zero interface-pair, biological-relation, or peptide-
+sequence overlap with safe373 evaluation queries/candidates, and no safe373
+cache path or coordinate was reused. No cache was generated. Evidence files
+are `bounded_pair_plan.json`, `chemistry_eligibility_audit.jsonl`,
+`bounded_plan_preflight_report.json`, `esm_real_model_preflight.json`, and
+`summary.md` in the audit directory.
+
 ## Verified Historical Phase-3 Diagnosis
 
 The existing 4096/512 Pilot and early-step diagnostics used data version v2.
@@ -957,26 +1105,78 @@ Evidence:
 
 ## Current Problem
 
-Formal v3 fine-tuning, selected-model release, and fixed-512 input-domain
-ablation are complete. The canonical-topology safe265 CPU prototype has passed
-complete first-pass generation and independent deterministic verification for
-265/265 safe sequences and 2,650/2,650 conformers. The v1 failure scene remains
-historical and unusable; only the separate v2 prototype has complete evidence.
-This PASS does not cover the 105 special-chemistry candidates, publish a new
-data version, or establish retrieval benefit. The safe373 frozen-model
-evaluator and CPU contract preflight now pass, but formal GPU retrieval remains
-unauthorized and has not been run.
+Formal v3 fine-tuning, selected-model release, fixed-512 input-domain ablation,
+canonical-topology safe265 generation, and the authorized safe373 frozen-model
+GPU evaluation are complete. Full-heavy random input clearly restores frozen
+3D-only signal relative to backbone-only input, but the learned-fusion result
+does not establish a stable overall advantage over 1D-only, ten-conformer
+averaging is not generally superior to D0, and neither frozen checkpoint is
+clearly best. The safe265 prototype still excludes 105 special-chemistry
+candidates and is not a formal data release. The bounded full-heavy adaptation
+contract implementation, synthetic one-step audit, and strict-offline
+real-model preflight pass. The current hard-coded 4,096/512 sorted prefix
+remains invalid, but the subsequent full formal-split sequence-level audit is
+`CORE_LINEAR_SUBSET_SUFFICIENT`: 13,831/19,707 train pairs (3,337 sequences;
+5,988 biological relations) and 1,711/2,463 valid pairs (663 sequences; 826
+relations) are conservatively ordinary-linear, strictly below 192 heavy atoms,
+and covered by the frozen torsion prior. Combined immediate coverage is
+15,542/22,170 pairs (70.1037%). The ordinary chemical class contains one
+additional 197-heavy-atom sequence, `WASLWNWFDITNWLWYIRKK`; it is excluded
+rather than truncated.
+
+The excluded sequence-level classes are 2,776 modified/nonstandard pairs,
+3,075 receptor-covalent pairs, 335 known-disulfide pairs, 86
+cyclic/crosslinked pairs, 51 multiple-Cys-unknown pairs, and 304
+chemistry-insufficient pairs. All 2,070 receptor-covalent structure-evidence
+instances have explicit connection and/or covalent-distance evidence, so they
+are outside the current non-covalent retrieval task rather than ordinary
+samples recoverable by sequence-only conformer generation. Adding fully
+specified disulfide and cyclic generators would raise theoretical coverage
+only to 15,963/22,170 (72.0027%); 355/22,170 pairs (1.6013%) remain blocked by
+insufficient chemistry metadata or unresolved multiple-Cys state.
+
+The separately authorized explicit plan is now frozen as
+`phase3-v2-bounded-full-heavy-plan-v1` with classification
+`EXPLICIT_BOUNDED_PLAN_PASS`. It selects eligible pairs by SHA256 of the
+schema namespace, split, and interface-pair ID, with interface-pair ID as the
+tie breaker. The descriptor has file SHA256
+`1894F635E352D127AC79DF226E4F50A7451B8E47C43D6388239A23752721957D`
+and canonical SHA256
+`2F8FF55185DE5E87861687CA564EC4851E186C16C4C8158B9C1168D8E32D8DE0`.
+It binds 4,096 train pairs / 1,748 sequences and 512 valid pairs / 337
+sequences. Ordered pair SHA256 values are
+`397FE1822FF3C1D5CD6CAAE812AB6B32ADE81FE82B65E6DE54954A340044CE26`
+train and
+`4ADADC28DC9ECD75B6DD9BC67BBEF7856434EB1358041A3C71A01E9CFACF81C8`
+valid. Train/valid and train/safe373 pair, sequence, and relation overlaps are
+all zero. Valid/safe373 overlap is explicitly retained and reported as 92
+query pairs, 150 peptide sequences, and 150 biological relations.
+
+The descriptor requires a future bounded cache for 2,085 unique sequences and
+20,850 conformers, but records generation/cache status as `NOT_BUILT`.
+No cache manifest or final adaptation manifest exists, and the runner rejects
+descriptor-only training before constructing an optimizer. Future training
+requires separately validated plan descriptor, materialized cache manifest,
+and final adaptation manifest binding the plan/cache SHA values, Phase-2
+checkpoint SHA, and unchanged freeze contract.
+
+Evidence:
+
+- `E:\pep\phase3\runs\drugclip\v2_full_split_full_heavy_eligibility_audit_v1\sequence_eligibility_registry.jsonl`
+- `E:\pep\phase3\runs\drugclip\v2_full_split_full_heavy_eligibility_audit_v1\full_split_eligibility_report.json`
+- `E:\pep\phase3\runs\drugclip\v2_full_split_full_heavy_eligibility_audit_v1\summary.md`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_explicit_plan_v1\bounded_plan_descriptor.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_explicit_plan_v1\plan_distribution_audit.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_explicit_plan_v1\plan_validation_report.json`
 
 ## Single Next Action
 
-Review the safe373 evaluator source and CPU preflight. Only under separate
-authorization may its formal GPU mode run into a new output directory. The
-evaluation must retain the exact safe373 plan, 265-peptide r2p bank,
-512-receptor p2r bank, 10,000 paired bootstrap, frozen Phase-2 and selected
-Phase-3 epoch-0 checkpoints, and score-matrix averaging for Cmean10/Dmean10.
-Do not compare future metrics directly with old 512-query / 370-peptide-bank
-results, fabricate the 105 excluded candidate conformers, train, or publish a
-data release.
+Review the frozen explicit descriptor and distribution audit before separately
+authorizing generation of its dedicated 2,085-sequence bounded train/valid
+cache. Do not reuse safe265/safe373 evaluation caches, change selected IDs,
+silently replace failed samples, fabricate special chemistry, create a final
+adaptation manifest before a cache exists, start training, or publish a data
+release without separate authorization.
 
 ## Workspace Safety
 
@@ -1010,6 +1210,10 @@ data release.
   `E:\pep\phase3\runs\drugclip\v3_input_domain_ablation_fixed512_v1`. It is
   ignored result evidence and must not be staged with the evaluator sources or
   Session Bridge.
+- The formal safe373 frozen-model output and launcher logs are retained at
+  `E:\pep\phase3\runs\drugclip\v3_safe373_full_atom_retrieval_v1`. Its clean
+  detached worktree and two exact dependency junctions were removed only after
+  full result validation.
 - Do not clean, revert, stage, commit, or infer file ownership from Git diff
   alone. Generated `runs/` artifacts are ignored and require direct evidence
   inspection.
