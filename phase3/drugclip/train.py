@@ -40,6 +40,12 @@ from phase3.drugclip.random_augmentation_dataset import (
 from phase3.drugclip.batching import UniquePeptideBatchSampler, collate_phase3
 from phase3.drugclip.config import DEFAULT_RUN_ROOT
 from phase3.drugclip.forward import forward_and_known_positive_loss
+from phase3.drugclip.full_heavy_adaptation_contract import (
+    FullHeavyDatasetView,
+    build_bounded_optimizer_groups,
+    configure_bounded_full_heavy_trainable,
+    validate_bounded_full_heavy_contract,
+)
 from phase3.drugclip.training_state import (
     amp_is_enabled,
     autocast_context,
@@ -93,6 +99,30 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--stop_after_epoch", type=int, default=None)
     parser.add_argument("--train_interface_pair_limit", type=int, default=None)
     parser.add_argument("--valid_interface_pair_limit", type=int, default=None)
+    parser.add_argument(
+        "--full-heavy-adaptation-manifest",
+        default=None,
+        help=(
+            "Final Phase-3 v2 adaptation manifest binding the frozen plan, "
+            "materialized cache, freeze contract, and Phase-2 checkpoint."
+        ),
+    )
+    parser.add_argument(
+        "--full-heavy-plan-descriptor",
+        default=None,
+        help=(
+            "Frozen Phase-3 v2 explicit bounded plan descriptor. This alone "
+            "cannot start training while its cache status is NOT_BUILT."
+        ),
+    )
+    parser.add_argument(
+        "--full-heavy-cache-manifest",
+        default=None,
+        help=(
+            "Materialized bounded train/valid full-heavy cache manifest; "
+            "safe265/safe373 evaluation caches are forbidden."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -357,8 +387,32 @@ def _step_checkpoint_path(output_dir: Path, global_step: int) -> Path:
     return output_dir / f"step_{global_step:03d}.pt"
 
 
+def _validate_full_heavy_cli_contract(args: argparse.Namespace) -> bool:
+    values = {
+        "adaptation_manifest": args.full_heavy_adaptation_manifest,
+        "plan_descriptor": args.full_heavy_plan_descriptor,
+        "cache_manifest": args.full_heavy_cache_manifest,
+    }
+    requested = any(values.values())
+    if requested and not all(values.values()):
+        if (
+            args.full_heavy_plan_descriptor
+            and not args.full_heavy_cache_manifest
+        ):
+            raise ValueError(
+                "full_heavy_cache_not_built:"
+                "plan_descriptor_cannot_start_training"
+            )
+        raise ValueError(
+            "full_heavy_runtime_contract_incomplete:"
+            "adaptation_manifest_plan_descriptor_cache_manifest_required"
+        )
+    return requested
+
+
 def main() -> None:
     args = parse_args()
+    full_heavy_requested = _validate_full_heavy_cli_contract(args)
     if args.max_steps is not None and args.max_steps < 1:
         raise ValueError("max_steps must be positive")
     if args.max_steps is not None and args.stop_after_epoch is not None:
@@ -392,7 +446,25 @@ def main() -> None:
 
     source_configs = load_source_configs(checkpoint_path, args.source_model_configs, repo_root)
     model = load_phase2_fusion_model(checkpoint_path, source_configs, device, args, repo_root)
-    if args.freeze_all_towers:
+    full_heavy_freeze_contract: dict[str, Any] | None = None
+    if full_heavy_requested:
+        if args.freeze_all_towers or args.train_interface_pair_limit or args.valid_interface_pair_limit:
+            raise ValueError(
+                "full-heavy adaptation uses its manifest plans and fixed freeze contract"
+            )
+        full_heavy_freeze_contract = configure_bounded_full_heavy_trainable(model)
+        unfreeze_1d = {"requested_layers": 0, "trainable_parameters": 0}
+        unfreeze_3d = {
+            "requested_layers": 1,
+            "scope": "peptide_encoder_only",
+            "trainable_parameters": sum(
+                parameter.numel()
+                for name, parameter in model.named_parameters()
+                if parameter.requires_grad
+                and name.startswith("model_3d.peptide_encoder.")
+            ),
+        }
+    elif args.freeze_all_towers:
         unfreeze_1d = {"requested_layers": 0, "trainable_parameters": 0}
         unfreeze_3d = {"requested_layers": 0, "trainable_parameters": 0}
     else:
@@ -415,8 +487,49 @@ def main() -> None:
         raise ValueError("train_valid_data_contract_mismatch")
     train_base.write_mapping_summary(output_dir / "train_interface_pair_mapping_summary.json")
     valid_base.write_mapping_summary(output_dir / "valid_interface_pair_mapping_summary.json")
-    train_dataset = _interface_pair_subset(train_base, args.train_interface_pair_limit)
-    valid_dataset = _interface_pair_subset(valid_base, args.valid_interface_pair_limit)
+    full_heavy_data_contract: dict[str, Any] | None = None
+    if full_heavy_requested:
+        full_heavy_data_contract = validate_bounded_full_heavy_contract(
+            resolve_path(args.full_heavy_adaptation_manifest, repo_root),
+            plan_descriptor_file=resolve_path(
+                args.full_heavy_plan_descriptor, repo_root
+            ),
+            cache_manifest_file=resolve_path(
+                args.full_heavy_cache_manifest, repo_root
+            ),
+            phase2_checkpoint=checkpoint_path,
+            train_interface_pair_ids=train_base.interface_pair_ids,
+            valid_interface_pair_ids=valid_base.interface_pair_ids,
+            train_sequence_by_pair={
+                pair_id: str(row["pair"]["peptide_sequence"])
+                for pair_id, row in train_base.interface_pair_rows.items()
+            },
+            valid_sequence_by_pair={
+                pair_id: str(row["pair"]["peptide_sequence"])
+                for pair_id, row in valid_base.interface_pair_rows.items()
+            },
+            train_relation_by_pair={
+                pair_id: str(row["_biological_pair_id"])
+                for pair_id, row in train_base.interface_pair_rows.items()
+            },
+            valid_relation_by_pair={
+                pair_id: str(row["_biological_pair_id"])
+                for pair_id, row in valid_base.interface_pair_rows.items()
+            },
+            freeze_contract=full_heavy_freeze_contract,
+        )
+        payloads = full_heavy_data_contract.pop("payload_by_sequence")
+        train_view = FullHeavyDatasetView(train_base, payloads)
+        valid_view = FullHeavyDatasetView(valid_base, payloads)
+        train_dataset = InterfacePairSubsetDataset(
+            train_view, full_heavy_data_contract["train_interface_pair_ids"]
+        )
+        valid_dataset = InterfacePairSubsetDataset(
+            valid_view, full_heavy_data_contract["valid_interface_pair_ids"]
+        )
+    else:
+        train_dataset = _interface_pair_subset(train_base, args.train_interface_pair_limit)
+        valid_dataset = _interface_pair_subset(valid_base, args.valid_interface_pair_limit)
     train_pair_sha256 = _sequence_hash(train_dataset.interface_pair_ids)
     valid_pair_sha256 = _sequence_hash(valid_dataset.interface_pair_ids)
     subset_manifest = {
@@ -434,11 +547,16 @@ def main() -> None:
     valid_sampler = UniquePeptideBatchSampler(valid_dataset, args.batch_size, seed=args.seed + 17, epoch=0)
     train_loader = DataLoader(train_dataset, batch_sampler=train_sampler, num_workers=args.num_workers, collate_fn=collate_phase3)
     valid_loader = DataLoader(valid_dataset, batch_sampler=valid_sampler, num_workers=args.num_workers, collate_fn=collate_phase3)
-    fusion_parameters = [p for module in (model.receptor_fusion, model.peptide_fusion) for p in module.parameters() if p.requires_grad]
-    tower_parameters = [p for module in (model.model_1d, model.model_3d) for p in module.parameters() if p.requires_grad]
-    parameter_groups = [{"params": fusion_parameters, "lr": args.lr, "group_name": "fusion"}]
-    if tower_parameters:
-        parameter_groups.append({"params": tower_parameters, "lr": args.tower_lr, "group_name": "tower"})
+    if full_heavy_requested:
+        parameter_groups = build_bounded_optimizer_groups(
+            model, fusion_lr=args.lr, tower_lr=args.tower_lr
+        )
+    else:
+        fusion_parameters = [p for module in (model.receptor_fusion, model.peptide_fusion) for p in module.parameters() if p.requires_grad]
+        tower_parameters = [p for module in (model.model_1d, model.model_3d) for p in module.parameters() if p.requires_grad]
+        parameter_groups = [{"params": fusion_parameters, "lr": args.lr, "group_name": "fusion"}]
+        if tower_parameters:
+            parameter_groups.append({"params": tower_parameters, "lr": args.tower_lr, "group_name": "tower"})
     optimizer = torch.optim.AdamW(parameter_groups, weight_decay=args.weight_decay)
     epoch_train_steps = len(train_sampler) * args.epochs
     if args.max_steps is not None and args.max_steps > epoch_train_steps:
@@ -455,6 +573,7 @@ def main() -> None:
         "freeze_all_towers": args.freeze_all_towers,
         "unfreeze_1d": unfreeze_1d,
         "unfreeze_3d": unfreeze_3d,
+        "bounded_full_heavy": full_heavy_freeze_contract,
     }
     valid_sampler.set_epoch(0)
     validation_plan = valid_dataset.epoch_plan()
@@ -495,6 +614,7 @@ def main() -> None:
         "scheduler_kind": "linear_warmup_constant",
         "global_seed": args.seed,
         "freeze_configuration": freeze_configuration,
+        "full_heavy_data_contract": full_heavy_data_contract,
         "train_interface_pair_ids": train_dataset.interface_pair_ids,
         "valid_interface_pair_ids": valid_dataset.interface_pair_ids,
         "amp_enabled": use_amp,

@@ -81,6 +81,7 @@ def save_training_checkpoint(
     data_contract_keys = (
         "data_version", "dataset_version", "dataset_root", "data_manifest_path",
         "data_manifest_sha256", "database_contract", "cache_schema", "generator_id", "qc_id",
+        "full_heavy_data_contract",
     )
     data_contract = {key: run_config.get(key) for key in data_contract_keys}
     torch.save(
@@ -170,6 +171,13 @@ def load_training_checkpoint(
             raise ValueError(f"checkpoint run_config mismatch for {key}")
         if stored_config.get(key) != expected_run_config.get(key):
             raise ValueError(f"checkpoint run_config mismatch for {key}")
+    if (
+        stored_config.get("full_heavy_data_contract")
+        != expected_run_config.get("full_heavy_data_contract")
+    ):
+        raise ValueError(
+            "checkpoint run_config mismatch for full_heavy_data_contract"
+        )
     model.load_state_dict(checkpoint["model_state_dict"], strict=True)
     optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
     scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
