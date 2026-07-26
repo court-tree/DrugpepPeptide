@@ -1331,3 +1331,44 @@ runtime, retrieval benefit, or adaptation success.
 - Do not create the final adaptation manifest, train, or run retrieval until
   the formal 2,085-sequence cache is separately authorized and fully
   validated.
+
+## 2026-07-26: Accept The Formal Bounded Full-Heavy Cache
+
+### Decision
+
+Accept
+`phase3/runs/drugclip/v2_bounded_full_heavy_cache_v1` as the formal bounded
+full-heavy cache under classification `BOUNDED_FULL_HEAVY_CACHE_PASS`. It
+contains exactly 2,085 frozen-plan sequences and 20,850 conformers, has no
+failure or temporary files, uses no target-bound generation inputs, and passes
+the independent read-only validator.
+Its scope is only the frozen bounded `ordinary_linear_standard` train/valid
+plan, not excluded special chemistry, safe373, or the full formal split.
+
+The cache manifest file SHA256 is
+`8FB8BB574D72925445D4C13B930F26273691868A9DC351EBB6CDD2B76E5FB992`;
+its canonical SHA256 is
+`AC189E317FF454A199C8A6C3F8FFD4EDB1C74DF681F3B10B678B0793547A67ED`.
+The validator report SHA256 is
+`BDD522D53483457525BA9DE54DB1A28251545D08968B8FC023B4C8ECE6916CA9`.
+
+The initial 270-sequence interruption remains operational history, not a
+scientific failure. The authorized recovery proved that all 270 completed
+files matched the stale control record, archived that record without changing
+its SHA, and resumed without rewriting any completed file. The resume
+revalidated 270 files and generated exactly 1,815 missing sequences.
+
+This decision accepts only the cache prerequisite. The frozen plan descriptor
+remains immutable and may continue to state its original `NOT_BUILT`
+requirement status; the cache is bound separately by its manifest. No final
+adaptation manifest, training result, retrieval result, or data release is
+implied.
+
+### Do Not Repeat
+
+- Do not interpret the launcher progress-sharing interruption as conformer,
+  chemistry, FASPR, or QC failure.
+- Do not rewrite the plan descriptor to embed post-generation cache state.
+- Do not regenerate or replace any of the 2,085 accepted sequence files.
+- Do not create a final adaptation manifest, train, or run retrieval without
+  separate authorization and exact binding to this cache manifest.

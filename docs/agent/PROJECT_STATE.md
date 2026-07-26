@@ -1,6 +1,6 @@
 # PepCLIP Current Project State
 
-Last verified: 2026-07-24
+Last verified: 2026-07-26
 
 ## Current Phase
 
@@ -1165,6 +1165,57 @@ Evidence:
 - `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_smoke_v1\smoke_manifest.json`
 - `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_smoke_v1\sequences`
 
+## Phase-3 v2 Formal Bounded Full-Heavy Cache
+
+The separately authorized formal materialization is complete and independently
+validated at
+`E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_v1`. Its durable
+classification is `BOUNDED_FULL_HEAVY_CACHE_PASS`.
+This cache covers only the frozen bounded `ordinary_linear_standard`
+train/valid plan; it is not a cache for excluded special chemistry, safe373,
+or the full formal split.
+
+The first builder invocation was operationally interrupted after writing 270
+complete sequence files: launcher polling opened `progress.json` while the
+builder attempted its atomic Windows `os.replace`, causing `WinError 5`.
+There was no generation, chemistry, QC, slot-exhaustion, or contract failure.
+Recovery verified that the 269 recorded progress entries were a strict SHA
+subset of the stale 270-entry temporary progress file and that all 270 actual
+sequence files matched the latter. The stale control file was preserved as
+`operational_interruption_progress_270.json` with unchanged SHA256
+`B1186DE00A4F662D7242C428C4C59BEB1F3CF9169C7A5EDC265C61D19B7751F8`.
+
+The single authorized `--resume` revalidated all 270 completed files and
+generated only the remaining 1,815 sequences. All original 270 file SHA256
+values, byte lengths, and timestamps remained unchanged. Final counts are
+2,085/2,085 sequences and 20,850/20,850 conformers, with zero failure records,
+zero temporary files, and no target-bound generation inputs. Generation used
+22,483 attempts and 1,633 unchanged-contract rejections: 1,568 nonlocal
+heavy-atom clashes, 64 Pro amide-nitrogen planarity failures, and one illegal
+heavy-atom bond-angle failure. The maximum accepted attempt index was 5;
+heavy-atom counts range from 39 to 191.
+
+The final cache manifest file SHA256 is
+`8FB8BB574D72925445D4C13B930F26273691868A9DC351EBB6CDD2B76E5FB992`;
+its canonical SHA256 is
+`AC189E317FF454A199C8A6C3F8FFD4EDB1C74DF681F3B10B678B0793547A67ED`.
+The independent read-only validator exited 0 with classification
+`BOUNDED_FULL_HEAVY_CACHE_VALIDATION_PASS`; its report SHA256 is
+`BDD522D53483457525BA9DE54DB1A28251545D08968B8FC023B4C8ECE6916CA9`.
+The cache occupies 1,433,047,408 bytes including retained operational evidence
+and work files. This completes the bounded cache prerequisite only. No final
+adaptation manifest, optimizer, backward pass, training, or retrieval run was
+created or executed.
+
+Evidence:
+
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_v1\cache_contract.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_v1\cache_manifest.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_v1\cache_index.jsonl`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_v1\validator.report.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_v1\operational_recovery_preflight_and_sequence_snapshot_270.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_v1\operational_interruption_report.json`
+
 ## Current Problem
 
 Formal v3 fine-tuning, selected-model release, fixed-512 input-domain ablation,
@@ -1214,13 +1265,14 @@ valid. Train/valid and train/safe373 pair, sequence, and relation overlaps are
 all zero. Valid/safe373 overlap is explicitly retained and reported as 92
 query pairs, 150 peptide sequences, and 150 biological relations.
 
-The descriptor requires a future bounded cache for 2,085 unique sequences and
-20,850 conformers, but records generation/cache status as `NOT_BUILT`.
-No cache manifest or final adaptation manifest exists, and the runner rejects
-descriptor-only training before constructing an optimizer. Future training
-requires separately validated plan descriptor, materialized cache manifest,
-and final adaptation manifest binding the plan/cache SHA values, Phase-2
-checkpoint SHA, and unchanged freeze contract.
+The frozen descriptor itself continues to record its pre-generation
+requirement state as `NOT_BUILT`; it is immutable and was not rewritten after
+materialization. The separately bound formal cache now exists and passes
+independent validation for all 2,085 sequences / 20,850 conformers. A final
+adaptation manifest still does not exist, and the runner must continue to
+reject training until a separately authorized manifest binds the immutable
+plan descriptor, cache manifest SHA, Phase-2 checkpoint SHA, and unchanged
+freeze contract.
 
 Evidence:
 
@@ -1233,13 +1285,12 @@ Evidence:
 
 ## Single Next Action
 
-Review the bounded-cache materializer, read-only validator, fixture tests, and
-five-sequence interrupted/resumed smoke. Only separate authorization may start
-the exact 2,085-sequence / 20,850-conformer formal cache. Do not reuse
-safe265/safe373 evaluation caches, change selected IDs, silently replace
-failed samples, fabricate special chemistry, create a final adaptation
-manifest before a complete validated cache exists, start training, or publish
-a data release.
+Review the completed, independently validated 2,085-sequence / 20,850-conformer
+formal cache and its retained operational-recovery evidence. Only separate
+authorization may create the final adaptation manifest or start bounded
+adaptation. Do not rewrite the frozen descriptor, reuse safe265/safe373
+evaluation caches, change selected IDs, silently replace samples, fabricate
+special chemistry, train, run retrieval, or publish a data release.
 
 ## Workspace Safety
 
