@@ -1236,7 +1236,7 @@ def validate_bounded_full_heavy_contract(
         != expected_freeze_sha
     ):
         raise ValueError("full_heavy_adaptation_binding_mismatch")
-    return {
+    runtime_result = {
         "schema_version": CONTRACT_SCHEMA,
         "adaptation_manifest_path": str(adaptation_path),
         "adaptation_manifest_canonical_sha256": adaptation_recorded_sha,
@@ -1260,6 +1260,140 @@ def validate_bounded_full_heavy_contract(
         "cache_index_sha256": cache_manifest["index_sha256"],
         "payload_by_sequence": payload_by_sequence,
     }
+    # Older unit fixtures predate the finalizer.  The production final
+    # manifest is fail-closed under the extended bindings below.
+    if not adaptation.get("finalizer_version"):
+        return runtime_result
+    plan_binding = adaptation.get("plan", {})
+    cache_binding = adaptation.get("cache", {})
+    initialization = adaptation.get("initialization", {})
+    frozen = adaptation.get("freeze_contract", {})
+    formal_v3 = adaptation.get("formal_random_conformer_v3", {})
+    safe373 = adaptation.get("safe373_evaluation_plan", {})
+    generation = adaptation.get("generation_contract", {})
+    source_policy = adaptation.get("source_policy", {})
+    counts = adaptation.get("counts", {})
+    execution = adaptation.get("execution_state", {})
+    bound_plan_path = _resolve_relative(
+        adaptation_path, plan_binding.get("path"), "adaptation_plan_path"
+    )
+    bound_cache_path = _resolve_relative(
+        adaptation_path, cache_binding.get("path"), "adaptation_cache_path"
+    )
+    bound_checkpoint_path = _resolve_relative(
+        adaptation_path,
+        initialization.get("checkpoint_path"),
+        "adaptation_checkpoint_path",
+    )
+    cache_contract_path = _resolve_relative(
+        adaptation_path,
+        cache_binding.get("cache_contract_path"),
+        "adaptation_cache_contract_path",
+    )
+    cache_contract = _read_json(cache_contract_path)
+    cache_contract_recorded_sha = str(
+        cache_contract.get("contract_canonical_sha256") or ""
+    )
+    cache_contract_core = {
+        key: value
+        for key, value in cache_contract.items()
+        if key != "contract_canonical_sha256"
+    }
+    if (
+        bound_plan_path != descriptor_path
+        or bound_cache_path != cache_manifest_path
+        or bound_checkpoint_path != Path(phase2_checkpoint).resolve()
+        or plan_binding.get("file_sha256") != sha256_file(descriptor_path)
+        or plan_binding.get("canonical_sha256")
+        != plan_contract["descriptor_canonical_sha256"]
+        or int(plan_binding.get("train_pair_count", -1)) != MAX_TRAIN_PAIRS
+        or int(plan_binding.get("valid_pair_count", -1)) != MAX_VALID_PAIRS
+        or plan_binding.get("train_pair_ids_sha256") != sequence_sha256(train_plan)
+        or plan_binding.get("valid_pair_ids_sha256") != sequence_sha256(valid_plan)
+        or cache_binding.get("file_sha256") != sha256_file(cache_manifest_path)
+        or cache_binding.get("canonical_sha256") != cache_recorded_sha
+        or cache_binding.get("cache_contract_canonical_sha256")
+        != cache_contract_recorded_sha
+        or canonical_json_sha256(cache_contract_core)
+        != cache_contract_recorded_sha
+        or int(cache_binding.get("sequence_count", -1))
+        != len(payload_by_sequence)
+        or int(cache_binding.get("conformer_count", -1))
+        != len(payload_by_sequence) * CONFORMERS_PER_SEQUENCE
+        or int(cache_binding.get("conformers_per_sequence", -1))
+        != CONFORMERS_PER_SEQUENCE
+        or initialization.get("role") != "phase2_learned_concat_baseline"
+        or initialization.get("checkpoint_sha256")
+        != PHASE2_INITIALIZATION_SHA256
+        or frozen.get("version") != FREEZE_CONTRACT_VERSION
+        or frozen.get("trainable_parameter_names_sha256")
+        != expected_freeze_sha
+        or int(frozen.get("trainable_tensor_count", -1))
+        != len(freeze_contract.get("trainable_parameter_names", []))
+        or int(frozen.get("trainable_parameter_count", -1))
+        != int(freeze_contract.get("trainable_parameter_count", -2))
+    ):
+        raise ValueError("full_heavy_adaptation_nested_binding_mismatch")
+    formal_v3_path = _resolve_relative(
+        adaptation_path,
+        formal_v3.get("manifest_path"),
+        "adaptation_formal_v3_manifest_path",
+    )
+    formal_v3_manifest = _read_json(formal_v3_path)
+    safe373_path = _resolve_relative(
+        adaptation_path,
+        safe373.get("path"),
+        "adaptation_safe373_plan_path",
+    )
+    safe373_plan = _read_json(safe373_path)
+    safe373_core = {
+        key: value
+        for key, value in safe373_plan.items()
+        if key != "plan_canonical_sha256"
+    }
+    generation_keys = (
+        "generator_version",
+        "torsion_prior_manifest_file_sha256",
+        "torsion_prior_manifest_canonical_sha256",
+        "torsion_prior_jsonl_sha256",
+        "faspr_source_commit",
+        "faspr_binary_sha256",
+        "faspr_rotamer_library_sha256",
+        "canonical_topology_contract",
+        "maximum_attempts_per_logical_conformer",
+        "nonlocal_heavy_atom_clash_threshold_angstrom",
+        "atom_cap_exclusive",
+        "generation_input_contract",
+    )
+    if (
+        formal_v3_manifest.get("dataset_version") != "random_conformer_v3"
+        or formal_v3.get("dataset_version") != "random_conformer_v3"
+        or formal_v3.get("manifest_file_sha256") != sha256_file(formal_v3_path)
+        or safe373.get("file_sha256") != sha256_file(safe373_path)
+        or safe373.get("canonical_sha256") != SAFE373_PLAN_CANONICAL_SHA256
+        or safe373_plan.get("plan_canonical_sha256")
+        != SAFE373_PLAN_CANONICAL_SHA256
+        or canonical_json_sha256(safe373_core)
+        != SAFE373_PLAN_CANONICAL_SHA256
+        or safe373.get("cache_used_for_training") is not False
+        or any(generation.get(key) != cache_contract.get(key) for key in generation_keys)
+        or source_policy.get("chemistry_classification")
+        != "ordinary_linear_standard"
+        or source_policy.get("special_chemistry_in_scope") is not False
+        or source_policy.get("evaluation_cache_used_for_training") is not False
+        or source_policy.get("target_bound_generation_inputs_used") is not False
+        or counts
+        != {
+            "train_interface_pairs": MAX_TRAIN_PAIRS,
+            "valid_interface_pairs": MAX_VALID_PAIRS,
+            "cache_sequences": len(payload_by_sequence),
+            "cache_conformers": len(payload_by_sequence)
+            * CONFORMERS_PER_SEQUENCE,
+        }
+        or any(bool(value) for value in execution.values())
+    ):
+        raise ValueError("full_heavy_adaptation_extended_contract_mismatch")
+    return runtime_result
 
 
 class FullHeavyDatasetView:
