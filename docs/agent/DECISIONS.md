@@ -1372,3 +1372,40 @@ implied.
 - Do not regenerate or replace any of the 2,085 accepted sequence files.
 - Do not create a final adaptation manifest, train, or run retrieval without
   separate authorization and exact binding to this cache manifest.
+
+## 2026-07-26: Freeze The Final Adaptation Binding And Accept Zero-Step Readiness
+
+### Decision
+
+Accept the deterministic
+`phase3-v2-bounded-full-heavy-adaptation-manifest-v1` binding and the real
+strict-offline preflight under classification
+`FULL_HEAVY_ADAPTATION_ZERO_STEP_PASS`. The manifest file SHA256 is
+`39E68076FBF4FCA97FC8F0AE8D3C0E0F0F584899F281AB2E757249D17C73E01F`;
+its canonical SHA256 is
+`FFC0534019BDDA0B41C06A5E004C77B0D41CD7B59A0A68DFFF213BCF5B29CA4A`.
+It binds the immutable 4,096/512 plan, 2,085-sequence/20,850-conformer cache,
+Phase-2 learned-concat initialization, 26-tensor/2,843,265-parameter freeze
+contract, formal v3 Manifest, safe373 exclusion reference, and the frozen
+full-heavy generation/QC contracts using relative paths only.
+
+The preflight is a zero-update readiness proof. It loaded the real model
+offline, validated the complete plan and cache, constructed the exact
+train/valid full-heavy views, and produced finite bidirectional loss,
+embedding, and logits on one real batch from each split under inference mode.
+All specified frozen module state hashes and bound input-file hashes remained
+unchanged, and no gradients were created. Optimizer groups were described
+only; no optimizer, backward, scheduler/AMP step, checkpoint write, training,
+or retrieval was executed. The real-model zero-step preflight report SHA256 is
+`600251BC1E5B3B484076E8CA9DA010FB2DF039F79B689F0FBBF81CE048362924`.
+
+### Do Not Repeat
+
+- Do not reinterpret zero-step PASS as evidence of adaptation benefit or
+  training stability.
+- Do not alter the frozen plan, cache, Phase-2 initialization, freeze scope,
+  generator, or QC contract when starting any later authorized run.
+- Do not include excluded special chemistry or safe373 evaluation cache
+  coordinates in adaptation.
+- Do not start an optimizer step, bounded training, or GPU retrieval without
+  separate explicit authorization.

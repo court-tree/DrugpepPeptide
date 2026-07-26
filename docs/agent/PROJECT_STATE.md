@@ -1216,6 +1216,49 @@ Evidence:
 - `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_v1\operational_recovery_preflight_and_sequence_snapshot_270.json`
 - `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_v1\operational_interruption_report.json`
 
+## Phase-3 v2 Final Adaptation Manifest And Zero-Step Preflight
+
+The finalized adaptation binding and real-model zero-step preflight are
+complete at
+`E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_adaptation_preflight_v1`
+with classification `FULL_HEAVY_ADAPTATION_ZERO_STEP_PASS`.
+
+The deterministic final manifest uses schema
+`phase3-v2-bounded-full-heavy-adaptation-manifest-v1`. Its file SHA256 is
+`39E68076FBF4FCA97FC8F0AE8D3C0E0F0F584899F281AB2E757249D17C73E01F`
+and canonical SHA256 is
+`FFC0534019BDDA0B41C06A5E004C77B0D41CD7B59A0A68DFFF213BCF5B29CA4A`.
+It contains only relative paths and binds the frozen plan file/canonical SHA,
+formal cache file/canonical SHA, Phase-2 learned-concat checkpoint, freeze
+contract, formal `random_conformer_v3` Manifest, safe373 evaluation plan, and
+the frozen generator/prior/FASPR/canonical-topology/QC contracts. It records
+exactly 4,096 train pairs, 512 valid pairs, 2,085 cached sequences, and 20,850
+conformers; special chemistry remains outside scope.
+
+The strict-offline CPU preflight loaded the real ESM asset and Phase-2
+checkpoint, verified 352 model-state tensors / 28,575,002 elements as finite,
+and reproduced the exact freeze contract: 26 trainable tensors, 2,843,265
+parameters, and parameter-name SHA256
+`ACC0E5C1AC2FC5EA2C27DC559795B55BD5FCD1D351821529F72B4D9AC6414774`.
+It ran the formal full plan/cache validator, built real full-heavy train and
+valid dataset views in the frozen 4,096/512 order, and completed one real
+peptide-unique batch per split under `eval` plus `torch.inference_mode`.
+Both directional losses, embeddings, and logits were finite. Receptor and
+peptide 1D encoders, receptor 3D encoder, and receptor fusion state hashes
+were unchanged; no gradient was created. The optimizer parameter groups were
+described but no optimizer was instantiated, and no backward, scheduler/AMP
+step, checkpoint write, training, or retrieval occurred.
+The real-model zero-step preflight report SHA256 is
+`600251BC1E5B3B484076E8CA9DA010FB2DF039F79B689F0FBBF81CE048362924`.
+
+Evidence:
+
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_adaptation_preflight_v1\final_adaptation_manifest.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_adaptation_preflight_v1\adaptation_manifest_validation.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_adaptation_preflight_v1\real_model_zero_step_preflight.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_adaptation_preflight_v1\batch_contract_audit.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_adaptation_preflight_v1\summary.md`
+
 ## Current Problem
 
 Formal v3 fine-tuning, selected-model release, fixed-512 input-domain ablation,
@@ -1267,12 +1310,12 @@ query pairs, 150 peptide sequences, and 150 biological relations.
 
 The frozen descriptor itself continues to record its pre-generation
 requirement state as `NOT_BUILT`; it is immutable and was not rewritten after
-materialization. The separately bound formal cache now exists and passes
-independent validation for all 2,085 sequences / 20,850 conformers. A final
-adaptation manifest still does not exist, and the runner must continue to
-reject training until a separately authorized manifest binds the immutable
-plan descriptor, cache manifest SHA, Phase-2 checkpoint SHA, and unchanged
-freeze contract.
+materialization. The separately bound formal cache passes independent
+validation for all 2,085 sequences / 20,850 conformers, and the final
+adaptation manifest now binds it to the immutable plan, Phase-2 checkpoint,
+and unchanged freeze contract. The real zero-step preflight passes, but this
+is a readiness/contract result only: it contains no optimizer, gradient,
+update, checkpoint, training result, or retrieval result.
 
 Evidence:
 
@@ -1285,12 +1328,12 @@ Evidence:
 
 ## Single Next Action
 
-Review the completed, independently validated 2,085-sequence / 20,850-conformer
-formal cache and its retained operational-recovery evidence. Only separate
-authorization may create the final adaptation manifest or start bounded
-adaptation. Do not rewrite the frozen descriptor, reuse safe265/safe373
-evaluation caches, change selected IDs, silently replace samples, fabricate
-special chemistry, train, run retrieval, or publish a data release.
+Review the finalized adaptation manifest and real zero-step preflight. Only a
+separate authorization may start bounded adaptation; zero-step PASS is not a
+training result. Do not rewrite the frozen descriptor, regenerate the formal
+cache, reuse safe265/safe373 evaluation caches, change selected IDs, silently
+replace samples, fabricate special chemistry, train, run retrieval, or
+publish a data release.
 
 ## Workspace Safety
 
