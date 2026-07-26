@@ -1473,3 +1473,50 @@ multi-step stability, model-selection benefit, or retrieval improvement.
   failure.
 - Do not execute step 2/32, bounded training, or retrieval without separate
   authorization.
+
+## 2026-07-26: Accept Step-32 Engineering Completion, Not Retrieval Improvement
+
+### Decision
+
+Accept the single bounded full-heavy step-32 Pilot as
+`FULL_HEAVY_STEP032_ENGINEERING_PASS`.
+It started from the Phase-2 learned-concat checkpoint, executed exactly 32
+successful optimizer steps under the 22-tensor feature-path freeze contract,
+kept `coord_mlp` and all receptor/peptide-1D/temperature scope frozen, and
+completed with finite train and validation losses. Its checkpoint SHA256 is
+`4F9ADB3A2E13CE71358AF7C3B01FD0D23ACA7D50959E3A8FD8CDE20DA1F859A0`.
+
+Classify the fixed-contract safe373 scientific result as `MIXED`. Relative to
+the recomputed Phase-2 baseline, Phase-3 step 32 leaves Dmean10 recall values
+unchanged except for a one-query p2r 3D-only R@1 increase; MRR and rank
+differences are negligible and every paired primary-metric 95% interval
+crosses zero. Full-heavy D remains substantially better than backbone-only C,
+and learned-fusion D remains mostly above 1D-only, but the 32-step adaptation
+does not show stable incremental benefit over its Phase-2 initialization.
+This result applies only to the 373-query / 265-peptide / 512-receptor
+contract and is not numerically comparable with the old 512-query /
+370-peptide-bank evaluation.
+
+The precise split conclusion is `REPRESENTATION_PASS` plus
+`ADAPTATION_NO_MEASURABLE_INCREMENT`: candidate-independent full-heavy
+Dmean10 is materially better than backbone-only Cmean10, and learned-fusion
+Dmean10 has higher Recall/MRR than 1D-only on most reported comparisons,
+although rank changes remain mixed and Dmean10 is not stably superior to D0.
+The step-32 update itself proves engineering execution, not adaptation
+benefit. The bound retrieval metrics, paired-bootstrap, and checkpoint-audit
+SHA256 values are, respectively,
+`55FB78607477BA438963E2A6363CD1958CE5B0557DE8D2303582712F7F0FC533`,
+`A547830ACF2DC54BEACC97F3847B9FCDE5724A8BD501CB2E8FFAC1A462ADBD39`,
+and
+`25187C02AFFCEABD7237BA0EB96F3939CABA978929FFF5B2E124D31A58A8DB13`.
+
+### Do Not Repeat
+
+- Do not describe engineering step-32 completion as scientific improvement.
+- Do not claim directional improvement from point estimates whose paired
+  primary-metric intervals cross zero.
+- Do not directly extend to full training, learning-rate search, or
+  multi-epoch search.
+- If separately authorized, the only next exposure check is the same-contract
+  step-256 single pass. If it still shows no measurable increment or
+  regresses, stop the current v2 adaptation recipe.

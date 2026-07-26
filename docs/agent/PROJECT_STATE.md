@@ -1278,6 +1278,74 @@ Evidence:
 - `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_first_step_audit_v2\`
 - preserved diagnostic `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_first_step_audit_v1\`
 
+## Phase-3 v2 Bounded Step-32 Pilot And Safe373 Retrieval
+
+The engineering classification is `FULL_HEAVY_STEP032_ENGINEERING_PASS`; the
+scientific classification is `MIXED`. More precisely, the retained
+full-heavy representation result is `REPRESENTATION_PASS`, while the bounded
+update is `ADAPTATION_NO_MEASURABLE_INCREMENT`.
+
+The single authorized bounded full-heavy Pilot completed from the formal
+Phase-2 learned-concat initialization at fixed HEAD
+`abfeb3e11ead3946e70abbc68c44e4903c838a68`. It used the immutable
+4,096/512 plan, the 2,085-sequence/20,850-conformer cache, feature-path
+freeze-contract v2, batch size 16, fusion LR `1e-6`, peptide-3D LR `2e-7`,
+weight decay `1e-4`, seed 1, AMP, and exactly 32 successful optimizer steps
+over 32 batches / 512 samples. The training summary records finite train and
+validation losses of 7.076222 and 7.181521, respectively, with pair loss,
+pair duplication, and peptide uniqueness violations all 0. The 22-tensor /
+2,580,096-parameter scope and frozen `coord_mlp`, receptor towers/fusion,
+peptide 1D, and temperature are recorded under parameter-name SHA256
+`246F0A44F6D3E39FA64F0EA2C04E416316375D9BBBA66700EB566D0DB505745D`.
+The step-32 checkpoint is 135,371,553 bytes with SHA256
+`4F9ADB3A2E13CE71358AF7C3B01FD0D23ACA7D50959E3A8FD8CDE20DA1F859A0`.
+No checkpoint above step 32 was created.
+
+The subsequent evaluator completed with status PASS under the unchanged
+safe373 contract: 373 queries, 265-peptide r2p bank, 512-receptor p2r bank,
+2,650 readable full-heavy conformers, zero vocabulary unknowns, and 10,000
+paired bootstrap resamples with seed 20260724. It recomputed the Phase-2
+baseline and evaluated the explicit model label `phase3_v2_step032`.
+Both checkpoint model-state hashes were unchanged before and after evaluation.
+
+For full-heavy Dmean10 3D-only, Phase-3 step 32 versus Phase-2 was effectively
+unchanged. In r2p, R@1/5/10 were
+0.07507/0.17962/0.23324 for both models; MRR changed from 0.13560168 to
+0.13560177, median rank remained 70, and mean rank improved from 85.35121 to
+85.34584. In p2r, R@1 changed from 0.06971 to 0.07239 while R@5/10 remained
+0.13941/0.17426; MRR changed from 0.11249901 to 0.11387563, median rank
+remained 139, and mean rank improved from 182.39946 to 182.39678. All paired
+primary-metric intervals cross zero.
+
+For full-heavy Dmean10 learned fusion, r2p R@1/5/10 remained
+0.12869/0.22520/0.28418; MRR changed from 0.18439242 to 0.18439505, median
+rank remained 50, and mean rank changed from 78.13405 to 78.13673. In p2r,
+R@1/5/10 remained 0.13137/0.18231/0.22788; MRR changed from 0.16521224 to
+0.16520640, median rank remained 110, and mean rank improved from 162.69705
+to 162.63539. Again all paired primary-metric intervals cross zero.
+
+Full-heavy input itself remains beneficial relative to backbone-only Cmean10,
+and learned-fusion Dmean10 remains mostly above 1D-only on recall/MRR in both
+directions. Ten-score-matrix averaging gives small, directionally mixed
+changes relative to D0. The bounded 32-step update, however, provides no
+stable retrieval improvement over the Phase-2 initialization. The scientific
+classification is `MIXED`, separate from the successful engineering training
+and evaluator completion. This result is specific to safe373 and must not be
+compared numerically with the old 512-query/370-peptide-bank contract.
+The retrieval metrics file SHA256 is
+`55FB78607477BA438963E2A6363CD1958CE5B0557DE8D2303582712F7F0FC533`;
+the paired-bootstrap file SHA256 is
+`A547830ACF2DC54BEACC97F3847B9FCDE5724A8BD501CB2E8FFAC1A462ADBD39`;
+and the checkpoint-audit file SHA256 is
+`25187C02AFFCEABD7237BA0EB96F3939CABA978929FFF5B2E124D31A58A8DB13`.
+
+Evidence:
+
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_step032_pilot_v1\`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_step032_safe373_retrieval_v1\retrieval_metrics.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_step032_safe373_retrieval_v1\bootstrap_confidence_intervals.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_step032_safe373_retrieval_v1\checkpoint_audit.json`
+
 ## Current Problem
 
 Formal v3 fine-tuning, selected-model release, fixed-512 input-domain ablation,
@@ -1331,11 +1399,11 @@ The frozen descriptor itself continues to record its pre-generation
 requirement state as `NOT_BUILT`; it is immutable and was not rewritten after
 materialization. The separately bound formal cache passes independent
 validation for all 2,085 sequences / 20,850 conformers, and the final
-adaptation manifest now binds it to the immutable plan, Phase-2 checkpoint,
-and the feature-path freeze contract. The replacement zero-step preflight and
-the exactly-one-step audit pass. This proves the scoped update and recovery
-contracts at step 1 only; it does not establish multi-step stability,
-adaptation benefit, or retrieval improvement.
+adaptation manifest binds it to the immutable plan, Phase-2 checkpoint, and
+feature-path freeze contract. Zero-step, first-step, and bounded step-32
+engineering execution now pass. The safe373 comparison nevertheless shows
+only negligible, directionally mixed changes from the Phase-2 initialization,
+with all paired primary-metric intervals crossing zero.
 
 Evidence:
 
@@ -1348,12 +1416,13 @@ Evidence:
 
 ## Single Next Action
 
-Review the feature-path freeze-contract v2, replacement zero-step preflight,
-and the single successful step-1 checkpoint. Separate authorization is
-required for any step 2/32, bounded training, or retrieval. Do not restore
-`coord_mlp` to the trainable set, rewrite the frozen descriptor, regenerate
-the formal cache, reuse safe265/safe373 evaluation caches, change selected
-IDs, or silently replace samples.
+Review the completed step-32 Pilot and its `MIXED` safe373 result. Any
+continuation requires separate authorization and may only be a same-contract
+step-256 single-pass exposure check, not full training, learning-rate search,
+or multi-epoch search. If step 256 still has no measurable increment or
+regresses, stop the current v2 adaptation recipe. Do not restore `coord_mlp`,
+rewrite the frozen descriptor, regenerate the formal cache, reuse evaluation
+cache as training data, change selected IDs, or silently replace samples.
 
 ## Workspace Safety
 
