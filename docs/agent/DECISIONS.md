@@ -1520,3 +1520,98 @@ and
 - If separately authorized, the only next exposure check is the same-contract
   step-256 single pass. If it still shows no measurable increment or
   regresses, stop the current v2 adaptation recipe.
+
+## 2026-07-26: Stop The Current v2 Adaptation Recipe After Step 256
+
+### Decision
+
+Accept the fresh Phase-2-initialized single-pass step-256 run as an engineering
+completion, but classify its fixed-contract safe373 result as
+`ADAPTATION_NO_MEASURABLE_INCREMENT`. The run completed exactly 256 optimizer
+steps over all 4,096 frozen-plan training samples with finite train and
+validation losses, zero pair loss/duplication/peptide-uniqueness violations,
+and the unchanged 22-tensor / 2,580,096-parameter freeze contract. Its
+`step_256.pt` SHA256 is
+`E911A637F5757611059EC74B40AFCD609445E4684D830B4781F2ACC370DC6AD6`.
+
+Relative to the recomputed Phase-2 baseline, step-256 full-heavy Dmean10
+Recall and MRR changes are zero or very small and every paired Recall/MRR 95%
+interval crosses or includes zero. The p2r learned-fusion mean-rank
+improvement is not a directional success because R@1 and MRR decline while
+R@10 increases by one query. Step 256 also does not provide a material
+increment over step 32. This result leaves the separate
+`REPRESENTATION_PASS` conclusion intact: full-heavy D remains useful relative
+to backbone-only C, but the present bounded adaptation update does not
+measurably improve retrieval.
+
+The bound retrieval metrics, paired-bootstrap, and checkpoint-audit SHA256
+values are, respectively,
+`1244C56E4BA6656C158AD34F9F01D7B215686197223FC8F88556B0BAC6D70EE6`,
+`04A6B058610A5088FE751481EC0039FD8CABF381E079A137A9CBA7945E9DA7CF`,
+and
+`35D824382C67B48400A1ED22EC8C45C6D19203E3BA8CFEE3F420517BE5964085`.
+
+### Do Not Repeat
+
+- Do not run a second epoch, learning-rate search, or parameter search under
+  the current v2 adaptation recipe.
+- Do not reinterpret isolated rank-statistic changes as stable retrieval
+  improvement when Recall/MRR paired intervals include zero.
+- Do not revoke the full-heavy representation result merely because this
+  adaptation recipe added no measurable increment.
+
+## 2026-07-26: Treat The Random/Bound Peptide-3D Gap As Unresolved
+
+### Decision
+
+Retain the train-only 64-sequence domain-gap result as a permanent scientific
+constraint. Under the frozen Phase-2 peptide-3D encoder, the median D0-D9
+cosine distance is 0.15661, bound-to-D0 is 0.21829, and bound-to-Dmean10 is
+0.15684. Step 32 and step 256 do not materially reduce this gap. Learned
+fusion compresses conformer sensitivity to approximately 44-46% of the
+3D-only value, which means it attenuates rather than discards the 3D signal.
+
+Do not interpret the stopped R-P contrastive adaptation as having solved
+peptide conformer invariance, and do not continue that recipe through more
+steps, another epoch, learning-rate search, or a broader unfreeze scope.
+Any future training contract must directly preserve peptide identity while
+addressing the train-only random/bound domain gap and its multi-state teacher
+structure.
+
+## 2026-07-26: Require Set-valued Bound Teachers, Not One Sequence Centroid
+
+### Decision
+
+Classify the frozen bounded-train provenance and Phase-2 peptide-3D
+consistency audit as `MULTI_PROTOTYPE_TEACHER_REQUIRED`. Across 602
+sequence-weighted multi-pose peptides, median bound-bound cosine distance is
+0.01376563 versus 0.14845791 random-random and 0.19910572 random-bound. The
+paired median random-bound minus bound-bound difference is 0.17447639 with a
+10,000-resample 95% interval [0.16341659, 0.18465512]. Only 26/1,747 teacher
+prototypes (1.4883%) have any nonpositive pose identity margin, so the teacher
+space is generally sequence-discriminative.
+
+Do not reduce the teacher to one normalized sequence centroid. Seven
+sequences meet the fixed relation-structured dispersion screen, demonstrating
+that a small but real subset has distinct observed bound states whose average
+can lie between states. Any future teacher-alignment design must therefore be
+set-valued or clustered within sequence, using only legal bounded-train
+provenance and a pre-registered clustering contract.
+
+The direct exact join passed 4,091/4,096 pairs. Two failed joins are
+recoverable by an explicit global evidence-ID/case-duplicate rule, while
+three evidence structures encode a peptide sequence different from the
+formal pair and must be excluded as teacher instances. Never silently relabel
+those structures. This provenance correction does not alter the separate
+`REPRESENTATION_PASS` conclusion or reverse the step-32 and step-256
+`ADAPTATION_NO_MEASURABLE_INCREMENT` result.
+
+### Do Not Repeat
+
+- Do not use a single averaged bound centroid for every peptide sequence.
+- Do not use safe373 pairs, sequences, relations, or metrics to form or tune
+  teacher clusters.
+- Do not treat evidence-ID equality as sufficient when the structure peptide
+  sequence differs from the formal pair sequence.
+- Do not resume the stopped R-P contrastive recipe or implement teacher loss
+  without a separately reviewed training contract.

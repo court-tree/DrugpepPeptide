@@ -1346,6 +1346,151 @@ Evidence:
 - `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_step032_safe373_retrieval_v1\bootstrap_confidence_intervals.json`
 - `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_step032_safe373_retrieval_v1\checkpoint_audit.json`
 
+## Phase-3 v2 Single-Pass Step-256 And Safe373 Retrieval
+
+The authorized same-contract single-pass exposure completed from a fresh
+Phase-2 learned-concat initialization at fixed HEAD
+`a781282d03d53b275031477c807766229c93d62e`. It did not resume from the
+step-32 checkpoint. The run executed exactly 256 successful optimizer steps
+over 256 batches / 4,096 samples, retained the 22-tensor /
+2,580,096-parameter feature-path freeze contract, and saved both
+`step_032.pt` and `step_256.pt`; no numbered checkpoint above step 256 exists.
+The final training loss was 7.34284685 and validation loss was 7.15516016.
+Pair loss, pair duplication, and peptide uniqueness violations were all 0,
+and the sampling plan covered all 4,096 frozen training pairs. The
+`step_256.pt` checkpoint is 135,371,617 bytes with SHA256
+`E911A637F5757611059EC74B40AFCD609445E4684D830B4781F2ACC370DC6AD6`.
+
+The fixed-contract safe373 evaluator completed with status PASS under model
+label `phase3_v2_step256`: 373 queries, a 265-peptide r2p bank, a
+512-receptor p2r bank, 2,650 readable full-heavy conformers, zero vocabulary
+unknowns, and 10,000 paired bootstrap resamples with seed 20260724. The
+Phase-2 and step-256 checkpoint model-state hashes were unchanged before and
+after evaluation.
+
+For full-heavy Dmean10 3D-only, step 256 versus the recomputed Phase-2
+baseline was effectively unchanged. In r2p, R@1/5/10 remained
+0.07507/0.17962/0.23324; MRR changed from 0.13560168 to 0.13521396,
+median rank from 70 to 69, and mean rank from 85.35121 to 85.36193. In p2r,
+R@1/5 remained 0.06971/0.13941, R@10 changed from 0.17426 to 0.17694,
+MRR from 0.11249901 to 0.11266230, median rank from 139 to 140, and mean rank
+from 182.39946 to 182.34584.
+
+For full-heavy Dmean10 learned fusion, r2p R@1/5/10 remained
+0.12869/0.22520/0.28418; MRR changed from 0.18439242 to 0.18417463,
+median rank remained 50, and mean rank improved from 78.13405 to 78.08847.
+In p2r, R@1 changed from 0.13137 to 0.12869, R@5 remained 0.18231, R@10
+changed from 0.22788 to 0.23056, MRR changed from 0.16521224 to 0.16392625,
+median rank remained 110, and mean rank improved from 162.69705 to 162.07239.
+
+All paired Recall/MRR intervals for step 256 versus Phase-2 cross or include
+zero. The isolated p2r learned-fusion mean-rank improvement is accompanied by
+lower R@1 and MRR and therefore does not establish consistent adaptation
+benefit. Step 256 also does not improve materially over the step-32 result.
+The scientific classification is `ADAPTATION_NO_MEASURABLE_INCREMENT`.
+The representation conclusion remains separate: full-heavy D is useful
+relative to backbone-only C, but this bounded adaptation recipe has now
+failed to add measurable retrieval benefit at both 32 and 256 steps.
+
+The retrieval metrics file SHA256 is
+`1244C56E4BA6656C158AD34F9F01D7B215686197223FC8F88556B0BAC6D70EE6`;
+the paired-bootstrap file SHA256 is
+`04A6B058610A5088FE751481EC0039FD8CABF381E079A137A9CBA7945E9DA7CF`;
+and the checkpoint-audit file SHA256 is
+`35D824382C67B48400A1ED22EC8C45C6D19203E3BA8CFEE3F420517BE5964085`.
+
+Evidence:
+
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_step256_single_pass_v1\`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_step256_safe373_retrieval_v1\retrieval_metrics.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_step256_safe373_retrieval_v1\bootstrap_confidence_intervals.json`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_step256_safe373_retrieval_v1\checkpoint_audit.json`
+
+## Phase-3 v2 Train-only Random/Bound Embedding Domain Gap
+
+The read-only deterministic train-only audit used 64 peptide sequences drawn
+from the first 512 frozen selection-key train pairs, without safe373 pair,
+sequence, or relation overlap. Under the frozen Phase-2 peptide-3D encoder,
+the sequence-level median D0-D9 pairwise cosine distance was 0.15661,
+bound-to-D0 cosine distance was 0.21829, and bound-to-Dmean10 cosine distance
+was 0.15684. The corresponding Euclidean values were 0.54550, 0.66074, and
+0.53944, and median within-random-conformer variance was 0.14095.
+
+Neither the step-32 nor the step-256 bounded R-P contrastive checkpoint
+materially reduced these values. Learned fusion attenuated random-conformer
+sensitivity to approximately 44-46% of the 3D-only sensitivity, so fusion is
+not simply ignoring the 3D branch. Together with
+`ADAPTATION_NO_MEASURABLE_INCREMENT`, this identifies the random-full-heavy
+to bound-full-heavy representation gap and within-random conformer variance
+as the unresolved scientific bottleneck; it does not justify further steps,
+epochs, learning-rate search, or broader unfreezing under the stopped R-P
+recipe.
+
+## Phase-3 v2 Train-only Bound-teacher Provenance And Consistency Audit
+
+The read-only audit used only the frozen bounded train plan (4,096 interface
+pairs / 1,748 peptide sequences) and the frozen Phase-2 peptide-3D encoder.
+Train/valid and train/safe373 pair, sequence, and biological-relation overlaps
+were all zero. True-bound coordinates were used only as train-only teacher
+evidence; the 10 random full-heavy conformers remained the existing
+candidate-independent cache. No training, backward, optimizer, checkpoint
+write, or model/input mutation occurred.
+
+The direct relation-local evidence join and bound-heavy extractor passed
+4,091/4,096 pairs. Five joins remained explicit failures: four 0-match joins
+and one case-only 2-match duplicate. A read-only targeted structure probe
+showed that `6wn4:BS01:A:C` and `7ZNK-L-P` are recoverable without changing
+the formal peptide sequence, while three teacher instances must be excluded
+because their evidence structures encode different peptide sequences:
+`8d6z:BS01:A:H`, `6mns_1_III_A:A`, and `6cnl_1_III_O:G`. These instances were
+not silently relabeled. The 1,747 directly closed sequences yielded 3,583
+unique legal bound poses; 602 sequences had at least two poses. The omitted
+sequence `AEELDAQLDAYNARMD` has a probe-valid single pose and therefore does
+not affect the multi-pose dispersion comparison.
+
+At sequence-level weighting, the median Phase-2 cosine distances were
+0.01376563 for bound-bound, 0.14845791 for random-random, and 0.19910572 for
+random-bound. The paired median random-bound minus bound-bound difference was
+0.17447639 with a 10,000-resample 95% bootstrap interval
+[0.16341659, 0.18465512]. The corresponding random-random minus bound-bound
+difference was 0.12745750 [0.12233895, 0.13299415]. Only 4/602 multi-pose
+sequences had median bound-bound dispersion at least as large as their
+random-bound gap.
+
+Teacher identity is generally strong: only 26/1,747 sequences (1.4883%) had
+any legal bound pose with a nonpositive margin to the nearest other-sequence
+prototype, and most such cases are closely related length-shifted sequences.
+Nevertheless, seven sequences show relation-structured multimodality under
+the fixed audit screen (both within- and between-relation comparisons exist,
+and the between-relation median cosine distance exceeds the within-relation
+median by more than 0.05). For example, `CAMLEPIETDEVT` has within-relation
+median distance 0 and between-relation median 0.1785. A single normalized
+centroid would average distinct observed teacher states for this subset.
+
+The classification is therefore `MULTI_PROTOTYPE_TEACHER_REQUIRED`.
+The previous `REPRESENTATION_PASS` and the step-32/step-256
+`ADAPTATION_NO_MEASURABLE_INCREMENT` conclusions remain unchanged. The audit
+supports a future train-only set-valued or clustered bound-teacher contract,
+not a single sequence centroid and not further R-P contrastive exposure.
+No new loss or training contract has been implemented.
+
+Evidence SHA256:
+
+- audit report:
+  `7760A59E6AE72D2C33289ADD47B26F6D488E68BF25282D334039E0094726FBEC`
+- sequence statistics:
+  `FBB3FD73AFBF002E6569C546B7E5827495156D2162CAF92F560D9B83FA23DE77`
+- scientific interpretation:
+  `89EA63A9D017B9D5A393A44D7B26FA3E688E1799EFDFF0BC7217A522CAB1E72B`
+- audit manifest file:
+  `45A2F18706E631BECFEE059BCA3CF1A45BEBA031096186CE080DB46380E454CC`
+- audit manifest canonical:
+  `6922914E9FDD1F3B9D702D3E7BB8283ADB09E58FACCC9354CEBDE5E1B77D7C52`
+
+Evidence directory:
+
+- `E:\pep\phase3\runs\drugclip\v2_train_only_bound_teacher_provenance_audit_v1\`
+
 ## Current Problem
 
 Formal v3 fine-tuning, selected-model release, fixed-512 input-domain ablation,
@@ -1403,7 +1548,16 @@ adaptation manifest binds it to the immutable plan, Phase-2 checkpoint, and
 feature-path freeze contract. Zero-step, first-step, and bounded step-32
 engineering execution now pass. The safe373 comparison nevertheless shows
 only negligible, directionally mixed changes from the Phase-2 initialization,
-with all paired primary-metric intervals crossing zero.
+with all paired primary-metric intervals crossing zero. The separately
+authorized fresh single-pass step-256 run also completed successfully, but
+its safe373 Recall/MRR changes remain negligible and all paired primary
+intervals cross or include zero. The current v2 bounded adaptation recipe is
+therefore stopped under `ADAPTATION_NO_MEASURABLE_INCREMENT`; this does not
+revoke the separate `REPRESENTATION_PASS` conclusion for full-heavy input.
+The train-only teacher audit shows that legal bound poses are usually much
+more internally consistent than the random-to-bound gap, but a small,
+explicit relation-structured subset is multimodal. The next contract cannot
+collapse all poses for a sequence to one centroid.
 
 Evidence:
 
@@ -1416,13 +1570,14 @@ Evidence:
 
 ## Single Next Action
 
-Review the completed step-32 Pilot and its `MIXED` safe373 result. Any
-continuation requires separate authorization and may only be a same-contract
-step-256 single-pass exposure check, not full training, learning-rate search,
-or multi-epoch search. If step 256 still has no measurable increment or
-regresses, stop the current v2 adaptation recipe. Do not restore `coord_mlp`,
-rewrite the frozen descriptor, regenerate the formal cache, reuse evaluation
-cache as training data, change selected IDs, or silently replace samples.
+Review a single new scientific contract for train-only set-valued or clustered
+bound-teacher alignment. It must exclude the three exact pair/evidence
+sequence mismatches, freeze an auditable duplicate-resolution rule, construct
+clusters only from legal bounded-train poses without safe373 information, and
+align candidate-independent random conformers to a legal teacher set rather
+than an averaged sequence centroid. Do not implement or train this design
+without separate authorization, and do not resume the stopped R-P contrastive
+recipe, learning-rate search, broader unfreezing, or multi-epoch search.
 
 ## Workspace Safety
 
