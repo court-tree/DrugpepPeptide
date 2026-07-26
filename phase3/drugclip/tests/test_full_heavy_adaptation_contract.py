@@ -422,7 +422,9 @@ class FullHeavyAdaptationContractTests(unittest.TestCase):
         self.assertTrue(names)
         self.assertTrue(all(
             name.startswith((
-                "model_3d.peptide_encoder.layers.1.",
+                "model_3d.peptide_encoder.layers.1.edge_mlp.",
+                "model_3d.peptide_encoder.layers.1.node_mlp.",
+                "model_3d.peptide_encoder.layers.1.norm.",
                 "model_3d.peptide_encoder.final_norm.",
                 "model_3d.peptide_encoder.project.",
                 "peptide_fusion.",
@@ -432,6 +434,12 @@ class FullHeavyAdaptationContractTests(unittest.TestCase):
         self.assertFalse(any(parameter.requires_grad for parameter in model.model_1d.parameters()))
         self.assertFalse(any(parameter.requires_grad for parameter in model.model_3d.receptor_encoder.parameters()))
         self.assertFalse(any(parameter.requires_grad for parameter in model.receptor_fusion.parameters()))
+        last = model.model_3d.peptide_encoder.layers[-1]
+        self.assertTrue(all(parameter.requires_grad for parameter in last.edge_mlp.parameters()))
+        self.assertTrue(all(parameter.requires_grad for parameter in last.node_mlp.parameters()))
+        self.assertTrue(all(parameter.requires_grad for parameter in last.norm.parameters()))
+        self.assertFalse(any(parameter.requires_grad for parameter in last.coord_mlp.parameters()))
+        self.assertFalse(any(".coord_mlp." in name for name in names))
 
     def test_optimizer_contains_exact_allowed_parameters(self):
         model = _model()
@@ -553,6 +561,90 @@ class FullHeavyAdaptationContractTests(unittest.TestCase):
             self.assertEqual(result["cache_sequence_count"], 2)
             self.assertEqual(len(result["train_interface_pair_ids"]), 4096)
             self.assertEqual(len(result["valid_interface_pair_ids"]), 512)
+
+    def test_old_26_tensor_freeze_contract_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            (
+                manifest,
+                descriptor,
+                cache_manifest,
+                checkpoint,
+                inputs,
+                freeze_contract,
+            ) = _runtime_contract_fixture(Path(temporary))
+            freeze_contract["contract_version"] = (
+                "phase3-v2-peptide-3d-last1-plus-peptide-fusion-v1"
+            )
+            original = sha256_file
+
+            def fake_hash(path):
+                return (
+                    PHASE2_INITIALIZATION_SHA256
+                    if Path(path).resolve() == checkpoint.resolve()
+                    else original(path)
+                )
+
+            with patch(
+                "phase3.drugclip.full_heavy_adaptation_contract.sha256_file",
+                side_effect=fake_hash,
+            ):
+                with self.assertRaisesRegex(
+                    ValueError, "full_heavy_adaptation_binding_mismatch"
+                ):
+                    validate_bounded_full_heavy_contract(
+                        manifest,
+                        plan_descriptor_file=descriptor,
+                        cache_manifest_file=cache_manifest,
+                        phase2_checkpoint=checkpoint,
+                        freeze_contract=freeze_contract,
+                        **inputs,
+                    )
+
+    def test_old_adaptation_manifest_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            (
+                manifest,
+                descriptor,
+                cache_manifest,
+                checkpoint,
+                inputs,
+                freeze_contract,
+            ) = _runtime_contract_fixture(Path(temporary))
+            value = json.loads(manifest.read_text())
+            value["freeze_contract_version"] = (
+                "phase3-v2-peptide-3d-last1-plus-peptide-fusion-v1"
+            )
+            core = {
+                key: item
+                for key, item in value.items()
+                if key != "manifest_canonical_sha256"
+            }
+            value["manifest_canonical_sha256"] = canonical_json_sha256(core)
+            manifest.write_text(json.dumps(value), encoding="utf-8")
+            original = sha256_file
+
+            def fake_hash(path):
+                return (
+                    PHASE2_INITIALIZATION_SHA256
+                    if Path(path).resolve() == checkpoint.resolve()
+                    else original(path)
+                )
+
+            with patch(
+                "phase3.drugclip.full_heavy_adaptation_contract.sha256_file",
+                side_effect=fake_hash,
+            ):
+                with self.assertRaisesRegex(
+                    ValueError, "full_heavy_adaptation_binding_mismatch"
+                ):
+                    validate_bounded_full_heavy_contract(
+                        manifest,
+                        plan_descriptor_file=descriptor,
+                        cache_manifest_file=cache_manifest,
+                        phase2_checkpoint=checkpoint,
+                        freeze_contract=freeze_contract,
+                        **inputs,
+                    )
 
     def test_manifest_rejects_evaluation_cache_as_training_input(self):
         with tempfile.TemporaryDirectory() as temporary:

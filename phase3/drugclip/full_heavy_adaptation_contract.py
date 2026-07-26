@@ -34,7 +34,9 @@ PLAN_SELECTION_ALGORITHM_VERSION = (
 SAFE373_PLAN_CANONICAL_SHA256 = (
     "A32FF671CFEA0D1B858C8EFC58AD0E30D6F3170C670089238127B637FCC64310"
 )
-FREEZE_CONTRACT_VERSION = "phase3-v2-peptide-3d-last1-plus-peptide-fusion-v1"
+FREEZE_CONTRACT_VERSION = (
+    "phase3-v2-peptide-3d-last1-feature-path-plus-peptide-fusion-v2"
+)
 PHASE2_INITIALIZATION_SHA256 = (
     "9FB16C48BA715C6273341609D60725AE796AD4A78771744E19ECF2C13D38AE20"
 )
@@ -907,7 +909,13 @@ def validate_bounded_plan_descriptor(
 def configure_bounded_full_heavy_trainable(
     model: PepCLIPConcatFusionModel,
 ) -> dict[str, Any]:
-    """Freeze everything except peptide EGNN last block/norm/project and fusion."""
+    """Train only the final peptide EGNN feature path, projection, and fusion.
+
+    The final EGNN layer's coordinate update is structurally downstream of the
+    node features consumed by pooling, so its ``coord_mlp`` cannot receive a
+    gradient from the retrieval objective.  Keep it frozen while training the
+    edge/node/norm feature path in that layer.
+    """
 
     set_frozen(model)
     peptide_encoder = model.model_3d.peptide_encoder
@@ -916,7 +924,14 @@ def configure_bounded_full_heavy_trainable(
     project = getattr(peptide_encoder, "project", None)
     if model.model_3d.encoder_type != "egnn" or not layers or final_norm is None or project is None:
         raise ValueError("full_heavy_adaptation_requires_peptide_egnn_encoder")
-    set_trainable(layers[-1])
+    last_layer = layers[-1]
+    for component_name in ("edge_mlp", "node_mlp", "norm"):
+        component = getattr(last_layer, component_name, None)
+        if component is None:
+            raise ValueError(
+                f"full_heavy_adaptation_missing_last_layer_component:{component_name}"
+            )
+        set_trainable(component)
     set_trainable(final_norm)
     set_trainable(project)
     set_trainable(model.peptide_fusion)
@@ -925,7 +940,9 @@ def configure_bounded_full_heavy_trainable(
         name for name, parameter in model.named_parameters() if parameter.requires_grad
     )
     allowed_prefixes = (
-        f"model_3d.peptide_encoder.layers.{len(layers) - 1}.",
+        f"model_3d.peptide_encoder.layers.{len(layers) - 1}.edge_mlp.",
+        f"model_3d.peptide_encoder.layers.{len(layers) - 1}.node_mlp.",
+        f"model_3d.peptide_encoder.layers.{len(layers) - 1}.norm.",
         "model_3d.peptide_encoder.final_norm.",
         "model_3d.peptide_encoder.project.",
         "peptide_fusion.",
@@ -945,8 +962,11 @@ def configure_bounded_full_heavy_trainable(
         "receptor_3d_encoder_frozen": True,
         "receptor_fusion_frozen": True,
         "peptide_1d_encoder_frozen": True,
+        "peptide_3d_last_layer_coord_mlp_frozen": True,
         "peptide_3d_trainable_components": [
-            f"layers.{len(layers) - 1}",
+            f"layers.{len(layers) - 1}.edge_mlp",
+            f"layers.{len(layers) - 1}.node_mlp",
+            f"layers.{len(layers) - 1}.norm",
             "final_norm",
             "project",
         ],
@@ -1220,6 +1240,7 @@ def validate_bounded_full_heavy_contract(
     )
     if (
         checkpoint_sha != PHASE2_INITIALIZATION_SHA256
+        or freeze_contract.get("contract_version") != FREEZE_CONTRACT_VERSION
         or adaptation.get("phase2_checkpoint_sha256")
         != PHASE2_INITIALIZATION_SHA256
         or adaptation.get("plan_descriptor_file_sha256")

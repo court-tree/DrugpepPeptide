@@ -252,13 +252,34 @@ def run_preflight(args: argparse.Namespace) -> dict[str, Any]:
     ):
         raise ValueError("real_model_state_contract_mismatch")
     freeze_contract = configure_bounded_full_heavy_trainable(model)
+    trainable_names = freeze_contract["trainable_parameter_names"]
+    coord_mlp_frozen = not any(
+        parameter.requires_grad
+        for parameter in model.model_3d.peptide_encoder.layers[-1].coord_mlp.parameters()
+    )
+    feature_path_only = all(
+        ".coord_mlp." not in name
+        and name.startswith(
+            (
+                "model_3d.peptide_encoder.layers.2.edge_mlp.",
+                "model_3d.peptide_encoder.layers.2.node_mlp.",
+                "model_3d.peptide_encoder.layers.2.norm.",
+                "model_3d.peptide_encoder.final_norm.",
+                "model_3d.peptide_encoder.project.",
+                "peptide_fusion.",
+            )
+        )
+        for name in trainable_names
+    )
     if (
-        len(freeze_contract["trainable_parameter_names"])
+        len(trainable_names)
         != EXPECTED_TRAINABLE_TENSOR_COUNT
         or int(freeze_contract["trainable_parameter_count"])
         != EXPECTED_TRAINABLE_PARAMETER_COUNT
         or freeze_contract["trainable_parameter_names_sha256"]
         != EXPECTED_TRAINABLE_PARAMETER_NAMES_SHA256
+        or not coord_mlp_frozen
+        or not feature_path_only
     ):
         raise ValueError("real_model_freeze_contract_mismatch")
     parameter_groups = optimizer_parameter_group_description(model)
@@ -413,6 +434,8 @@ def run_preflight(args: argparse.Namespace) -> dict[str, Any]:
                 EXPECTED_TRAINABLE_PARAMETER_NAMES_SHA256
             ),
             "freeze_contract": freeze_contract,
+            "last_egnn_coord_mlp_frozen": coord_mlp_frozen,
+            "trainable_parameters_all_on_feature_embedding_path": feature_path_only,
             "optimizer_created": False,
             "optimizer_parameter_group_description": parameter_groups,
         },

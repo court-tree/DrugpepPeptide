@@ -41,10 +41,10 @@ EXPECTED_CACHE_CANONICAL_SHA256 = (
     "AC189E317FF454A199C8A6C3F8FFD4EDB1C74DF681F3B10B678B0793547A67ED"
 )
 EXPECTED_TRAINABLE_PARAMETER_NAMES_SHA256 = (
-    "ACC0E5C1AC2FC5EA2C27DC559795B55BD5FCD1D351821529F72B4D9AC6414774"
+    "246F0A44F6D3E39FA64F0EA2C04E416316375D9BBBA66700EB566D0DB505745D"
 )
-EXPECTED_TRAINABLE_TENSOR_COUNT = 26
-EXPECTED_TRAINABLE_PARAMETER_COUNT = 2_843_265
+EXPECTED_TRAINABLE_TENSOR_COUNT = 22
+EXPECTED_TRAINABLE_PARAMETER_COUNT = 2_580_096
 FINALIZER_VERSION = "phase3-v2-bounded-full-heavy-adaptation-finalizer-v1"
 
 SPECIAL_CHEMISTRY_EXCLUSIONS = [
@@ -240,10 +240,15 @@ def build_final_adaptation_manifest(
             "trainable_tensor_count": EXPECTED_TRAINABLE_TENSOR_COUNT,
             "trainable_parameter_count": EXPECTED_TRAINABLE_PARAMETER_COUNT,
             "trainable_scope": [
-                "model_3d.peptide_encoder.layers.2",
+                "model_3d.peptide_encoder.layers.2.edge_mlp",
+                "model_3d.peptide_encoder.layers.2.node_mlp",
+                "model_3d.peptide_encoder.layers.2.norm",
                 "model_3d.peptide_encoder.final_norm",
                 "model_3d.peptide_encoder.project",
                 "peptide_fusion",
+            ],
+            "frozen_scope": [
+                "model_3d.peptide_encoder.layers.2.coord_mlp",
             ],
         },
         "formal_random_conformer_v3": {
