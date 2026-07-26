@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import torch
@@ -181,6 +182,162 @@ class SafeFullAtomRetrievalTests(unittest.TestCase):
             "phase3_epoch0_minus_phase2_Dmean10",
         } <= labels)
 
+    def test_dynamic_model_label_enters_models_and_bootstrap_comparisons(self):
+        label = "phase3_v2_step032"
+        entries = evaluator.checkpoint_model_entries(
+            Path("phase2.pt"),
+            {"model_label": label, "checkpoint": Path("step_032.pt")},
+        )
+        self.assertEqual([name for name, _ in entries], [
+            "phase2_baseline", label,
+        ])
+        comparisons = evaluator.preregistered_comparisons(label)
+        self.assertTrue(any(
+            row["later_model"] == label
+            and row["label"] == f"{label}_minus_phase2_Dmean10"
+            for row in comparisons
+        ))
+        serialized = json.dumps(comparisons, sort_keys=True)
+        self.assertNotIn("phase3_v1_epoch0", serialized)
+        self.assertNotIn("phase3_epoch0_minus_phase2", serialized)
+
+    def test_legacy_v1_default_checkpoint_contract_is_unchanged(self):
+        cli = evaluator.build_parser().parse_args([
+            "--pilot-output", "pilot",
+            "--dataset-root", "dataset",
+            "--chemistry-audit", "chemistry.jsonl",
+            "--safe265-cache-dir", "cache",
+            "--candidate-evidence-jsonl", "candidate.jsonl",
+            "--expanded-evidence-jsonl", "expanded.jsonl",
+            "--mmcif-root", "mmcif",
+            "--qbiolip-root", "qbiolip",
+            "--biolip-root", "biolip",
+            "--phase2-checkpoint", "phase2.pt",
+            "--source-model-configs", "configs.json",
+            "--output-dir", "output",
+        ])
+        contract = evaluator.resolve_phase3_checkpoint_contract(
+            cli, Path(evaluator.__file__).resolve().parents[2]
+        )
+        self.assertEqual(contract["mode"], "legacy_phase3_v1_epoch0")
+        self.assertEqual(contract["model_label"], "phase3_v1_epoch0")
+        self.assertEqual(
+            contract["actual_sha256"],
+            evaluator.FIXED512_EXPECTED["phase3_checkpoint_sha256"],
+        )
+        labels = {
+            row["label"] for row in evaluator.preregistered_comparisons()
+        }
+        self.assertIn("phase3_epoch0_minus_phase2_Dmean10", labels)
+
+    def test_explicit_checkpoint_sha_and_label_contract_passes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            checkpoint = Path(temporary) / "step_032.pt"
+            checkpoint.write_bytes(b"future-v2-checkpoint-fixture")
+            expected = evaluator._file_hash(checkpoint)
+            cli = unittest.mock.Mock(
+                phase3_checkpoint=str(checkpoint),
+                phase3_checkpoint_sha256=expected.lower(),
+                phase3_model_label="phase3_v2_step032",
+            )
+            contract = evaluator.resolve_phase3_checkpoint_contract(
+                cli, Path(temporary)
+            )
+        self.assertEqual(contract["mode"], "explicit")
+        self.assertEqual(contract["actual_sha256"], expected)
+        self.assertEqual(contract["expected_sha256"], expected)
+        self.assertEqual(contract["model_label"], "phase3_v2_step032")
+
+    def test_explicit_checkpoint_sha_mismatch_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            checkpoint = Path(temporary) / "step_032.pt"
+            checkpoint.write_bytes(b"fixture")
+            cli = unittest.mock.Mock(
+                phase3_checkpoint=str(checkpoint),
+                phase3_checkpoint_sha256="0" * 64,
+                phase3_model_label="phase3_v2_step032",
+            )
+            with self.assertRaisesRegex(
+                ValueError, "phase3_checkpoint_sha256_mismatch"
+            ):
+                evaluator.resolve_phase3_checkpoint_contract(
+                    cli, Path(temporary)
+                )
+
+    def test_partial_explicit_checkpoint_contract_is_rejected(self):
+        combinations = [
+            ("step.pt", None, None),
+            (None, "0" * 64, None),
+            (None, None, "phase3_v2_step032"),
+            ("step.pt", "0" * 64, None),
+            ("step.pt", None, "phase3_v2_step032"),
+            (None, "0" * 64, "phase3_v2_step032"),
+        ]
+        for checkpoint, sha256, label in combinations:
+            with self.subTest(
+                checkpoint=checkpoint, sha256=sha256, label=label
+            ):
+                cli = unittest.mock.Mock(
+                    phase3_checkpoint=checkpoint,
+                    phase3_checkpoint_sha256=sha256,
+                    phase3_model_label=label,
+                )
+                with self.assertRaisesRegex(
+                    ValueError, "requires_checkpoint_sha256_and_label"
+                ):
+                    evaluator.resolve_phase3_checkpoint_contract(
+                        cli, Path(".")
+                    )
+
+    def test_invalid_or_conflicting_explicit_labels_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            checkpoint = Path(temporary) / "step.pt"
+            checkpoint.write_bytes(b"fixture")
+            expected = evaluator._file_hash(checkpoint)
+            for label in ("", " phase3_v2_step032", "phase2_baseline"):
+                with self.subTest(label=label):
+                    cli = unittest.mock.Mock(
+                        phase3_checkpoint=str(checkpoint),
+                        phase3_checkpoint_sha256=expected,
+                        phase3_model_label=label,
+                    )
+                    with self.assertRaises(ValueError):
+                        evaluator.resolve_phase3_checkpoint_contract(
+                            cli, Path(temporary)
+                        )
+        with self.assertRaisesRegex(
+            ValueError, "duplicate_evaluation_model_label"
+        ):
+            evaluator.checkpoint_model_entries(
+                Path("phase2.pt"),
+                {
+                    "model_label": "phase2_baseline",
+                    "checkpoint": Path("phase3.pt"),
+                },
+            )
+
+    def test_dynamic_label_loads_explicit_checkpoint_state(self):
+        sentinel = object()
+        with patch.object(
+            evaluator,
+            "_load_input_domain_model",
+            return_value=sentinel,
+        ) as loader:
+            result = evaluator._load_model(
+                "phase3_v2_step032",
+                Path("step_032.pt"),
+                Path("phase2.pt"),
+                {},
+                unittest.mock.Mock(),
+                Path("."),
+                torch.device("cpu"),
+            )
+        self.assertIs(result, sentinel)
+        self.assertEqual(
+            loader.call_args.args[0], evaluator.LEGACY_PHASE3_MODEL_LABEL
+        )
+        self.assertEqual(loader.call_args.args[1], Path("step_032.pt"))
+
     def test_score_mean_requires_ten_matrices(self):
         matrices = [torch.full((2, 3), float(index)) for index in range(10)]
         mean = evaluator.arithmetic_mean_score(matrices)
@@ -202,7 +359,6 @@ class SafeFullAtomRetrievalTests(unittest.TestCase):
             "--qbiolip-root", "qbiolip",
             "--biolip-root", "biolip",
             "--phase2-checkpoint", "phase2.pt",
-            "--phase3-checkpoint", "phase3.pt",
             "--source-model-configs", "configs.json",
             "--output-dir", "output",
             "--preflight-only",

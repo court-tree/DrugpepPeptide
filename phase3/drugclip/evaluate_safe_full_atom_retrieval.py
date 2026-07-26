@@ -43,7 +43,7 @@ from phase3.drugclip.evaluate_input_domain_ablation import (
     _encode_variant,
     _input_sha,
     _json_sha,
-    _load_model,
+    _load_model as _load_input_domain_model,
     _model_args,
     _sampler_batches,
     _score_matrix,
@@ -58,6 +58,12 @@ from phase3.drugclip.train import load_source_configs, resolve_path
 
 SCHEMA_VERSION = "phase3-v2-safe373-full-atom-retrieval-v1"
 PLAN_SCHEMA_VERSION = "phase3-v2-safe373-evaluation-plan-v1"
+PHASE2_MODEL_LABEL = "phase2_baseline"
+LEGACY_PHASE3_MODEL_LABEL = "phase3_v1_epoch0"
+LEGACY_PHASE3_CHECKPOINT = (
+    "phase3/runs/drugclip/"
+    "v3_formal_epoch0_selection_recovery_v1/checkpoint_best.pt"
+)
 SAFE_QUERY_COUNT = 373
 SAFE_PEPTIDE_CANDIDATE_COUNT = 265
 RECEPTOR_CANDIDATE_COUNT = 512
@@ -436,9 +442,11 @@ def paired_bootstrap(
     }
 
 
-def preregistered_comparisons() -> list[dict[str, str]]:
+def preregistered_comparisons(
+    phase3_model_label: str = LEGACY_PHASE3_MODEL_LABEL,
+) -> list[dict[str, str]]:
     rows = []
-    for model in ("phase2_baseline", "phase3_v1_epoch0"):
+    for model in (PHASE2_MODEL_LABEL, phase3_model_label):
         for direction in ("r2p", "p2r"):
             for representation in ("3d_only", "learned_fusion"):
                 for later, earlier, label in (
@@ -482,9 +490,13 @@ def preregistered_comparisons() -> list[dict[str, str]]:
     for direction in ("r2p", "p2r"):
         for representation in ("3d_only", "learned_fusion"):
             rows.append({
-                "label": "phase3_epoch0_minus_phase2_Dmean10",
-                "later_model": "phase3_v1_epoch0",
-                "earlier_model": "phase2_baseline",
+                "label": (
+                    "phase3_epoch0_minus_phase2_Dmean10"
+                    if phase3_model_label == LEGACY_PHASE3_MODEL_LABEL
+                    else f"{phase3_model_label}_minus_phase2_Dmean10"
+                ),
+                "later_model": phase3_model_label,
+                "earlier_model": PHASE2_MODEL_LABEL,
                 "later_representation": representation,
                 "earlier_representation": representation,
                 "direction": direction,
@@ -501,13 +513,108 @@ def _checkpoint_finite(model: torch.nn.Module) -> bool:
     )
 
 
+def _load_model(
+    label: str,
+    checkpoint: Path,
+    phase2_checkpoint: Path,
+    source_configs: dict[str, Any],
+    train_args: argparse.Namespace,
+    repo_root: Path,
+    device: torch.device,
+) -> torch.nn.Module:
+    if label == PHASE2_MODEL_LABEL:
+        loader_label = PHASE2_MODEL_LABEL
+    else:
+        loader_label = LEGACY_PHASE3_MODEL_LABEL
+    return _load_input_domain_model(
+        loader_label,
+        checkpoint,
+        phase2_checkpoint,
+        source_configs,
+        train_args,
+        repo_root,
+        device,
+    )
+
+
+def validate_phase3_checkpoint_cli_group(
+    cli: argparse.Namespace,
+) -> bool:
+    supplied = {
+        "checkpoint": getattr(cli, "phase3_checkpoint", None),
+        "sha256": getattr(cli, "phase3_checkpoint_sha256", None),
+        "model_label": getattr(cli, "phase3_model_label", None),
+    }
+    supplied_count = sum(value is not None for value in supplied.values())
+    if supplied_count not in (0, 3):
+        raise ValueError(
+            "phase3_checkpoint_contract_requires_checkpoint_sha256_and_label"
+        )
+    return supplied_count == 3
+
+
+def resolve_phase3_checkpoint_contract(
+    cli: argparse.Namespace,
+    repo_root: Path,
+) -> dict[str, Any]:
+    explicit = validate_phase3_checkpoint_cli_group(cli)
+    supplied = {
+        "checkpoint": getattr(cli, "phase3_checkpoint", None),
+        "sha256": getattr(cli, "phase3_checkpoint_sha256", None),
+        "model_label": getattr(cli, "phase3_model_label", None),
+    }
+    if not explicit:
+        checkpoint = resolve_path(LEGACY_PHASE3_CHECKPOINT, repo_root).resolve()
+        expected_sha256 = FIXED512_EXPECTED["phase3_checkpoint_sha256"]
+        model_label = LEGACY_PHASE3_MODEL_LABEL
+        mode = "legacy_phase3_v1_epoch0"
+    else:
+        checkpoint = resolve_path(str(supplied["checkpoint"]), repo_root).resolve()
+        expected_sha256 = str(supplied["sha256"]).upper()
+        model_label = str(supplied["model_label"])
+        mode = "explicit"
+        if (
+            len(expected_sha256) != 64
+            or any(character not in "0123456789ABCDEF" for character in expected_sha256)
+        ):
+            raise ValueError("invalid_phase3_checkpoint_sha256")
+        if not model_label or model_label != model_label.strip():
+            raise ValueError("invalid_phase3_model_label")
+        if model_label == PHASE2_MODEL_LABEL:
+            raise ValueError("phase3_model_label_conflicts_with_phase2_baseline")
+    actual_sha256 = _file_hash(checkpoint)
+    if actual_sha256 != expected_sha256:
+        raise ValueError("phase3_checkpoint_sha256_mismatch")
+    return {
+        "mode": mode,
+        "checkpoint": checkpoint,
+        "expected_sha256": expected_sha256,
+        "actual_sha256": actual_sha256,
+        "model_label": model_label,
+    }
+
+
+def checkpoint_model_entries(
+    phase2_checkpoint: Path,
+    phase3_contract: dict[str, Any],
+) -> tuple[tuple[str, Path], tuple[str, Path]]:
+    model_label = str(phase3_contract["model_label"])
+    if model_label == PHASE2_MODEL_LABEL:
+        raise ValueError("duplicate_evaluation_model_label")
+    return (
+        (PHASE2_MODEL_LABEL, phase2_checkpoint),
+        (model_label, Path(phase3_contract["checkpoint"])),
+    )
+
+
 def preflight(cli: argparse.Namespace, repo_root: Path) -> dict[str, Any]:
     pilot = resolve_path(cli.pilot_output, repo_root).resolve()
     dataset_root = resolve_path(cli.dataset_root, repo_root).resolve()
     chemistry_path = resolve_path(cli.chemistry_audit, repo_root).resolve()
     cache_dir = resolve_path(cli.safe265_cache_dir, repo_root).resolve()
     phase2_checkpoint = resolve_path(cli.phase2_checkpoint, repo_root).resolve()
-    phase3_checkpoint = resolve_path(cli.phase3_checkpoint, repo_root).resolve()
+    phase3_contract = resolve_phase3_checkpoint_contract(cli, repo_root)
+    phase3_checkpoint = phase3_contract["checkpoint"]
     plan_path = pilot / "validation_sampling_plan.jsonl"
     checks = {
         "fixed512_plan_file_sha256": _file_hash(plan_path),
@@ -515,14 +622,13 @@ def preflight(cli: argparse.Namespace, repo_root: Path) -> dict[str, Any]:
             dataset_root / "DATA_MANIFEST.json"
         ),
         "phase2_checkpoint_sha256": _file_hash(phase2_checkpoint),
-        "phase3_checkpoint_sha256": _file_hash(phase3_checkpoint),
+        "phase3_checkpoint_sha256": phase3_contract["actual_sha256"],
         "chemistry_audit_file_sha256": _file_hash(chemistry_path),
     }
     for actual_key, expected_key in (
         ("fixed512_plan_file_sha256", "plan_file_sha256"),
         ("dataset_manifest_sha256", "manifest_sha256"),
         ("phase2_checkpoint_sha256", "phase2_checkpoint_sha256"),
-        ("phase3_checkpoint_sha256", "phase3_checkpoint_sha256"),
     ):
         if checks[actual_key] != FIXED512_EXPECTED[expected_key]:
             raise ValueError(f"input_sha256_mismatch:{actual_key}")
@@ -631,9 +737,8 @@ def preflight(cli: argparse.Namespace, repo_root: Path) -> dict[str, Any]:
             smoke_candidates, smoke_ids, strict=True
         )
     }
-    for label, checkpoint in (
-        ("phase2_baseline", phase2_checkpoint),
-        ("phase3_v1_epoch0", phase3_checkpoint),
+    for label, checkpoint in checkpoint_model_entries(
+        phase2_checkpoint, phase3_contract
     ):
         model = _load_model(
             label,
@@ -720,6 +825,8 @@ def preflight(cli: argparse.Namespace, repo_root: Path) -> dict[str, Any]:
         "config": config,
         "phase2_checkpoint": phase2_checkpoint,
         "phase3_checkpoint": phase3_checkpoint,
+        "phase3_checkpoint_contract": phase3_contract,
+        "phase3_model_label": phase3_contract["model_label"],
         "source_configs": source_configs,
         "AB_contract": {
             "selection_logic": (
@@ -769,9 +876,9 @@ def _formal_evaluate(
     all_records: dict[str, Any] = {}
     rank_store: dict[str, Any] = {}
     checkpoint_audit = {"read_only": True, "checkpoints": {}}
-    for label, checkpoint in (
-        ("phase2_baseline", flight["phase2_checkpoint"]),
-        ("phase3_v1_epoch0", flight["phase3_checkpoint"]),
+    for label, checkpoint in checkpoint_model_entries(
+        flight["phase2_checkpoint"],
+        flight["phase3_checkpoint_contract"],
     ):
         model = _load_model(
             label,
@@ -900,7 +1007,7 @@ def _formal_evaluate(
         dtype=np.int32,
     )
     intervals = {}
-    for comparison in preregistered_comparisons():
+    for comparison in preregistered_comparisons(flight["phase3_model_label"]):
         later = rank_store[
             comparison["later_model"]
         ][comparison["later_representation"]][
@@ -946,6 +1053,14 @@ def _formal_evaluate(
         "Dmean10_policy": "arithmetic mean of ten score matrices",
         "bound_A_policy": "target-bound non-deployable diagnostic upper bound",
         "hash_checks": flight["hash_checks"],
+        "phase3_checkpoint_contract": {
+            key: (
+                str(value)
+                if isinstance(value, Path)
+                else value
+            )
+            for key, value in flight["phase3_checkpoint_contract"].items()
+        },
         "cache_audit": flight["cache_audit"],
     })
     write_json(output / "checkpoint_audit.json", checkpoint_audit)
@@ -967,7 +1082,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--qbiolip-root", required=True)
     parser.add_argument("--biolip-root", required=True)
     parser.add_argument("--phase2-checkpoint", required=True)
-    parser.add_argument("--phase3-checkpoint", required=True)
+    parser.add_argument("--phase3-checkpoint")
+    parser.add_argument("--phase3-checkpoint-sha256")
+    parser.add_argument("--phase3-model-label")
     parser.add_argument("--source-model-configs", required=True)
     parser.add_argument("--bootstrap-seed", type=int, default=20260724)
     parser.add_argument("--bootstrap-resamples", type=int, default=10000)
@@ -980,6 +1097,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     cli = build_parser().parse_args()
+    validate_phase3_checkpoint_cli_group(cli)
     if cli.bootstrap_resamples != 10000:
         raise ValueError("safe373 bootstrap requires 10000 resamples")
     repo_root = Path(__file__).resolve().parents[2]
@@ -1003,6 +1121,12 @@ def main() -> None:
             "cache": flight["cache_audit"],
             "AB_contract": flight["AB_contract"],
             "checkpoint_audit": flight["checkpoint_audit"],
+            "phase3_checkpoint_contract": {
+                key: str(value) if isinstance(value, Path) else value
+                for key, value in flight[
+                    "phase3_checkpoint_contract"
+                ].items()
+            },
             "score_matrix_smoke": flight["score_smoke"],
             "no_training_path": flight["no_training_path"],
             "formal_gpu_evaluation_run": False,
