@@ -1216,48 +1216,67 @@ Evidence:
 - `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_v1\operational_recovery_preflight_and_sequence_snapshot_270.json`
 - `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_cache_v1\operational_interruption_report.json`
 
-## Phase-3 v2 Final Adaptation Manifest And Zero-Step Preflight
+## Phase-3 v2 Feature-Path Freeze Contract And Zero-Step Preflight
 
-The finalized adaptation binding and real-model zero-step preflight are
-complete at
-`E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_adaptation_preflight_v1`
-with classification `FULL_HEAVY_ADAPTATION_ZERO_STEP_PASS`.
+The v1 freeze contract is superseded because the last EGNN layer's
+`coord_mlp` is structurally downstream of the final node features consumed by
+pooling and therefore received no retrieval-loss gradient. Its manifest and
+the preserved first-step failure remain diagnostic evidence; neither was
+overwritten. The v1 `failure.json` SHA256 remains
+`1D3952AB4273935E3DD2E47E3BC311AD73DEC6083DD4D39CC86AE642EA6BE267`.
 
-The deterministic final manifest uses schema
-`phase3-v2-bounded-full-heavy-adaptation-manifest-v1`. Its file SHA256 is
-`39E68076FBF4FCA97FC8F0AE8D3C0E0F0F584899F281AB2E757249D17C73E01F`
+The replacement contract is
+`phase3-v2-peptide-3d-last1-feature-path-plus-peptide-fusion-v2`. It freezes
+the final layer `coord_mlp` and trains only that layer's
+`edge_mlp`/`node_mlp`/`norm`, peptide encoder `final_norm`/`project`, and
+peptide fusion. The real model has exactly 22 trainable tensors and 2,580,096
+trainable parameters; the complete parameter-name canonical SHA256 is
+`246F0A44F6D3E39FA64F0EA2C04E416316375D9BBBA66700EB566D0DB505745D`.
+
+The replacement zero-step output is
+`E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_adaptation_preflight_v2`.
+Its final manifest file SHA256 is
+`22C4F1140AE2E65DC6AAE4BEB809B52AB3936CDA4F53381D7DC362A06A363FEA`
 and canonical SHA256 is
-`FFC0534019BDDA0B41C06A5E004C77B0D41CD7B59A0A68DFFF213BCF5B29CA4A`.
-It contains only relative paths and binds the frozen plan file/canonical SHA,
-formal cache file/canonical SHA, Phase-2 learned-concat checkpoint, freeze
-contract, formal `random_conformer_v3` Manifest, safe373 evaluation plan, and
-the frozen generator/prior/FASPR/canonical-topology/QC contracts. It records
-exactly 4,096 train pairs, 512 valid pairs, 2,085 cached sequences, and 20,850
-conformers; special chemistry remains outside scope.
+`F092F535C18D8240E71284C3B8A39E11D1BE2308FF2F1218D702B7D606922464`.
+It preserves the same immutable plan, full-heavy cache, Phase-2 checkpoint,
+formal v3 Manifest, safe373 evaluation reference, and generation/QC bindings.
+The real strict-offline preflight passed in 179.41 seconds, verified the
+22-tensor feature-path scope and frozen `coord_mlp`, and produced finite
+forward/loss results without optimizer creation, backward, gradients,
+checkpoint writing, training, or retrieval. Its report SHA256 is
+`5E087B95AFA2AFF56E52D0CCA88F773E5B506A3163F7070D263087FDAE6A3C85`.
 
-The strict-offline CPU preflight loaded the real ESM asset and Phase-2
-checkpoint, verified 352 model-state tensors / 28,575,002 elements as finite,
-and reproduced the exact freeze contract: 26 trainable tensors, 2,843,265
-parameters, and parameter-name SHA256
-`ACC0E5C1AC2FC5EA2C27DC559795B55BD5FCD1D351821529F72B4D9AC6414774`.
-It ran the formal full plan/cache validator, built real full-heavy train and
-valid dataset views in the frozen 4,096/512 order, and completed one real
-peptide-unique batch per split under `eval` plus `torch.inference_mode`.
-Both directional losses, embeddings, and logits were finite. Receptor and
-peptide 1D encoders, receptor 3D encoder, and receptor fusion state hashes
-were unchanged; no gradient was created. The optimizer parameter groups were
-described but no optimizer was instantiated, and no backward, scheduler/AMP
-step, checkpoint write, training, or retrieval occurred.
-The real-model zero-step preflight report SHA256 is
-`600251BC1E5B3B484076E8CA9DA010FB2DF039F79B689F0FBBF81CE048362924`.
+## Phase-3 v2 First-Step Audit
+
+The one authorized retry completed with classification
+`FULL_HEAVY_FIRST_STEP_PASS`. It executed exactly one successful
+`optimizer.step` and one scheduler step, then stopped at `global_step=1`.
+All 22 authorized tensors received non-`None`, finite gradients, acquired
+optimizer state at step 1, and changed by finite amounts. All 22 changed;
+zero forbidden tensors or buffers changed. The peptide feature path and
+peptide fusion both changed, while the final `coord_mlp`, receptor 1D/3D and
+fusion, peptide 1D, temperature, and all other frozen state remained bitwise
+unchanged. Receptor embeddings were bitwise unchanged; peptide full-heavy
+embeddings changed and all post-update embeddings, logits, and losses were
+finite.
+
+The only checkpoint is `step_001.pt`, SHA256
+`718DF5EEA2746690C1262195E1A14D1FDD054AA6F9A08FB9DABD1AEC8E0BE833`.
+Reload into a fresh model/optimizer/scheduler/scaler reproduced the complete
+state, `global_step=1`, and next batch offset 1; a mismatched contract was
+rejected. A second optimizer step was rejected by the audit hard gate before
+any update. Bound plan/cache/adaptation/checkpoint input SHA values were
+unchanged. The first-step report SHA256 is
+`AF03A3D85CEA488E6FC1A59F896034C8B423729C5BD76CF4E0B9403578A500E7`;
+the detailed parameter audit SHA256 is
+`0C94B82B466817F72BD0881B1FA63B9DF7D7407C3467EC2A8640698EFF1589CE`.
 
 Evidence:
 
-- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_adaptation_preflight_v1\final_adaptation_manifest.json`
-- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_adaptation_preflight_v1\adaptation_manifest_validation.json`
-- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_adaptation_preflight_v1\real_model_zero_step_preflight.json`
-- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_adaptation_preflight_v1\batch_contract_audit.json`
-- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_adaptation_preflight_v1\summary.md`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_adaptation_preflight_v2\`
+- `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_first_step_audit_v2\`
+- preserved diagnostic `E:\pep\phase3\runs\drugclip\v2_bounded_full_heavy_first_step_audit_v1\`
 
 ## Current Problem
 
@@ -1313,9 +1332,10 @@ requirement state as `NOT_BUILT`; it is immutable and was not rewritten after
 materialization. The separately bound formal cache passes independent
 validation for all 2,085 sequences / 20,850 conformers, and the final
 adaptation manifest now binds it to the immutable plan, Phase-2 checkpoint,
-and unchanged freeze contract. The real zero-step preflight passes, but this
-is a readiness/contract result only: it contains no optimizer, gradient,
-update, checkpoint, training result, or retrieval result.
+and the feature-path freeze contract. The replacement zero-step preflight and
+the exactly-one-step audit pass. This proves the scoped update and recovery
+contracts at step 1 only; it does not establish multi-step stability,
+adaptation benefit, or retrieval improvement.
 
 Evidence:
 
@@ -1328,12 +1348,12 @@ Evidence:
 
 ## Single Next Action
 
-Review the finalized adaptation manifest and real zero-step preflight. Only a
-separate authorization may start bounded adaptation; zero-step PASS is not a
-training result. Do not rewrite the frozen descriptor, regenerate the formal
-cache, reuse safe265/safe373 evaluation caches, change selected IDs, silently
-replace samples, fabricate special chemistry, train, run retrieval, or
-publish a data release.
+Review the feature-path freeze-contract v2, replacement zero-step preflight,
+and the single successful step-1 checkpoint. Separate authorization is
+required for any step 2/32, bounded training, or retrieval. Do not restore
+`coord_mlp` to the trainable set, rewrite the frozen descriptor, regenerate
+the formal cache, reuse safe265/safe373 evaluation caches, change selected
+IDs, or silently replace samples.
 
 ## Workspace Safety
 

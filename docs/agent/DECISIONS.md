@@ -1409,3 +1409,67 @@ or retrieval was executed. The real-model zero-step preflight report SHA256 is
   coordinates in adaptation.
 - Do not start an optimizer step, bounded training, or GPU retrieval without
   separate explicit authorization.
+
+## 2026-07-26: Preserve The Pre-Step Audit Stop As Operational
+
+### Decision
+
+The first bounded full-heavy step audit stopped before any optimizer or
+scheduler step because its initial implementation treated `grad=None` on an
+allowed peptide-EGNN coordinate-update parameter as a finite-gradient
+contract failure. This is `OPERATIONAL_FAILURE`, not evidence of a non-finite
+loss/gradient, AMP skip, failed parameter update, or model instability.
+No `step_001.pt` exists and the successful optimizer-step count remains zero.
+
+The corrected implementation records missing gradients separately, requires
+all present gradients to be finite, preserves the optimizer parameter-group
+set as all 26 allowed tensors, and requires any created optimizer state to be
+only for allowed tensors with state step 1. This correction is fixture-tested
+only. The failed output and its original failure record remain preserved, and
+the audit was not automatically retried.
+
+### Do Not Repeat
+
+- Do not classify `grad=None` as a non-finite gradient.
+- Do not claim a first-step model result or checkpoint from this stopped run.
+- Do not rerun the audit, execute step 2/32, train, or retrieve without new
+  explicit authorization.
+
+## 2026-07-26: Freeze Only The Final EGNN Feature Path And Accept Step 1
+
+### Decision
+
+Supersede the 26-tensor freeze contract with
+`phase3-v2-peptide-3d-last1-feature-path-plus-peptide-fusion-v2`. The final
+EGNN layer `coord_mlp` is structurally downstream of the last node features
+used by pooling and had no retrieval-loss gradient, so it is frozen. Trainable
+scope is the last layer `edge_mlp`, `node_mlp`, and `norm`; peptide encoder
+`final_norm` and `project`; and peptide fusion. On the real model this is
+exactly 22 tensors / 2,580,096 parameters with parameter-name SHA256
+`246F0A44F6D3E39FA64F0EA2C04E416316375D9BBBA66700EB566D0DB505745D`.
+
+Accept the replacement v2 zero-step preflight as
+`FULL_HEAVY_ADAPTATION_ZERO_STEP_PASS` and the single authorized update as
+`FULL_HEAVY_FIRST_STEP_PASS`. All 22 parameters had finite, non-missing
+gradients, optimizer state at step 1, and finite changes; no forbidden
+parameter or buffer changed. The frozen `coord_mlp` and receptor-side state
+were bitwise unchanged, while the peptide feature path, peptide fusion, and
+peptide full-heavy embedding changed. The only checkpoint is `step_001.pt`
+with SHA256
+`718DF5EEA2746690C1262195E1A14D1FDD054AA6F9A08FB9DABD1AEC8E0BE833`;
+fresh-instance restoration and contract mismatch rejection passed, and a
+second optimizer step was blocked before update.
+
+The previous v1 manifest and failure remain preserved as superseded
+diagnostic evidence. This step-1 result proves optimizer scope, numerical
+viability for one batch, and checkpoint recovery only. It does not establish
+multi-step stability, model-selection benefit, or retrieval improvement.
+
+### Do Not Repeat
+
+- Do not re-enable the last-layer `coord_mlp` without changing and reviewing
+  the freeze contract.
+- Do not overwrite or reinterpret the v1 failure as a scientific model
+  failure.
+- Do not execute step 2/32, bounded training, or retrieval without separate
+  authorization.
